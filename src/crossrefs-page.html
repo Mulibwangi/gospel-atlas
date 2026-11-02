@@ -68,8 +68,18 @@ canvas:focus-visible{outline:2px solid var(--gold);outline-offset:-3px}
 .panel h2{font-family:var(--serif);font-weight:400;font-size:21px;margin:4px 0 2px;letter-spacing:-.4px}
 .panel .sub{font-size:11px;color:var(--muted);margin:0 0 14px}
 .links{list-style:none;margin:0;padding:0;max-height:430px;overflow:auto}
-.links li{display:flex;align-items:baseline;gap:9px;padding:7px 0;border-top:1px solid var(--line);font-size:12px;cursor:pointer}
-.links li span:first-child{width:7px;height:7px;border-radius:50%;flex:0 0 auto;align-self:center}
+.links li{display:block;border-top:1px solid var(--line);font-size:12px}
+.link-head{display:flex;align-items:baseline;gap:9px;padding:7px 0;cursor:pointer}
+.link-head .dot{width:7px;height:7px;border-radius:50%;flex:0 0 auto;align-self:center}
+.link-head .plus{color:var(--faint);font-size:13px;line-height:1;width:11px;text-align:center}
+.links li.open .link-head .plus{color:var(--gold)}
+.link-body{padding:2px 0 12px 16px;border-left:2px solid var(--line);margin:0 0 8px 3px}
+.links li.open .link-body{border-left-color:var(--gold)}
+.link-body .ref{display:block;font-size:10px;letter-spacing:.03em;color:var(--muted);margin:9px 0 3px}
+.link-body .ref:first-child{margin-top:2px}
+.link-body p{font-family:var(--serif);font-size:13px;line-height:1.65;margin:0;color:var(--ink)}
+.link-body .arrow{color:var(--gold)}
+.link-body .all{background:none;border:0;padding:8px 0 0;color:var(--gold);font-size:11px;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
 .links .ref{flex:1;min-width:0}
 .links .n{font-variant-numeric:tabular-nums;color:var(--faint);font-size:11px}
 .links .turn{order:3;background:none;border:0;color:var(--faint);cursor:pointer;font-size:13px;line-height:1;padding:0 2px;margin-left:6px}
@@ -290,7 +300,7 @@ const geom={};
 function sizes(){
   const rect=canvas.parentElement.getBoundingClientRect();
   W=Math.max(300,Math.round(rect.width));
-  H=state.view==='arc'?Math.round(Math.min(560,Math.max(300,W*0.42))):Math.round(Math.min(720,Math.max(340,W*0.78)));
+  H=state.view==='arc'?Math.round(Math.min(560,Math.max(300,W*0.42))):Math.round(Math.min(840,Math.max(360,W*0.86)));
   dpr=Math.min(2,window.devicePixelRatio||1);
   canvas.style.height=H+'px';
   canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);
@@ -305,17 +315,18 @@ function layout(){
     const focused=state.focus?state.focus.to-state.focus.from+1:0;
     // With a focus, the dial is the book: one full revolution for it, with the rest
     // of the canon kept as a context ring outside. Without one, the ring is the canon.
-    const R=Math.min(W,H)*(focused?0.395:0.37);
+    const R=Math.min(W,H)*(focused?0.34:0.32);   // room for three tiers of radial labels
     const Rin=focused?R*0.54:0;
     geom.circle={cx,cy,R,Rin,focused,barMax:R*(focused?0.085:0.14)};
     geom.angle=i=>{                                   // canon ring, Genesis 1 at the top
       const k=Math.max(0,Math.min(N-1,i));
       return -Math.PI/2+(k/N)*Math.PI*2;
     };
-    geom.dial=i=>{                                    // the focused run, chapter one at the top
-      const k=i-state.focus.from;
-      return -Math.PI/2+(k/focused)*Math.PI*2;
-    };
+    // The bezel turns: whichever chapter is held comes to twelve o'clock.
+    const held=(state.locked!==null&&state.focus&&state.locked>=state.focus.from&&state.locked<=state.focus.to)
+      ? state.locked : (state.focus?state.focus.from:0);
+    geom.dialZero=held;
+    geom.dial=i=>-Math.PI/2+((((i-held)%focused)+focused)%focused)/focused*Math.PI*2;
     geom.point=(i,r)=>{const t=geom.angle(i);return[cx+Math.cos(t)*r,cy+Math.sin(t)*r]};
     geom.dialPoint=(i,r)=>{const t=geom.dial(i);return[cx+Math.cos(t)*r,cy+Math.sin(t)*r]};
     // Where a link's end sits: on the dial when it is inside the focus, else on the canon ring.
@@ -413,17 +424,34 @@ function drawFrame(c){
     c.strokeStyle=faint;c.globalAlpha=.55;c.lineWidth=1;
     c.beginPath();c.moveTo(seam[0],seam[1]);c.lineTo(seamOut[0],seamOut[1]);c.stroke();
     c.globalAlpha=1;
+    // All sixty-six books are named. Each takes the first tier with room for it,
+    // dropping to the book's abbreviation before labels are allowed to collide.
+    const tiers=[R*1.01+barMax+11,R*1.01+barMax+23,R*1.01+barMax+35];
+    const filled=[-Infinity,-Infinity,-Infinity];
+    c.textBaseline='middle';c.font='9px '+css('--sans');
     BOOKS.forEach((b,bi)=>{
       const lit=focused&&b.first>=state.focus.from&&b.first+b.chapters-1<=state.focus.to;
-      if(!(b.chapters>=20||['Matt','Mark','Luke','John','Rev','Gen'].includes(b.code))&&!lit)return;
-      const mid=b.first+b.chapters/2,a=geom.angle(mid),p=geom.point(mid,R*1.01+barMax+11);
+      const mid=b.first+b.chapters/2,u=mid/N;
+      let name=null,tier=-1;
+      for(const candidate of [shortName(b.name),b.code]){
+        const half=(c.measureText(candidate).width/2+3)/(Math.PI*2*tiers[0]);
+        for(let t=0;t<3;t++)if(u-half>=filled[t]){filled[t]=u+half;tier=t;name=candidate;break}
+        if(tier>=0)break;
+      }
+      if(tier<0)return;
+      const ang=geom.angle(mid),p=geom.point(mid,tiers[tier]);
       if(!isFinite(p[0])||!isFinite(p[1]))return;
+      if(tier>0){
+        const q=geom.point(mid,R*1.01+barMax+4),q2=geom.point(mid,tiers[tier]-4);
+        c.strokeStyle=faint;c.globalAlpha=.3;c.lineWidth=.7;
+        c.beginPath();c.moveTo(q[0],q[1]);c.lineTo(q2[0],q2[1]);c.stroke();c.globalAlpha=1;
+      }
       c.save();c.translate(p[0],p[1]);
-      const flip=Math.cos(a)<0;c.rotate(a+(flip?Math.PI:0));
+      const flip=Math.cos(ang)<0;c.rotate(ang+(flip?Math.PI:0));
       c.textAlign=flip?'right':'left';
       c.fillStyle=lit?css('--gold'):(bi>=NT?ink:faint);
       c.font=(lit?'700 ':bi>=NT?'600 ':'')+'9px '+css('--sans');
-      c.fillText(shortName(b.name),0,0);c.restore();
+      c.fillText(name,0,0);c.restore();
     });
     if(focused){
       // The dial: one revolution for the book in focus, its chapters as the scale.
@@ -434,7 +462,7 @@ function drawFrame(c){
       c.globalAlpha=1;c.strokeStyle=css('--gold');c.lineWidth=1.6;c.stroke();
       const every=n>60?10:n>30?5:n>15?2:1;
       for(let i=state.focus.from;i<=state.focus.to;i++){
-        const k=i-state.focus.from+1,major=k===1||k%every===0;
+        const k=i-state.focus.from+1,major=k===1||k%every===0||i===state.locked;
         const t=geom.dial(i);
         const p1=[cx+Math.cos(t)*Rin,cy+Math.sin(t)*Rin];
         const p2=[cx+Math.cos(t)*(Rin+(major?9:5)),cy+Math.sin(t)*(Rin+(major?9:5))];
@@ -604,7 +632,7 @@ function chapterAt(px,py){
     const wrap=(x,m)=>((Math.round(x)%m)+m)%m;      // the twelve o'clock join belongs to the first slot
     if(focused&&r>Rin*0.42&&r<Rin+30){
       const n=state.focus.to-state.focus.from+1;
-      return state.focus.from+wrap(a/(Math.PI*2)*n-0.5+0.5,n);
+      return state.focus.from+(((geom.dialZero-state.focus.from)+wrap(a/(Math.PI*2)*n,n))%n);
     }
     if(r<R*0.62||r>R*1.3)return null;
     return wrap(a/(Math.PI*2)*N,N);
@@ -613,7 +641,7 @@ function chapterAt(px,py){
   if(px<m.padL||px>m.padL+sources.length*m.cw)return null;
   return sources[Math.max(0,Math.min(sources.length-1,Math.floor((px-m.padL)/m.cw)))];
 }
-function select(ci){state.locked=ci;paint();describe()}
+function select(ci){state.locked=ci;renderBase();describe()}
 canvas.addEventListener('pointermove',e=>{
   const r=canvas.getBoundingClientRect(),i=chapterAt(e.clientX-r.left,e.clientY-r.top);
   if(i!==state.hover){state.hover=i;paint();describe()}
@@ -621,7 +649,7 @@ canvas.addEventListener('pointermove',e=>{
 canvas.addEventListener('pointerleave',()=>{if(state.hover!==null){state.hover=null;paint();describe()}});
 canvas.addEventListener('click',e=>{
   const r=canvas.getBoundingClientRect(),i=chapterAt(e.clientX-r.left,e.clientY-r.top);
-  state.locked=(i===state.locked)?null:i;paint();describe();
+  state.locked=(i===state.locked)?null:i;renderBase();describe();
 });
 canvas.addEventListener('keydown',e=>{
   const step={ArrowRight:1,ArrowLeft:-1,ArrowUp:-10,ArrowDown:10}[e.key];
@@ -632,14 +660,50 @@ canvas.addEventListener('keydown',e=>{
 });
 
 // ---- panel --------------------------------------------------------------
-function row(ci,colour,count,onClick){
+// A list row that opens in place, in the manner of the Atlas's connection cards,
+// with the full set still available underneath.
+function linkRow({colour,text,count,pair,title,extra}){
   const li=document.createElement('li');
-  const dot=document.createElement('span');dot.style.background=colour;
-  const ref=document.createElement('span');ref.className='ref';ref.textContent=label(ci);
+  const head=document.createElement('div');head.className='link-head';
+  const dot=document.createElement('span');dot.className='dot';dot.style.background=colour;
+  const ref=document.createElement('span');ref.className='ref';ref.textContent=text;
   const n=document.createElement('span');n.className='n';n.textContent=count;
-  li.append(dot,ref,n);li.addEventListener('click',onClick);
+  head.append(dot,ref,n);
+  if(extra)head.appendChild(extra);
+  const plus=document.createElement('span');plus.className='plus';plus.textContent='+';
+  head.appendChild(plus);
+  const body=document.createElement('div');body.className='link-body';body.hidden=true;
+  li.append(head,body);
+  head.addEventListener('click',()=>{
+    const open=li.classList.toggle('open');
+    plus.textContent=open?'\u2212':'+';
+    body.hidden=!open;
+    if(!open||body.dataset.filled)return;
+    body.dataset.filled='1';
+    const found=findLinks(pair[0],pair[1],pair[2],pair[3]);
+    if(!found.length){const p=document.createElement('p');p.textContent='No verse-level links here under the current filters.';body.appendChild(p);return}
+    let lastFrom=-1;
+    found.slice(0,4).forEach(i=>{
+      if(VL_FROM[i]!==lastFrom){            // several links often share one source verse
+        const a=document.createElement('span');a.className='ref';
+        a.textContent=verseLabel(VL_FROM[i]);body.appendChild(a);
+        const pa=document.createElement('p');pa.textContent=TEXT[VL_FROM[i]]||'';body.appendChild(pa);
+        lastFrom=VL_FROM[i];
+      }
+      const z=document.createElement('span');z.className='ref';
+      z.innerHTML='<span class="arrow">\u2192</span> '+verseRange(VL_TO[i],VL_SPAN[i]);body.appendChild(z);
+      const pz=document.createElement('p');
+      let t='';for(let v=VL_TO[i];v<=VL_TO[i]+VL_SPAN[i];v++)t+=(t?' ':'')+(TEXT[v]||'');
+      pz.textContent=t;body.appendChild(pz);
+    });
+    const all=document.createElement('button');all.type='button';all.className='all';
+    all.textContent=found.length>4?'Read all '+fmt(found.length)+' in full \u2193':'Open in full \u2193';
+    all.addEventListener('click',e=>{e.stopPropagation();openPassages(pair[0],pair[1],pair[2],pair[3],title)});
+    body.appendChild(all);
+  });
   return li;
 }
+
 function describe(){
   const focus=state.locked!==null?state.locked:state.hover;
   const eyebrow=document.getElementById('p-eyebrow'),title=document.getElementById('p-title'),
@@ -666,11 +730,6 @@ function describe(){
         : 'No links cross its boundary in the current subset.';
       [...byBook.entries()].sort((a,b)=>b[1]-a[1]).slice(0,16).forEach(([bi,n])=>{
         const b=BOOKS[bi];
-        const li=document.createElement('li');
-        const dot=document.createElement('span');dot.style.background=testamentColour(b.first);
-        const ref=document.createElement('span');ref.className='ref';ref.textContent=shortName(b.name);
-        const cnt=document.createElement('span');cnt.className='n';cnt.textContent=fmt(n)+' links';
-        li.append(dot,ref,cnt);
         const turn=document.createElement('button');
         turn.type='button';turn.className='turn';turn.title='Make '+shortName(b.name)+' the dial';
         turn.setAttribute('aria-label','Turn the dial to '+shortName(b.name));
@@ -680,11 +739,11 @@ function describe(){
           state.focus={from:b.first,to:b.first+b.chapters-1,label:shortName(b.name)};
           state.locked=null;input.value=shortName(b.name);chip();renderBase();describe();
         });
-        li.appendChild(turn);
-        li.addEventListener('click',()=>openPassages(
-          state.focus.from,state.focus.to,b.first,b.first+b.chapters-1,
-          state.focus.label+' \u2194 '+shortName(b.name)));
-        list.appendChild(li);
+        list.appendChild(linkRow({
+          colour:testamentColour(b.first),text:shortName(b.name),count:fmt(n)+' links',
+          pair:[state.focus.from,state.focus.to,b.first,b.first+b.chapters-1],
+          title:state.focus.label+' \u2194 '+shortName(b.name),extra:turn
+        }));
       });
       return;
     }
@@ -693,8 +752,17 @@ function describe(){
     sub.textContent='Move across the drawing to isolate a chapter, or pick one here. Click to hold a selection; arrow keys step through once the drawing has focus.';
     const totals=new Map();
     for(const l of LINKS)if(visible(l))totals.set(l[0],(totals.get(l[0])||0)+l[2]);
-    [...totals.entries()].sort((a,b)=>b[1]-a[1]).slice(0,14)
-      .forEach(([ci,n])=>list.appendChild(row(ci,COMPLETE?testamentColour(ci):gospelColour(ci),fmt(n)+' links',()=>select(ci))));
+    [...totals.entries()].sort((a,b)=>b[1]-a[1]).slice(0,14).forEach(([ci,n])=>{
+      const li=document.createElement('li');
+      const head=document.createElement('div');head.className='link-head';
+      const dot=document.createElement('span');dot.className='dot';
+      dot.style.background=COMPLETE?testamentColour(ci):gospelColour(ci);
+      const ref=document.createElement('span');ref.className='ref';ref.textContent=label(ci);
+      const cnt=document.createElement('span');cnt.className='n';cnt.textContent=fmt(n)+' links';
+      head.append(dot,ref,cnt);li.appendChild(head);
+      head.addEventListener('click',()=>select(ci));
+      list.appendChild(li);
+    });
     return;
   }
   const out=LINKS.filter(l=>visible(l)&&l[0]===focus).sort((a,b)=>b[2]-a[2]);
@@ -708,8 +776,11 @@ function describe(){
     :'No links in the current subset.';
   rows.slice(0,60).forEach(l=>{
     const other=out.length?l[1]:l[0];
-    list.appendChild(row(other,linkColour(l),l[2]+(l[2]===1?' link':' links'),
-      ()=>openChapterPair(out.length?focus:other,out.length?other:focus)));
+    const a=out.length?focus:other,z=out.length?other:focus;
+    list.appendChild(linkRow({
+      colour:linkColour(l),text:label(other),count:l[2]+(l[2]===1?' link':' links'),
+      pair:[a,a,z,z],title:label(a)+' \u2194 '+label(z)
+    }));
   });
 }
 let passageState=null;
