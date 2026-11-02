@@ -293,28 +293,27 @@ function layout(){
     geom.arc={pad,baseY,barMax,step:(W-pad*2)/N};
     geom.x=i=>pad+(i+0.5)*geom.arc.step;
   }else if(state.view==='circle'){
-    const cx=W/2,cy=H/2,R=Math.min(W,H)*0.37;
-    // A closed ring, turned so the focused run sits at twelve o'clock and widened
-    // to take a third of the circumference — a bezel rather than a sliver.
-    const width=new Float64Array(N),start=new Float64Array(N);
-    if(state.focus){
-      const n=state.focus.to-state.focus.from+1,rest=N-n,SHARE=Math.min(.34,Math.max(.12,n/N*6+.1));
-      for(let i=0;i<N;i++)width[i]=(i>=state.focus.from&&i<=state.focus.to)?SHARE/n:(1-SHARE)/Math.max(1,rest);
-    }else for(let i=0;i<N;i++)width[i]=1/N;
-    let run=0;
-    for(let i=0;i<N;i++){start[i]=run;run+=width[i]}
-    const centre=state.focus?start[state.focus.from]+(start[state.focus.to]+width[state.focus.to]-start[state.focus.from])/2:0;
-    geom.circle={cx,cy,R,centre,width,start,barMax:R*0.14};
-    // Fractional indices are used for book midpoints, so interpolate between slot centres.
-    const posOf=i=>{
-      if(!(i>=0))return start[0]+width[0]/2;
-      const k=Math.floor(i),f=i-k;
-      if(k>=N-1)return start[N-1]+width[N-1]*(0.5+Math.min(1,f));
-      const a=start[k]+width[k]/2,b=start[k+1]+width[k+1]/2;
-      return a+(b-a)*f;
+    const cx=W/2,cy=H/2;
+    const focused=state.focus?state.focus.to-state.focus.from+1:0;
+    // With a focus, the dial is the book: one full revolution for it, with the rest
+    // of the canon kept as a context ring outside. Without one, the ring is the canon.
+    const R=Math.min(W,H)*(focused?0.395:0.37);
+    const Rin=focused?R*0.54:0;
+    geom.circle={cx,cy,R,Rin,focused,barMax:R*(focused?0.085:0.14)};
+    geom.angle=i=>{                                   // canon ring, Genesis 1 at the top
+      const k=Math.max(0,Math.min(N-1,i));
+      return -Math.PI/2+(k/N)*Math.PI*2;
     };
-    geom.angle=i=>-Math.PI/2+(posOf(i)-centre)*Math.PI*2;
-    geom.point=(i,r)=>{const a=geom.angle(i);return[cx+Math.cos(a)*r,cy+Math.sin(a)*r]};
+    geom.dial=i=>{                                    // the focused run, chapter one at the top
+      const k=i-state.focus.from;
+      return -Math.PI/2+(k/focused)*Math.PI*2;
+    };
+    geom.point=(i,r)=>{const t=geom.angle(i);return[cx+Math.cos(t)*r,cy+Math.sin(t)*r]};
+    geom.dialPoint=(i,r)=>{const t=geom.dial(i);return[cx+Math.cos(t)*r,cy+Math.sin(t)*r]};
+    // Where a link's end sits: on the dial when it is inside the focus, else on the canon ring.
+    geom.end=i=>(focused&&i>=state.focus.from&&i<=state.focus.to)
+      ? {p:geom.dialPoint(i,Rin),inner:true,a:geom.dial(i)}
+      : {p:geom.point(i,R*0.985),inner:false,a:geom.angle(i)};
   }else{
     const padL=74,padT=16,padB=36,padR=16;
     geom.matrix={padL,padT,padB,padR,cw:(W-padL-padR)/sources.length,ch:(H-padT-padB)/N};
@@ -326,13 +325,29 @@ function curveInto(path,l){
     const x1=geom.x(a),x2=geom.x(b),y=geom.arc.baseY;
     const h=Math.min(y-10,Math.abs(x2-x1)*0.55);
     path.moveTo(x1,y);path.bezierCurveTo(x1,y-h*1.1,x2,y-h*1.1,x2,y);
-  }else{
-    const R=geom.circle.R;
-    const p1=geom.point(a,R*0.985),p2=geom.point(b,R*0.985);
-    const ba=BOOKS[bookOfChapter[a]],bb=BOOKS[bookOfChapter[b]];
-    const c1=geom.point(ba.first+ba.chapters/2,R*0.5),c2=geom.point(bb.first+bb.chapters/2,R*0.5);
-    path.moveTo(p1[0],p1[1]);path.bezierCurveTo(c1[0],c1[1],c2[0],c2[1],p2[0],p2[1]);
+    return;
   }
+  const {cx,cy,R,Rin,focused}=geom.circle;
+  const polar=(t,r)=>[cx+Math.cos(t)*r,cy+Math.sin(t)*r];
+  const bookMid=i=>{const bk=BOOKS[bookOfChapter[i]];return geom.angle(bk.first+bk.chapters/2)};
+  if(!focused){
+    const p1=geom.point(a,R*0.985),p2=geom.point(b,R*0.985);
+    const c1=polar(bookMid(a),R*0.5),c2=polar(bookMid(b),R*0.5);
+    path.moveTo(p1[0],p1[1]);path.bezierCurveTo(c1[0],c1[1],c2[0],c2[1],p2[0],p2[1]);
+    return;
+  }
+  const e1=geom.end(a),e2=geom.end(b);
+  if(e1.inner&&e2.inner){                              // both ends inside the book
+    const c1=polar(e1.a,Rin*0.28),c2=polar(e2.a,Rin*0.28);
+    path.moveTo(e1.p[0],e1.p[1]);path.bezierCurveTo(c1[0],c1[1],c2[0],c2[1],e2.p[0],e2.p[1]);
+    return;
+  }
+  const inner=e1.inner?e1:e2,outer=e1.inner?e2:e1;
+  const other=e1.inner?b:a;
+  const c1=polar(inner.a,Rin*1.22);                    // leaves the dial radially
+  const c2=polar(bookMid(other),R*0.70);               // gathers at its book
+  path.moveTo(inner.p[0],inner.p[1]);
+  path.bezierCurveTo(c1[0],c1[1],c2[0],c2[1],outer.p[0],outer.p[1]);
 }
 function drawLink(c,l,alpha,width){
   c.globalAlpha=alpha;c.strokeStyle=linkColour(l);c.lineWidth=width;
@@ -376,12 +391,13 @@ function drawFrame(c){
       c.fillText(name,code==='Rev'?x-3:x+3,baseY+barMax+22);
     });
   }else if(state.view==='circle'){
-    const {R,barMax}=geom.circle;
+    const {R,Rin,barMax,focused,cx,cy}=geom.circle;
     for(let i=0;i<N;i++){
       const h=1.5+(CHAPTERS[i]/maxVerses)*barMax;
       const p1=geom.point(i,R*1.01),p2=geom.point(i,R*1.01+h);
-      c.strokeStyle=bookOfChapter[i]%2?line:faint;c.globalAlpha=.8;
-      c.lineWidth=Math.max(.8,(Math.PI*2*R/N)*0.8);
+      const lit=focused&&i>=state.focus.from&&i<=state.focus.to;
+      c.strokeStyle=lit?css('--gold'):(bookOfChapter[i]%2?line:faint);
+      c.globalAlpha=lit?.9:.8;c.lineWidth=Math.max(.8,(Math.PI*2*R/N)*0.8);
       c.beginPath();c.moveTo(p1[0],p1[1]);c.lineTo(p2[0],p2[1]);c.stroke();
     }
     c.globalAlpha=1;
@@ -390,7 +406,7 @@ function drawFrame(c){
     c.beginPath();c.moveTo(seam[0],seam[1]);c.lineTo(seamOut[0],seamOut[1]);c.stroke();
     c.globalAlpha=1;
     BOOKS.forEach((b,bi)=>{
-      const lit=state.focus&&b.first>=state.focus.from&&b.first+b.chapters-1<=state.focus.to;
+      const lit=focused&&b.first>=state.focus.from&&b.first+b.chapters-1<=state.focus.to;
       if(!(b.chapters>=20||['Matt','Mark','Luke','John','Rev','Gen'].includes(b.code))&&!lit)return;
       const mid=b.first+b.chapters/2,a=geom.angle(mid),p=geom.point(mid,R*1.01+barMax+11);
       if(!isFinite(p[0])||!isFinite(p[1]))return;
@@ -401,6 +417,36 @@ function drawFrame(c){
       c.font=(lit?'700 ':bi>=NT?'600 ':'')+'9px '+css('--sans');
       c.fillText(shortName(b.name),0,0);c.restore();
     });
+    if(focused){
+      // The dial: one revolution for the book in focus, its chapters as the scale.
+      const n=state.focus.to-state.focus.from+1;
+      // A solid face, so the dial reads as a bezel rather than a hint behind the chords.
+      c.globalAlpha=.93;c.fillStyle=css('--panel');
+      c.beginPath();c.arc(cx,cy,Rin,0,Math.PI*2);c.fill();
+      c.globalAlpha=1;c.strokeStyle=css('--gold');c.lineWidth=1.6;c.stroke();
+      const every=n>60?10:n>30?5:n>15?2:1;
+      for(let i=state.focus.from;i<=state.focus.to;i++){
+        const k=i-state.focus.from+1,major=k===1||k%every===0;
+        const t=geom.dial(i);
+        const p1=[cx+Math.cos(t)*Rin,cy+Math.sin(t)*Rin];
+        const p2=[cx+Math.cos(t)*(Rin+(major?9:5)),cy+Math.sin(t)*(Rin+(major?9:5))];
+        c.strokeStyle=major?css('--gold'):faint;c.globalAlpha=major?1:.75;c.lineWidth=major?2:1.1;
+        c.beginPath();c.moveTo(p1[0],p1[1]);c.lineTo(p2[0],p2[1]);c.stroke();
+        if(major){
+          const lp=[cx+Math.cos(t)*(Rin+21),cy+Math.sin(t)*(Rin+21)];
+          c.save();c.translate(lp[0],lp[1]);
+          c.globalAlpha=1;c.fillStyle=ink;c.font='650 11px '+css('--sans');
+          c.textAlign='center';c.textBaseline='middle';
+          c.fillText(String(k),0,0);c.restore();
+        }
+      }
+      c.globalAlpha=1;c.textBaseline='middle';
+      c.textAlign='center';
+      c.fillStyle=ink;c.font='18px '+css('--serif');
+      c.fillText(state.focus.label,cx,cy-8);
+      c.fillStyle=css('--muted');c.font='10px '+css('--sans');
+      c.fillText(n+(n===1?' CHAPTER':' CHAPTERS'),cx,cy+12);
+    }
   }else{
     const m=geom.matrix;
     c.strokeStyle=line;c.globalAlpha=.9;c.lineWidth=1;
@@ -464,6 +510,7 @@ function buildIndex(){
 // so a full-Bible view appears immediately and fills in instead of freezing the page.
 function renderBase(){
   const token=++renderToken;
+  layout();          // the circle's geometry depends on the focus, so recompute it here
   buildIndex();
   linkLayer=document.createElement('canvas');
   linkLayer.width=Math.max(1,W);linkLayer.height=Math.max(1,H);
@@ -516,7 +563,11 @@ function paint(){
   for(const l of (byChapter.get(focus)||[]))drawLink(ctx,l,state.view==='matrix'?1:.85,state.view==='matrix'?1:1.25);
   ctx.fillStyle=css('--ink');
   if(state.view==='arc'){const x=geom.x(focus);ctx.fillRect(x-1,geom.arc.baseY-6,2,12)}
-  else if(state.view==='circle'){const p=geom.point(focus,geom.circle.R*1.01);ctx.beginPath();ctx.arc(p[0],p[1],2.6,0,7);ctx.fill()}
+  else if(state.view==='circle'){
+    const e=geom.end(focus);
+    const p=e.inner?[geom.circle.cx+Math.cos(e.a)*geom.circle.Rin,geom.circle.cy+Math.sin(e.a)*geom.circle.Rin]:geom.point(focus,geom.circle.R*1.01);
+    ctx.beginPath();ctx.arc(p[0],p[1],3,0,7);ctx.fill();
+  }
   else{const m=geom.matrix;ctx.globalAlpha=.25;
     if(sourceSlot.has(focus))ctx.fillRect(m.padL+sourceSlot.get(focus)*m.cw,m.padT,Math.max(1.2,m.cw),N*m.ch);
     else ctx.fillRect(m.padL,m.padT+focus*m.ch,sources.length*m.cw,Math.max(1.2,m.ch));
@@ -527,7 +578,9 @@ function paint(){
 function caption(){
   document.getElementById('caption').textContent={
     arc:'Chapters left to right, Genesis 1 to Revelation 22. Bar length is the number of verses; arc height is the distance a link travels.',
-    circle:'Chapters clockwise around a closed ring; whatever is in focus is turned to the top, and the tick marks Genesis 1. Chords are pulled toward the centre of each book, so links sharing a destination braid together.',
+    circle:state.focus
+      ?'The dial is '+state.focus.label+': one full turn, its chapters numbered. Every chord runs from a chapter out to where it points on the canon ring.'
+      :'The whole canon clockwise from Genesis 1 at the top. Chords are pulled toward the centre of each book, so links sharing a destination braid together. Choose a book to make it the dial.',
     matrix:'Each dot is one chapter pair: the chapter a link starts from across the bottom, the chapter it points to down the side. Direction is kept here and nowhere else.'
   }[state.view];
 }
@@ -537,14 +590,16 @@ function render(){sizes();layout();renderBase();caption()}
 function chapterAt(px,py){
   if(state.view==='arc'){const i=Math.round((px-geom.arc.pad)/geom.arc.step-0.5);return i>=0&&i<N?i:null}
   if(state.view==='circle'){
-    const {cx,cy,R,centre,start,width}=geom.circle,dx=px-cx,dy=py-cy,r=Math.hypot(dx,dy);
-    if(r<R*0.3||r>R*1.38)return null;
+    const {cx,cy,R,Rin,focused}=geom.circle,dx=px-cx,dy=py-cy,r=Math.hypot(dx,dy);
     let a=Math.atan2(dy,dx)+Math.PI/2;
     while(a<0)a+=Math.PI*2;while(a>=Math.PI*2)a-=Math.PI*2;
-    let u=a/(Math.PI*2)+centre;u-=Math.floor(u);
-    let lo=0,hi=N-1;
-    while(lo<hi){const mid=(lo+hi+1)>>1;if(start[mid]<=u)lo=mid;else hi=mid-1}
-    return lo;
+    const wrap=(x,m)=>((Math.round(x)%m)+m)%m;      // the twelve o'clock join belongs to the first slot
+    if(focused&&r>Rin*0.42&&r<Rin+30){
+      const n=state.focus.to-state.focus.from+1;
+      return state.focus.from+wrap(a/(Math.PI*2)*n-0.5+0.5,n);
+    }
+    if(r<R*0.62||r>R*1.3)return null;
+    return wrap(a/(Math.PI*2)*N,N);
   }
   const m=geom.matrix;
   if(px<m.padL||px>m.padL+sources.length*m.cw)return null;
