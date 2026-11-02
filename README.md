@@ -73,9 +73,12 @@ book, and a matrix — switching between them without losing your place.
 The matrix is the only one of the three that keeps direction, so the asymmetry
 of the links is visible: who points at whom, rather than merely what is
 connected. Search a book or a chapter (`Isaiah 53`, `Ps 22`, `Jn 3`, and the
-usual abbreviations) to jump to it, or choose a whole book to see only what
-touches it — in, out, or both ways. That filter is what makes the density
-usable.
+usual abbreviations) to jump to it, or narrow the drawing to one book or to a
+section — the Law, History, Wisdom and Poetry, the Major or Minor Prophets, the
+Gospels, Paul's Letters, the General Letters, either Testament — and see only
+what crosses into it, out of it, or both. That filter is what makes the density
+usable: choose the Major Prophets and the picture becomes the few hundred
+chords that actually land there, with Isaiah 53 at the head of the list.
 
 ![Only the links into Revelation](docs/images/crossrefs-book.png)
 

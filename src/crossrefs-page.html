@@ -125,7 +125,7 @@ root.innerHTML=`
     <div>
       <p class="eyebrow">GOSPEL ATLAS · CROSS-REFERENCE LAB</p>
       <h1>Where Scripture <em>points</em>.</h1>
-      <p class="lede">${COMPLETE?'Every cross-reference in the collection':'Every cross-reference that starts in Matthew, Mark, Luke or John'}, drawn three ways from the same data. Search for a book or a chapter to drill into it.</p>
+      <p class="lede">${COMPLETE?'Every cross-reference in the collection':'Every cross-reference that starts in Matthew, Mark, Luke or John'}, drawn three ways from the same data. Narrow it to one book, or to a section \u2014 the Law, the Prophets, Paul\u2019s Letters \u2014 and read what crosses into it.</p>
     </div>
     <div class="counts">
       <div><strong>${fmt(LINKS.reduce((n,l)=>n+l[2],0))}</strong><span>VERSE LINKS</span></div>
@@ -140,7 +140,7 @@ root.innerHTML=`
       <button data-view="matrix" aria-pressed="false">Matrix</button>
     </div>
     <div class="search">
-      <input id="q" type="search" autocomplete="off" placeholder="Search a book or chapter — Isaiah 53, Ps 22, Jn 3" aria-label="Search for a book or chapter">
+      <input id="q" type="search" autocomplete="off" placeholder="Search — Isaiah 53, Ps 22, the Prophets, Paul" aria-label="Search for a book or chapter">
       <div id="results" hidden></div>
     </div>
     <div class="opt">Colour
@@ -152,6 +152,11 @@ root.innerHTML=`
     </div>
     <div class="opt"><label><input type="checkbox" id="cbsafe"> Colour-blind safe</label></div>
     <div class="opt">Minimum links <input type="range" id="minlinks" min="1" max="12" value="1" aria-label="Minimum verse links per chapter pair"><strong id="minlabel" style="font-variant-numeric:tabular-nums;color:var(--ink)">1</strong></div>
+    <div class="opt">Focus
+      <select id="section" aria-label="Focus on a section of the Bible">
+        <option value="">Whole Bible</option>
+      </select>
+    </div>
     <div id="chipslot"></div>
     <div class="opt" id="dirslot" hidden>Direction
       <select id="direction" aria-label="Which links to show for the focused book">
@@ -182,7 +187,25 @@ root.innerHTML=`
     <p><strong>Form.</strong> The arc diagram follows the one Chris Harrison and Christoph Römhild made in 2007. This is drawn independently, from different data, and uses none of their artwork. Coder: David Lee.</p>
   </footer>`;
 
-const state={view:'circle',colour:'distance',cbsafe:false,min:1,hover:null,locked:null,book:null,dir:'both'};
+// Focus is a contiguous run of chapters, so one book and a section of books
+// work through the same mechanism.
+const SECTIONS=[
+ ['Old Testament','Gen','Mal','ot oldtestament hebrewbible tanakh'],
+ ['New Testament','Matt','Rev','nt newtestament'],
+ ['The Law','Gen','Deut','pentateuch torah law fivebooks books of moses'],
+ ['History','Josh','Esth','historical narrative formerprophets'],
+ ['Wisdom and Poetry','Job','Song','wisdom poetry poetical writings'],
+ ['Major Prophets','Isa','Dan','majorprophets'],
+ ['Minor Prophets','Hos','Mal','minorprophets twelve thetwelve'],
+ ['The Prophets','Isa','Mal','prophets prophecy latterprophets'],
+ ['The Gospels','Matt','John','gospels fourgospels evangelists'],
+ ['Paul\u2019s Letters','Rom','Phlm','paul pauline epistlesofpaul letters'],
+ ['General Letters','Heb','Jude','general catholic epistles']
+].map(([name,from,to,alias])=>{
+  const a=BOOKS.find(b=>b.code===from),z=BOOKS.find(b=>b.code===to);
+  return a&&z?{name,from:a.first,to:z.first+z.chapters-1,alias}:null;
+}).filter(Boolean);
+const state={view:'circle',colour:'distance',cbsafe:false,min:1,hover:null,locked:null,focus:null,dir:'both'};
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const GOSPEL={Matt:'--matt',Mark:'--mark',Luke:'--luke',John:'--john'};
 const CB={Matt:'#0072b2',Mark:'#d55e00',Luke:'#009e73',John:'#cc79a7'};
@@ -284,13 +307,14 @@ function drawFrame(c){
     }
     c.globalAlpha=1;
     BOOKS.forEach((b,bi)=>{
-      if(!(b.chapters>=20||['Matt','Mark','Luke','John','Rev','Gen'].includes(b.code))&&state.book!==bi)return;
+      const lit=state.focus&&b.first>=state.focus.from&&b.first+b.chapters-1<=state.focus.to;
+      if(!(b.chapters>=20||['Matt','Mark','Luke','John','Rev','Gen'].includes(b.code))&&!lit)return;
       const mid=b.first+b.chapters/2,a=geom.angle(mid),p=geom.point(mid,R*1.01+barMax+11);
       c.save();c.translate(p[0],p[1]);
       const flip=Math.cos(a)<0;c.rotate(a+(flip?Math.PI:0));
       c.textAlign=flip?'right':'left';
-      c.fillStyle=state.book===bi?css('--gold'):(bi>=NT?ink:faint);
-      c.font=(state.book===bi?'700 ':bi>=NT?'600 ':'')+'9px '+css('--sans');
+      c.fillStyle=lit?css('--gold'):(bi>=NT?ink:faint);
+      c.font=(lit?'700 ':bi>=NT?'600 ':'')+'9px '+css('--sans');
       c.fillText(shortName(b.name),0,0);c.restore();
     });
   }else{
@@ -317,15 +341,32 @@ function drawFrame(c){
       c.fillStyle=faint;c.fillText(shortName(b.name),(x1+x2)/2,m.padT+N*m.ch+20);
     });
   }
+  if(state.focus){
+    c.save();c.strokeStyle=css('--gold');c.globalAlpha=.9;
+    if(state.view==='arc'){
+      c.lineWidth=3;c.beginPath();
+      c.moveTo(geom.x(state.focus.from),geom.arc.baseY+geom.arc.barMax+9);
+      c.lineTo(geom.x(state.focus.to),geom.arc.baseY+geom.arc.barMax+9);c.stroke();
+    }else if(state.view==='circle'){
+      const r=geom.circle.R*1.01+geom.circle.barMax+4;
+      c.lineWidth=2.5;c.beginPath();
+      c.arc(geom.circle.cx,geom.circle.cy,r,geom.angle(state.focus.from),geom.angle(state.focus.to+1));c.stroke();
+    }else{
+      const m=geom.matrix;c.lineWidth=2.5;c.beginPath();
+      c.moveTo(m.padL-3,m.padT+state.focus.from*m.ch);
+      c.lineTo(m.padL-3,m.padT+(state.focus.to+1)*m.ch);c.stroke();
+    }
+    c.restore();
+  }
   c.restore();
 }
-function inBook(ci){const b=BOOKS[state.book];return ci>=b.first&&ci<b.first+b.chapters}
+function inFocus(ci){return ci>=state.focus.from&&ci<=state.focus.to}
 function visible(l){
   if(l[2]<state.min)return false;
-  if(state.book!==null){
-    if(state.dir==='out')return inBook(l[0]);
-    if(state.dir==='in')return inBook(l[1]);
-    return inBook(l[0])||inBook(l[1]);
+  if(state.focus){
+    if(state.dir==='out')return inFocus(l[0]);
+    if(state.dir==='in')return inFocus(l[1]);
+    return inFocus(l[0])||inFocus(l[1]);
   }
   return true;
 }
@@ -416,11 +457,11 @@ function describe(){
         sub=document.getElementById('p-sub'),list=document.getElementById('p-list');
   list.innerHTML='';
   if(focus===null||focus===undefined){
-    eyebrow.textContent=state.book!==null?'BUSIEST IN '+shortName(BOOKS[state.book].name).toUpperCase():'BUSIEST CHAPTERS';
+    eyebrow.textContent=state.focus?'BUSIEST IN '+state.focus.label.toUpperCase():'BUSIEST CHAPTERS';
     title.textContent='Start anywhere';
     sub.textContent='Move across the drawing to isolate a chapter, or pick one here. Click to hold a selection; arrow keys step through once the drawing has focus.';
     const totals=new Map();
-    const end=(state.book!==null&&state.dir==='in')?1:0;
+    const end=(state.focus&&state.dir==='in')?1:0;
     for(const l of LINKS)if(visible(l))totals.set(l[end],(totals.get(l[end])||0)+l[2]);
     [...totals.entries()].sort((a,b)=>b[1]-a[1]).slice(0,14)
       .forEach(([ci,n])=>list.appendChild(row(ci,COMPLETE?testamentColour(ci):gospelColour(ci),fmt(n)+' links',()=>select(ci))));
@@ -499,13 +540,21 @@ function lookup(query){
       return x.s-y.s||x.a.bi-y.a.bi;
     });
   const out=[];
+  const sq=namePart||rawName;
+  SECTIONS.map(sec=>{
+    const keys=[norm(sec.name)].concat(sec.alias.split(' '));
+    const rank=keys.some(k=>k===sq)?0:keys.some(k=>k.startsWith(sq))?1:keys.some(k=>k.includes(sq))?2:9;
+    return {sec,rank};
+  }).filter(x=>x.rank<9).sort((a,b)=>a.rank-b.rank).slice(0,3)
+    .forEach(({sec})=>out.push({kind:'range',from:sec.from,to:sec.to,label:sec.name,
+      text:sec.name+' · section',n:(sec.to-sec.from+1)+' chapters'}));
   for(const {a} of ranked){
     const b=BOOKS[a.bi];
     if(chapterPart&&chapterPart>=1&&chapterPart<=b.chapters){
       const ci=b.first+chapterPart-1;
       out.push({kind:'chapter',ci,text:label(ci),n:totalsByChapter.get(ci)||0});
     }
-    out.push({kind:'book',bi:a.bi,text:shortName(b.name)+' · whole book',n:b.chapters+' chapters'});
+    out.push({kind:'range',from:b.first,to:b.first+b.chapters-1,label:shortName(b.name),text:shortName(b.name)+' · whole book',n:b.chapters+' chapters'});
     if(out.length>=8)break;
   }
   return out.slice(0,8);
@@ -526,9 +575,10 @@ function showResults(){
   results.hidden=false;
 }
 function choose(it){
-  results.hidden=true;input.value=it.kind==='chapter'?it.text:shortName(BOOKS[it.bi].name);
-  if(it.kind==='chapter'){state.book=null;chip();renderBase();select(it.ci)}
-  else{state.book=it.bi;state.locked=null;chip();renderBase();describe()}
+  results.hidden=true;
+  input.value=it.kind==='chapter'?it.text:it.label;
+  if(it.kind==='chapter'){state.focus=null;chip();renderBase();select(it.ci)}
+  else{state.focus={from:it.from,to:it.to,label:it.label};state.locked=null;chip();renderBase();describe()}
 }
 input.addEventListener('input',showResults);
 input.addEventListener('focus',showResults);
@@ -539,14 +589,18 @@ input.addEventListener('keydown',e=>{
 document.addEventListener('click',e=>{if(!e.target.closest('.search'))results.hidden=true});
 function chip(){
   const slot=document.getElementById('chipslot');slot.innerHTML='';
-  document.getElementById('dirslot').hidden=state.book===null;
-  if(state.book===null)return;
+  document.getElementById('dirslot').hidden=!state.focus;
+  const sel=document.getElementById('section');
+  if(sel)sel.value=state.focus&&SECTIONS.some(x=>x.name===state.focus.label)?state.focus.label:'';
+  if(!state.focus)return;
   const c=document.createElement('span');c.className='chip';
-  c.append(document.createTextNode('Only '+shortName(BOOKS[state.book].name)));
-  const x=document.createElement('button');x.type='button';x.setAttribute('aria-label','Show the whole Bible again');x.textContent='×';
-  x.addEventListener('click',()=>{state.book=null;input.value='';chip();renderBase();describe()});
+  c.append(document.createTextNode('Only '+state.focus.label));
+  const x=document.createElement('button');x.type='button';
+  x.setAttribute('aria-label','Show the whole Bible again');x.textContent='×';
+  x.addEventListener('click',clearFocus);
   c.appendChild(x);slot.appendChild(c);
 }
+function clearFocus(){state.focus=null;input.value='';chip();renderBase();describe()}
 
 // ---- controls -----------------------------------------------------------
 document.querySelectorAll('.views button').forEach(b=>b.addEventListener('click',()=>{
@@ -559,9 +613,19 @@ document.getElementById('cbsafe').addEventListener('change',e=>{state.cbsafe=e.t
 document.getElementById('minlinks').addEventListener('input',e=>{
   state.min=+e.target.value;document.getElementById('minlabel').textContent=e.target.value;renderBase();describe();
 });
+(function(){
+  const sel=document.getElementById('section');
+  SECTIONS.forEach(x=>{const o=document.createElement('option');o.value=x.name;o.textContent=x.name;sel.appendChild(o)});
+  sel.addEventListener('change',e=>{
+    const sec=SECTIONS.find(x=>x.name===e.target.value);
+    if(!sec){clearFocus();return}
+    state.focus={from:sec.from,to:sec.to,label:sec.name};state.locked=null;input.value='';
+    chip();renderBase();describe();
+  });
+})();
 document.getElementById('direction').addEventListener('change',e=>{state.dir=e.target.value;renderBase();describe()});
 document.getElementById('clear').addEventListener('click',()=>{
-  state.locked=null;state.hover=null;state.book=null;state.dir='both';
+  state.locked=null;state.hover=null;state.focus=null;state.dir='both';
   document.getElementById('direction').value='both';input.value='';chip();renderBase();describe();
 });
 let t;addEventListener('resize',()=>{clearTimeout(t);t=setTimeout(render,160)});
