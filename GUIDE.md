@@ -44,9 +44,29 @@ Gospel Index. The other four colours identify units assigned only to Matthew,
 Mark, Luke or John in that index. The badges identify the exact combination.
 The colours describe the index, not an exact match of wording.
 
-Click a square or choose a story to read the parallel passages. Search titles
-in English or enter a reference such as John 4:7. Click a verse number to view
-its outgoing cross-references. Arrow keys work when a map has keyboard focus.
+Click a square or choose a story to read the parallel passages. Click a verse
+number to view its outgoing cross-references. Arrow keys work when a map has
+keyboard focus. On a phone, swipe sideways to move between the four Gospels and
+between the parallel passages.
+
+The search box matches story titles, references such as John 4:7, and, from
+three letters upwards, the Scripture text of the edition you are reading.
+Online editions carry no text in this file, so their searches use the ASV 1901.
+Accents and ligatures are folded, so Zacchaeus finds Zacchæus. Each matched
+unit shows the first verse containing your words.
+
+"Told in … but not in …" lists the units one Gospel records and another does
+not. It reports the chosen index's assignments: a unit absent from one Gospel
+may still share details with something that Gospel records elsewhere.
+
+"Colour-blind palette" switches the five colours to the Okabe-Ito set, so no
+distinction depends on telling red from green. The Mt / Mk / Lk / Jn badges
+carry the same information as text either way. The choice is remembered in this
+browser.
+
+The address bar keeps the selected story and verse, so a link copied from it
+reopens at the same place. "Copy references" includes that link when the app is
+opened from a web address.
 
 ## Heading symbols
 

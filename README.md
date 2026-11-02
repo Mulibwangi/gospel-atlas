@@ -47,10 +47,20 @@ art. The panels contain Scripture and references, with no generated commentary.
 
 ![A heading symbol panel showing Scripture](docs/images/symbol.png)
 
-Search story titles in English or type a reference such as `John 4:7`. Adjust
-the text size, print the selected passages, copy the references, or download the
-index, cross-reference and audit data from inside the app. Arrow keys move
-through a map that has keyboard focus.
+**Search the text, and compare the accounts.** The search box matches story
+titles, references such as `John 4:7`, and the Scripture text itself in whatever
+edition you are reading — accents and ligatures folded, so `Zacchaeus` finds the
+ASV's `Zacchæus`. "Told in … but not in …" lists the units one Gospel records
+and another does not, which is the comparison the maps show but cannot answer
+precisely.
+
+![Comparing what Luke records and Matthew does not](docs/images/compare.png)
+
+Adjust the text size, print the selected passages, copy the references, or
+download the index, cross-reference and audit data from inside the app. Arrow
+keys move through a map that has keyboard focus, and a colour-blind palette
+(Okabe-Ito) is one click away in the legend. The address bar keeps the selected
+story and verse, so a copied link reopens at the same passage.
 
 ## Languages
 
@@ -93,6 +103,13 @@ Windows, macOS or Linux, with JavaScript enabled. The app file is large, so
 allow it a few seconds to appear.
 
 ![The START HERE page](docs/images/start-here.png)
+
+On a phone, use the hosted version: the maps become one Gospel per screen,
+swiped sideways, and the parallel passages do the same. A downloaded ZIP is
+awkward to open on a phone, whatever the app does.
+
+<img src="docs/images/phone-maps.png" alt="One Gospel filling a phone screen" width="300">
+
 
 The complete collection may be shared free of charge for non-commercial use
 under the data licences below.

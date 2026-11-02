@@ -12,3 +12,32 @@
 @media(max-width:1150px){.gospel-card-heading{flex-wrap:wrap}.gospel-card-heading>span{padding-left:68px}.gospel-symbol{width:48px;height:48px}.gospel-card-heading>span{padding-left:58px}.gospel-heading-text h3{font-size:22px!important}}
 @media(max-width:600px){.edition-panel{padding:16px}.edition-controls{gap:12px}.edition-controls label{min-width:100%}.edition-status{align-items:flex-start;gap:7px;flex-direction:column}.reading-tools{gap:6px}.gospel-symbol{width:42px;height:42px}.gospel-card-heading>div{gap:6px!important}.gospel-heading-text h3{font-size:20px!important}.gospel-card-heading>span{padding-left:48px}.theme-label{font-size:9px}.symbol-dialog{padding:18px}.symbol-title h2{font-size:34px}.symbol-title .gospel-symbol{width:65px;height:65px}.symbol-tabs button{padding:8px;font-size:11px}.symbol-scripture{max-height:45vh}.site-header .edition{display:none}}
 @media print{body{background:#fff!important;color:#000!important}header.site-header,.hero,.edition-panel,.atlas-section,.story-browser,.detail-top,.story-arrows,.detail-summary button,.connections-section,footer,.map-tooltip,.reader-note,.method-dialog,.symbol-actions,.symbol-tabs,.dialog-top{display:none!important}main{width:100%!important;padding:0!important;max-width:none!important}.story-section{display:block!important;margin:0!important}.story-detail{width:100%!important}.passage-grid{display:grid!important;grid-template-columns:1fr 1fr!important;gap:15px!important}.passage-text{max-height:none!important;height:auto!important;overflow:visible!important}.passage-card{break-inside:avoid}.passage-text p{color:#000!important}.symbol-dialog[open]{position:static!important;max-height:none!important;width:100%!important;border:0!important;box-shadow:none!important;padding:0!important;overflow:visible!important}.symbol-scripture{max-height:none!important;overflow:visible!important}.symbol-dialog::backdrop{background:transparent!important}body:has(.symbol-dialog[open]) main{display:none!important}.symbol-title{margin-bottom:12px!important}.symbol-title h2{font-size:30px!important}.symbol-title p:after{content:' · Coder: David Lee'}.story-detail>h2:after{content:' — Gospel Atlas · Coder: David Lee';font:11px system-ui;display:block;margin-top:10px}}
+
+/* Search, comparison, palette and phone layout */
+.compare-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 15px;margin-top:10px;background:#f1f1e9;border:1px solid #e2e4d9;border-radius:7px;font-size:11px;color:#7b8278}
+.compare-label{font-size:8px;letter-spacing:1.5px;color:#919a8c;font-weight:650}
+.compare-row label{display:flex;align-items:center;gap:7px}
+.compare-row select{border:1px solid #d9ddd0;padding:7px 22px 7px 9px;border-radius:4px;background:#fcfcf5;color:#5d675b;font-size:11px}
+.compare-row strong{font-size:11px;color:#3f5a46;font-weight:650}
+.compare-clear{font-size:11px;color:#6e8259;text-decoration:underline;padding:0}
+.compare-hint{color:#9ba58e;font-size:10px}
+.search-note{margin:10px 2px 0;font-size:10px;line-height:1.6;color:#8c9480}
+.palette-toggle{font-size:10px;color:#6e8259;padding:0;text-decoration:underline;text-underline-offset:3px}
+.palette-toggle[aria-pressed=true]{color:#3f5a46;font-weight:650}
+.story-match{font-size:9px;color:#7f8f70;letter-spacing:.04em}
+.swipe-hint{display:none;margin:0 0 10px;font-size:10px;color:#929a8d}
+@media(max-width:700px){
+ .gospel-grid{display:flex;overflow-x:auto;gap:12px;scroll-snap-type:x mandatory;padding-bottom:8px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+ .gospel-grid::-webkit-scrollbar{display:none}
+ .gospel-card{flex:0 0 86%;scroll-snap-align:center}
+ .passage-grid{display:flex!important;overflow-x:auto;gap:12px;scroll-snap-type:x mandatory;padding-bottom:8px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+ .passage-grid::-webkit-scrollbar{display:none}
+ .passage-card{flex:0 0 88%;scroll-snap-align:center}
+ .passage-text{height:300px}
+ .swipe-hint{display:block}
+ .compare-row{gap:10px 12px}
+ .compare-row label{flex:1;min-width:140px}
+ .compare-row select{flex:1}
+ .compare-hint{width:100%}
+}
+@media print{.compare-row,.search-note,.swipe-hint,.palette-toggle{display:none!important}.passage-grid{display:grid!important;overflow:visible!important}.passage-card{flex:none!important}}
