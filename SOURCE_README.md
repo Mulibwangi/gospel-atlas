@@ -25,6 +25,25 @@ and the text file is src/how-to-open.txt; the app filename is set once at the to
 of build.mjs and substituted into both. zipwriter.mjs assembles the archive in
 Node, so no zip command is needed.
 
+## Cross-Reference Lab
+
+docs/cross-references.html is a second page: the cross-references drawn as an
+arc diagram, a circle and a matrix, with search and a single-book filter. Build
+it with:
+
+    npm run build:crossrefs                                  # Gospel links only
+    node tools/pack-crossrefs.mjs --full cross-references.zip # the whole Bible
+
+Without --full it uses data/crossrefs.json, which holds only the links that
+originate in the four Gospels. The complete dataset is the download recorded in
+the release audit, https://a.openbible.info/data/cross-references.zip; pass the
+zip or the cross_references.txt inside it. The packer aggregates to directed
+chapter pairs, gzips them and embeds them in the page, so the page stays one
+self-contained file that works offline. It prints the SHA-256 of whatever file
+you pass and says whether it matches the audit.
+
+## Other files
+
 download/Gospel_Atlas_David_Lee.zip is the copy the README links to, so the
 download works straight from the repository. Refresh it with
 `cp dist/Gospel_Atlas_David_Lee.zip download/` whenever you publish a build.

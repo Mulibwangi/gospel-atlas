@@ -62,6 +62,27 @@ keys move through a map that has keyboard focus, and a colour-blind palette
 (Okabe-Ito) is one click away in the legend. The address bar keeps the selected
 story and verse, so a copied link reopens at the same passage.
 
+## Cross-Reference Lab
+
+A second page, `docs/cross-references.html`, draws the cross-references
+themselves three ways — an arc diagram, a circle with the chords bundled by
+book, and a matrix — switching between them without losing your place.
+
+![The cross-references drawn as a bundled circle](docs/images/crossrefs.png)
+
+The matrix is the only one of the three that keeps direction, so the asymmetry
+of the links is visible: who points at whom, rather than merely what is
+connected. Search a book or a chapter (`Isaiah 53`, `Ps 22`, `Jn 3`, and the
+usual abbreviations) to jump to it, or choose a whole book to see only what
+touches it — in, out, or both ways. That filter is what makes the density
+usable.
+
+![Only the links into Revelation](docs/images/crossrefs-book.png)
+
+It currently carries the 44,469 links that originate in the Gospels, which is
+what this repository holds; pointing the packer at the complete OpenBible
+download fills out all three views. `SOURCE_README.md` has the command.
+
 ## Languages
 
 English plus 20 widely used languages. This is a practical selection, not a
