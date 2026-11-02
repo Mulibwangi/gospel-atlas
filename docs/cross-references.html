@@ -72,6 +72,10 @@ canvas:focus-visible{outline:2px solid var(--gold);outline-offset:-3px}
 .links li span:first-child{width:7px;height:7px;border-radius:50%;flex:0 0 auto;align-self:center}
 .links .ref{flex:1;min-width:0}
 .links .n{font-variant-numeric:tabular-nums;color:var(--faint);font-size:11px}
+.links .turn{order:3;background:none;border:0;color:var(--faint);cursor:pointer;font-size:13px;line-height:1;padding:0 2px;margin-left:6px}
+.links .turn:hover,.links .turn:focus-visible{color:var(--gold)}
+.more{display:block;margin:16px auto 0;background:none;border:1px solid var(--line);border-radius:5px;color:var(--muted);font-size:12px;padding:10px 18px;cursor:pointer}
+.more:hover{color:var(--ink)}
 .legend{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:14px;font-size:10px;color:var(--muted)}
 .legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:-1px}
 .ramp{height:8px;width:104px;border-radius:2px}
@@ -138,8 +142,9 @@ for(let i=0,run=0;i<COUNT;i++){
   VL_FROM[i]=run;VL_TO[i]=DATA.links[i*4+1];VL_SPAN[i]=DATA.links[i*4+2];VL_VOTES[i]=Math.min(32767,DATA.links[i*4+3]);
 }
 DATA.links=null;DATA.text=null;
+const PAIR_COUNT=new Map();
 const LINKS=(()=>{
-  const pairs=new Map();
+  const pairs=PAIR_COUNT;
   for(let i=0;i<COUNT;i++){
     const a=CHAPTER_OF_VERSE[VL_FROM[i]],b=CHAPTER_OF_VERSE[VL_TO[i]];
     const key=a*2000+b;
@@ -148,6 +153,9 @@ const LINKS=(()=>{
   }
   return [...pairs.values()].sort((x,y)=>y[2]-x[2]);
 })();
+// How many verse links a chapter pair holds, so the passage list obeys the same
+// threshold as the drawing rather than quietly showing more than the row promised.
+const pairCount=(a,b)=>{const r=PAIR_COUNT.get(a*2000+b);return r?r[2]:0};
 const bookOfChapter=new Int16Array(N),chapterNumber=new Int16Array(N);
 BOOKS.forEach((b,bi)=>{for(let c=0;c<b.chapters;c++){bookOfChapter[b.first+c]=bi;chapterNumber[b.first+c]=c+1}});
 const shortName=n=>n.split(' of ')[0];
@@ -230,7 +238,7 @@ root.innerHTML=`
   </section>
   <footer>
     <p><strong>What this is.</strong> ${DATA.sourceNote} Links are aggregated to directed chapter pairs${COMPLETE?'':', which is why the matrix is a band rather than a square and why the circle’s chords all leave from four sectors'}.</p>
-    <p><strong>Data.</strong> Cross-references from <a href="https://www.openbible.info/labs/cross-references/" target="_blank" rel="noreferrer">OpenBible.info</a>, CC BY, snapshot ${DATA.snapshot||''}${DATA.sourceSha256?', sha256 '+DATA.sourceSha256.slice(0,12):''}, derived chiefly from the Treasury of Scripture Knowledge. The votes are a live tally, so they shift between downloads. Chapter and verse counts from the ASV 1901.${DATA.dropped?' '+DATA.dropped+' link'+(DATA.dropped===1?'':'s')+' could not be placed, because '+(DATA.unmapped||[]).slice(0,2).join(' and ')+' '+((DATA.unmapped||[]).length>1?'are verses':'is a verse')+' the ASV does not have; ranges reaching past the ASV\u2019s last verse in a chapter stop there rather than collapsing.':''} The votes order the links; they are not similarity scores, and a missing link does not establish that a passage stands alone.</p>
+    <p><strong>Data.</strong> Cross-references from <a href="https://www.openbible.info/labs/cross-references/" target="_blank" rel="noreferrer">OpenBible.info</a>, CC BY, snapshot ${DATA.snapshot||''}${DATA.sourceSha256?', sha256 '+DATA.sourceSha256.slice(0,12):''}, derived chiefly from the Treasury of Scripture Knowledge. The votes are a live tally, so they shift between downloads, and a negative total means a link the community voted down; those sort last and are never removed. Chapter and verse counts from the ASV 1901.${DATA.dropped?' '+DATA.dropped+' link'+(DATA.dropped===1?'':'s')+' could not be placed, because '+(DATA.unmapped||[]).slice(0,2).join(' and ')+' '+((DATA.unmapped||[]).length>1?'are verses':'is a verse')+' the ASV does not have; ranges reaching past the ASV\u2019s last verse in a chapter stop there rather than collapsing.':''} The votes order the links; they are not similarity scores, and a missing link does not establish that a passage stands alone.</p>
     <p><strong>Form.</strong> The arc diagram follows the one Chris Harrison and Christoph Römhild made in 2007. This is drawn independently, from different data, and uses none of their artwork. Coder: David Lee.</p>
   </footer>`;
 
@@ -654,7 +662,7 @@ function describe(){
       eyebrow.textContent='LINKED BOOKS';
       title.textContent=state.focus.label;
       sub.textContent=crossing
-        ? fmt(crossing)+' links cross its boundary, to '+byBook.size+' other books'+(internal?', and '+fmt(internal)+' stay inside it':'')+'. Pick one to turn the ring to it.'
+        ? fmt(crossing)+' links cross its boundary, to '+byBook.size+' other books'+(internal?', and '+fmt(internal)+' stay inside it':'')+'. Pick one to read the passages; the dial button turns the ring to it.'
         : 'No links cross its boundary in the current subset.';
       [...byBook.entries()].sort((a,b)=>b[1]-a[1]).slice(0,16).forEach(([bi,n])=>{
         const b=BOOKS[bi];
@@ -663,10 +671,19 @@ function describe(){
         const ref=document.createElement('span');ref.className='ref';ref.textContent=shortName(b.name);
         const cnt=document.createElement('span');cnt.className='n';cnt.textContent=fmt(n)+' links';
         li.append(dot,ref,cnt);
-        li.addEventListener('click',()=>{
+        const turn=document.createElement('button');
+        turn.type='button';turn.className='turn';turn.title='Make '+shortName(b.name)+' the dial';
+        turn.setAttribute('aria-label','Turn the dial to '+shortName(b.name));
+        turn.textContent='\u25cc';
+        turn.addEventListener('click',e=>{
+          e.stopPropagation();
           state.focus={from:b.first,to:b.first+b.chapters-1,label:shortName(b.name)};
           state.locked=null;input.value=shortName(b.name);chip();renderBase();describe();
         });
+        li.appendChild(turn);
+        li.addEventListener('click',()=>openPassages(
+          state.focus.from,state.focus.to,b.first,b.first+b.chapters-1,
+          state.focus.label+' \u2194 '+shortName(b.name)));
         list.appendChild(li);
       });
       return;
@@ -692,22 +709,39 @@ function describe(){
   rows.slice(0,60).forEach(l=>{
     const other=out.length?l[1]:l[0];
     list.appendChild(row(other,linkColour(l),l[2]+(l[2]===1?' link':' links'),
-      ()=>openPassages(out.length?focus:other,out.length?other:focus)));
+      ()=>openChapterPair(out.length?focus:other,out.length?other:focus)));
   });
 }
-function openPassages(a,b){
+let passageState=null;
+// Every link row opens the text behind it, whether that row is one chapter or a whole book.
+function findLinks(aFrom,aTo,bFrom,bTo){
   const found=[];
-  for(let i=0;i<COUNT;i++)
-    if(CHAPTER_OF_VERSE[VL_FROM[i]]===a&&CHAPTER_OF_VERSE[VL_TO[i]]===b)found.push(i);
+  for(let i=0;i<COUNT;i++){
+    const ca=CHAPTER_OF_VERSE[VL_FROM[i]],cb=CHAPTER_OF_VERSE[VL_TO[i]];
+    const forward=ca>=aFrom&&ca<=aTo&&cb>=bFrom&&cb<=bTo;
+    const back=ca>=bFrom&&ca<=bTo&&cb>=aFrom&&cb<=aTo;
+    if(!forward&&!back)continue;
+    if(pairCount(ca,cb)<state.min)continue;
+    if(state.focus){
+      if(state.dir==='out'&&!forward)continue;
+      if(state.dir==='in'&&!back)continue;
+    }
+    found.push(i);
+  }
   found.sort((x,y)=>VL_VOTES[y]-VL_VOTES[x]||VL_FROM[x]-VL_FROM[y]);
-  const box=document.getElementById('passages'),list=document.getElementById('pairs');
+  return found;
+}
+function renderPassages(){
+  const {found,shown,title}=passageState;
+  const list=document.getElementById('pairs');
   document.getElementById('pass-eyebrow').textContent='PASSAGES BEHIND THE LINK';
-  document.getElementById('pass-title').textContent=label(a)+' \u2192 '+label(b);
+  document.getElementById('pass-title').textContent=title;
   document.getElementById('pass-sub').textContent=found.length
-    ? found.length+(found.length===1?' link':' links')+', strongest first \u00b7 American Standard Version 1901'
-    : 'No verse-level links between these chapters.';
+    ? (found.length>shown?'Showing the strongest '+shown+' of '+fmt(found.length)+' links':fmt(found.length)+(found.length===1?' link':' links')+', strongest first')
+      +' \u00b7 American Standard Version 1901'
+    : 'No verse-level links here under the current filters.';
   list.innerHTML='';
-  found.slice(0,40).forEach(i=>{
+  found.slice(0,shown).forEach(i=>{
     const row=document.createElement('div');row.className='pair';
     const from=document.createElement('article');from.className='verse-card';
     from.innerHTML='<h3>FROM <b>'+verseLabel(VL_FROM[i])+'</b></h3>';
@@ -720,12 +754,26 @@ function openPassages(a,b){
       to.appendChild(tp);
     }
     const votes=document.createElement('p');votes.className='pair-votes';
-    votes.textContent=VL_VOTES[i]+(VL_VOTES[i]===1?' vote':' votes')+' at OpenBible';
+    votes.textContent=VL_VOTES[i]<0
+      ? VL_VOTES[i]+' at OpenBible \u2014 voted down'
+      : VL_VOTES[i]+(VL_VOTES[i]===1?' vote':' votes')+' at OpenBible';
     row.append(from,to,votes);list.appendChild(row);
   });
+  if(found.length>shown){
+    const more=document.createElement('button');more.type='button';more.className='more';
+    more.textContent='Show '+Math.min(40,found.length-shown)+' more';
+    more.addEventListener('click',()=>{passageState.shown+=40;renderPassages()});
+    list.appendChild(more);
+  }
+}
+function openPassages(aFrom,aTo,bFrom,bTo,title){
+  passageState={found:findLinks(aFrom,aTo,bFrom,bTo),shown:40,title};
+  renderPassages();
+  const box=document.getElementById('passages');
   box.hidden=false;
   box.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});
 }
+function openChapterPair(a,b){openPassages(a,a,b,b,label(a)+' \u2194 '+label(b))}
 document.getElementById('pass-close').addEventListener('click',()=>{document.getElementById('passages').hidden=true});
 
 function legend(){
