@@ -1,0 +1,53 @@
+GOSPEL ATLAS - HOW TO OPEN
+Coder: David Lee
+
+
+OPEN IT IN THREE STEPS
+
+  1. Save this ZIP file to your computer - the Desktop or Documents folder
+     is fine. Do not work inside the ZIP preview window, and do not try to
+     open it from an email preview.
+
+  2. Unzip it.
+       Windows - right-click the ZIP, choose "Extract All", then "Extract".
+       macOS   - double-click the ZIP.
+       Linux   - right-click and choose "Extract Here".
+
+  3. Open the unzipped folder and double-click
+
+       1 START HERE - Open Gospel Atlas.html
+
+     Your browser opens a short page with one button on it: "Open the
+     Gospel Atlas". Click it and the app loads.
+
+  You can also skip the button and double-click Gospel_Atlas_David_Lee.html
+  directly. That is the app itself.
+
+
+IF IT OPENS IN THE WRONG PROGRAM
+
+  Right-click Gospel_Atlas_David_Lee.html, choose "Open with", and pick
+  Chrome, Firefox, Edge or Safari.
+
+
+WHAT YOU NEED
+
+  A recent Chrome, Firefox, Edge or Safari on Windows, macOS or Linux, with
+  JavaScript enabled. A desktop or laptop computer is the intended target.
+  No installation, account, terminal or web server is required, and the app
+  needs no internet connection. The app file is large, so allow a few
+  seconds for it to appear.
+
+
+WHAT IS IN THE FOLDER
+
+  1 START HERE - Open Gospel Atlas.html   A page with the open button.
+  2 HOW TO OPEN.txt                       This file.
+  Gospel_Atlas_David_Lee.html             The app. One self-contained file.
+  README.md                               Controls, languages, data sources
+                                          and licences. Plain text; any text
+                                          editor will open it.
+
+
+Free of charge for non-commercial use under the data licences listed in the
+README.

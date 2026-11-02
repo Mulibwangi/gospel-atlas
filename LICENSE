@@ -1,0 +1,109 @@
+Gospel Atlas — licences
+=======================
+
+This project combines application source code written by David Lee with
+Scripture texts, a Gospel index and a cross-reference dataset published by
+others. The code licence below covers the code only. Each body of data keeps
+the licence it arrived with, and those licences travel with any copy you share.
+
+Taken as a whole, the complete application may be shared free of charge for
+NON-COMMERCIAL use, because the Composite Gospel Index is licensed CC BY-NC-SA
+2.0. The reader's guide, GUIDE.md, carries the full notices, the adaptations
+made to each source, and the source hashes recorded in the release audit.
+
+
+1. Application source
+---------------------
+
+Covers src/, build.mjs, zipwriter.mjs, prepare_languages.py,
+verify_release.py and test_functions.mjs.
+
+MIT License
+
+Copyright (c) 2026 David Lee
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+
+2. Composite Gospel Index 1.2 — CC BY-NC-SA 2.0
+-----------------------------------------------
+
+Sean Boisen / SemanticBible.
+https://semanticbible.com/cgi/cgi-view.html
+https://semanticbible.com/license.html
+https://creativecommons.org/licenses/by-nc-sa/2.0/
+
+355 story units covering 3,779 Gospel verses. Adaptations: expansion to verse
+level, colour classification, interface presentation, and correction of unit
+102's source typo from Matt.4.33 to Mark.4.33. The index and the adapted index
+data retain this licence, including its non-commercial restriction.
+
+
+3. Cross-references — CC BY
+---------------------------
+
+OpenBible.info, snapshot of 26 October 2026.
+https://www.openbible.info/labs/cross-references/
+
+344,799 source records were ingested; the 44,469 originating in the four
+Gospels are included. The source votes order the links; they are not
+similarity scores.
+
+
+4. Scripture texts
+------------------
+
+Public domain:
+  American Standard Version 1901, supplied through
+    https://github.com/scrollmapper/bible_databases
+  World English Bible and seven further public-domain editions, through
+    https://free.bible/developers/
+  Japanese Kougo 1954/1955, structured text through scrollmapper; edition
+    provenance also listed by Free.Bible.
+
+Indian Revised Version — © Bridge Connectivity Solutions Pvt. Ltd.,
+CC BY-SA 4.0. Hindi: © 2017, 2018, 2019; Bengali: © 2018, 2019;
+Marathi, Punjabi, Tamil, Telugu: © 2017, 2019.
+  https://creativecommons.org/licenses/by-sa/4.0/
+  https://ebible.org/hin2017/copyright.htm
+  https://ebible.org/benirv/copyright.htm
+  https://ebible.org/mar/copyright.htm
+  https://ebible.org/pan/copyright.htm
+  https://ebible.org/tam2017/copyright.htm
+  https://ebible.org/tel2017/copyright.htm
+  Structured text mirror: https://github.com/thiagobodruk/bible
+Gospel extracts and formatting contributions retain CC BY-SA 4.0 separately
+from the Gospel index. Layout was changed; separately supplied headings and
+footnotes may be omitted. No machine translation was used. No source
+publisher's endorsement is implied.
+
+ESV and NASB texts are NOT included in this project. Those editions open in an
+external reader under the publishers' own terms.
+  https://www.crossway.org/permissions/
+  https://www.lockman.org/permission-to-quote-copyright-trademark-information/
+
+
+5. Other
+--------
+
+React and React DOM — MIT, copyright Meta Platforms, Inc. and affiliates.
+The full notice is embedded in the built HTML file.
+
+Icon artwork — supplied by David Lee, displayed through CSS background
+positioning without editing its pixels.

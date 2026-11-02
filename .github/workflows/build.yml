@@ -1,0 +1,47 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - run: npm ci
+
+      - name: Build the standalone app and the ZIP
+        run: npm run build
+
+      - name: Check the interface functions
+        run: node test_functions.mjs
+
+      - name: Check verse counts, numbering and licences
+        run: python3 verify_release.py
+
+      - name: Confirm the published copy matches the build
+        run: |
+          if ! cmp -s dist/index.html docs/index.html; then
+            echo "docs/index.html differs from this build."
+            echo "Run: cp dist/index.html docs/index.html"
+            exit 1
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Gospel_Atlas_David_Lee
+          path: dist/Gospel_Atlas_David_Lee.zip
+          retention-days: 30

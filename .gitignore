@@ -1,0 +1,5 @@
+node_modules/
+dist/
+.qa-functions.mjs
+.DS_Store
+Thumbs.db

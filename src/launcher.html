@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="author" content="David Lee">
+<meta name="description" content="How to open the Gospel Atlas offline app in your browser. Coder: David Lee.">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Start here &middot; Gospel Atlas</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='2' y='2' width='12' height='12' fill='%233e7598'/%3E%3Crect x='18' y='2' width='12' height='12' fill='%23b25c51'/%3E%3Crect x='2' y='18' width='12' height='12' fill='%234e8875'/%3E%3Crect x='18' y='18' width='12' height='12' fill='%23866a9f'/%3E%3C/svg%3E">
+<style>
+:root{color-scheme:light;--ink:#26362f;--muted:#747b73;--paper:#f7f6f1;--line:#dedfd5;--serif:Georgia,'Times New Roman',serif;
+font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--ink);background:var(--paper)}
+*{box-sizing:border-box}
+body{margin:0;font-size:15px;line-height:1.6;display:flex;justify-content:center;padding:40px 16px 64px}
+.sheet{width:100%;max-width:620px}
+.brand{display:inline-flex;gap:11px;align-items:center;font-size:18px;letter-spacing:-.5px;font-weight:650}
+.brand-mark{display:grid;grid-template-columns:repeat(2,8px);grid-template-rows:repeat(2,8px);gap:3px;transform:rotate(-6deg)}
+.brand-mark i{display:block}
+.eyebrow{font-size:10px;font-weight:650;letter-spacing:1.7px;color:#7a8378;margin:34px 0 0}
+h1{font-family:var(--serif);font-weight:400;font-size:clamp(30px,5vw,42px);letter-spacing:-1.3px;line-height:1.1;margin:12px 0 14px}
+.lede{margin:0;color:#71786f;font-size:15px}
+.open-row{margin:30px 0 14px}
+a.open{display:inline-flex;align-items:center;gap:12px;background:#2e4338;color:#fdfdf7;text-decoration:none;
+font-size:17px;font-weight:600;letter-spacing:-.2px;padding:19px 30px;border-radius:7px;box-shadow:0 2px 5px #27382d26}
+a.open:hover,a.open:focus-visible{background:#1d2e25;text-decoration:none}
+a.open span{font-size:20px;line-height:1}
+a.open:focus-visible{outline:3px solid #a68a39;outline-offset:3px}
+.under{font-size:12px;color:#868b80;margin:0}
+.under code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;background:#eeeee6;border:1px solid #e0e2d7;border-radius:3px;padding:2px 5px}
+h2{font-size:13px;font-weight:650;letter-spacing:.04em;text-transform:uppercase;color:#5d675b;margin:38px 0 12px}
+ol{margin:0;padding-left:22px}
+ol li{margin-bottom:9px;font-size:14px;color:#5d675b}
+.note{background:#eaece4;border:1px solid #d8ded0;border-radius:8px;padding:16px 19px;font-size:13px;color:#5d675b;margin:16px 0 0}
+.note p{margin:0 0 8px}.note p:last-child{margin:0}
+#zipwarn{display:none;background:#f4f0db;border:1px solid #e9dfb7;border-radius:8px;padding:16px 19px;margin:0 0 26px;color:#7d7232;font-size:14px}
+#zipwarn strong{display:block;font-size:15px;color:#6a6029;margin-bottom:6px}
+details{border-top:1px solid var(--line);margin-top:34px;padding-top:16px}
+summary{cursor:pointer;font-size:13px;font-weight:600;color:#5d675b}
+summary:focus-visible{outline:2px solid #a68a39;outline-offset:3px}
+details .body{padding-top:12px}
+details p{font-size:13px;color:#6d756c;margin:0 0 10px}
+footer{border-top:1px solid var(--line);margin-top:40px;padding-top:20px;font-size:11px;color:#909688}
+footer p{margin:0 0 5px}
+@media(max-width:560px){body{padding-top:26px}a.open{width:100%;justify-content:center;padding:18px 20px}}
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true"><i style="background:#3e7598"></i><i style="background:#b25c51"></i><i style="background:#4e8875"></i><i style="background:#866a9f"></i></span>
+    Gospel Atlas
+  </div>
+
+  <p class="eyebrow">START HERE</p>
+  <h1>Open the Gospel&nbsp;Atlas<br>in your browser</h1>
+  <p class="lede">Four Gospel pixel maps, parallel passages and biblical cross-references
+  in 21 languages. Everything is inside one file &mdash; no installation, no account,
+  no internet connection needed.</p>
+
+  <div id="zipwarn" role="alert">
+    <strong>Unzip the download first</strong>
+    This page is still running from inside the ZIP, so the button below will not
+    find the app. Close this window, save the ZIP to your Desktop or Documents
+    folder, unzip it, then open this page again from the unzipped folder.
+  </div>
+
+  <div class="open-row">
+    <a class="open" href="Gospel_Atlas_David_Lee.html" autofocus>
+      Open the Gospel Atlas <span aria-hidden="true">&rarr;</span>
+    </a>
+  </div>
+  <p class="under">Opens <code>Gospel_Atlas_David_Lee.html</code> in this browser. It is a large
+  file, so give it a few seconds to appear.</p>
+
+  <h2>If the button does nothing</h2>
+  <ol>
+    <li>Make sure you have <strong>unzipped</strong> the download. Inside a ZIP preview
+      window, nothing will open.</li>
+    <li>In the unzipped folder, <strong>double-click
+      <code>Gospel_Atlas_David_Lee.html</code></strong>.</li>
+    <li>If it opens in a text editor or anything other than a browser, right-click it and
+      choose <strong>Open with</strong>, then Chrome, Firefox, Edge or Safari.</li>
+  </ol>
+
+  <div class="note">
+    <p><strong>Received this by email?</strong> Save the attachment to your computer and
+    unzip it before opening. A mail preview window cannot run the app.</p>
+    <p>Use a recent Chrome, Firefox, Edge or Safari on Windows, macOS or Linux, with
+    JavaScript enabled. A desktop or laptop computer is the intended target.</p>
+  </div>
+
+  <details>
+    <summary>How to unzip</summary>
+    <div class="body">
+      <p><strong>Windows</strong> &mdash; right-click the ZIP, choose <em>Extract All</em>,
+      then <em>Extract</em>. Open the new folder that appears.</p>
+      <p><strong>macOS</strong> &mdash; double-click the ZIP. A folder of the same name
+      appears beside it.</p>
+      <p><strong>Linux</strong> &mdash; right-click the ZIP and choose
+      <em>Extract Here</em>, or run <code>unzip</code> in a terminal.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>What is in the folder</summary>
+    <div class="body">
+      <p><code>Gospel_Atlas_David_Lee.html</code> &mdash; the app itself. This one file holds
+      the maps, the Scripture editions and the cross-references.</p>
+      <p><code>README.md</code> &mdash; the controls, the languages included, and the data
+      sources and licences. It is a plain text file; any text editor will open it.</p>
+      <p><code>2 HOW TO OPEN.txt</code> &mdash; the same opening instructions as this page,
+      in plain text.</p>
+    </div>
+  </details>
+
+  <footer>
+    <p>Gospel Atlas &mdash; standalone edition. Coder: David Lee.</p>
+    <p>Free of charge for non-commercial use under the data licences listed in the README.</p>
+  </footer>
+
+</div>
+<script>
+(function(){
+  try{
+    var p = decodeURIComponent(location.pathname + location.href);
+    // Windows opens a file from inside a ZIP folder out of a Temp1_name.zip directory;
+    // mail clients preview attachments from a temporary folder too.
+    if(/[\\\/](?:Temp\d*_|AppData[\\\/]Local[\\\/]Temp)/i.test(p) || /\.zip[\\\/]/i.test(p)){
+      document.getElementById('zipwarn').style.display = 'block';
+    }
+  }catch(e){}
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+import {build} from 'esbuild';
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+await build({entryPoints:['src/editions.jsx'],bundle:true,platform:'node',format:'esm',outfile:'.qa-functions.mjs',jsx:'automatic'});
+global.window={ATLAS:JSON.parse(fs.readFileSync('data/atlas.json')),BASELINE:JSON.parse(fs.readFileSync('data/bible.json'))};
+const m=await import('./.qa-functions.mjs');
+assert.deepEqual(Object.values(m.THEMES).map(x=>x.symbol),['lion','ox','human figure','eagle']);
+for(const t of Object.values(m.THEMES))for(const r of t.refs)assert(m.rangeIds(r).length>0);
+const imp=m.parseImport({name:'Local ASV test',language:'en',verses:{'Mark.10.45':window.BASELINE['Mark.10.45'],'Bogus.1.1':'ignored','Mark.1.2':42}});assert.equal(imp.excluded,2);assert.equal(imp.edition.verses['Mark.10.45'],window.BASELINE['Mark.10.45']);
+assert.throws(()=>m.parseImport({verses:{'bad':'bad'}}));assert.throws(()=>m.parseImport([]));
+const rtl=m.parseImport({direction:'rtl',verses:{'Mark.10.45':window.BASELINE['Mark.10.45']}});assert.equal(rtl.edition.dir,'rtl');
+assert.equal(m.rangeIds('Mark.10.42-Mark.10.45').length,4);
+assert.equal(m.onlineUrl({id:'TCL02'},'Mark.10.42-Mark.10.45'),'https://www.bible.com/bible/170/MRK.10.42-45.TCL02');
+assert(m.onlineUrl({id:'ESV',gateway:'ESV'},'Mark.10.42-Mark.10.45').endsWith('version=ESV'));
+console.log('PASS: symbol mapping, passage ranges, import validation, right-to-left import, online edition links');
+fs.unlinkSync('.qa-functions.mjs');

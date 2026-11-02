@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "languages": 21,
+  "offlineLanguages": 12,
+  "editions": 25,
+  "gospelVerses": 3779,
+  "storyUnits": 355,
+  "gospelCrossReferences": 44469,
+  "standaloneBytes": 7621907,
+  "sha256": "6c90d157985b46e02a919ea2fd4cdc932ed750e6f0a01e187c4664506b7b093d",
+  "excludedOfflineMirrors": {
+    "bn_irvben": "Chapter lengths differed; source has no explicit per-verse IDs to resolve alignment",
+    "mr_irvmar": "Chapter lengths differed; source has no explicit per-verse IDs to resolve alignment",
+    "te_irvtel": "Chapter lengths differed; source has no explicit per-verse IDs to resolve alignment"
+  }
+}
