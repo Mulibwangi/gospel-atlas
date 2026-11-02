@@ -25,6 +25,10 @@ and the text file is src/how-to-open.txt; the app filename is set once at the to
 of build.mjs and substituted into both. zipwriter.mjs assembles the archive in
 Node, so no zip command is needed.
 
+download/Gospel_Atlas_David_Lee.zip is the copy the README links to, so the
+download works straight from the repository. Refresh it with
+`cp dist/Gospel_Atlas_David_Lee.zip download/` whenever you publish a build.
+
 GUIDE.md is the reader's guide. The build copies it into the ZIP under the name
 README.md, because that is what a recipient expects to find in the folder. The
 README.md in this repository is the project page shown on GitHub; it is not

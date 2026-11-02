@@ -8,7 +8,7 @@ it, side by side, in any of 21 languages.
 No installation, no account, no server, no internet connection, no tracking.
 
 **[Open it in your browser](https://mulibwangi.github.io/gospel-atlas/)** &nbsp;·&nbsp;
-**[Download the offline edition](https://github.com/Mulibwangi/gospel-atlas/releases/latest)** &nbsp;·&nbsp;
+**[Download the offline edition](https://github.com/Mulibwangi/gospel-atlas/raw/main/download/Gospel_Atlas_David_Lee.zip)** &nbsp;·&nbsp;
 [Reader's guide](GUIDE.md)
 
 ![The four Gospels as pixel maps](docs/images/maps.png)
@@ -83,7 +83,7 @@ titles are in English.
 | | |
 |---|---|
 | **Use it now** | [mulibwangi.github.io/gospel-atlas](https://mulibwangi.github.io/gospel-atlas/) — the same app, hosted. Nothing to download. |
-| **Keep a copy** | [Download the ZIP](https://github.com/Mulibwangi/gospel-atlas/releases/latest), unzip it, and double-click **1 START HERE - Open Gospel Atlas.html**. It works with no internet connection afterwards. |
+| **Keep a copy** | [Download the ZIP](https://github.com/Mulibwangi/gospel-atlas/raw/main/download/Gospel_Atlas_David_Lee.zip) (5.4 MB), unzip it, and double-click **1 START HERE - Open Gospel Atlas.html**. It works with no internet connection afterwards. |
 
 The download holds four files: the START HERE page with its Open button, the
 same instructions in plain text, the app itself, and the reader's guide. Nothing
