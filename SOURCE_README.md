@@ -34,6 +34,10 @@ it with:
     npm run build:crossrefs                                  # Gospel links only
     node tools/pack-crossrefs.mjs --full cross-references.zip # the whole Bible
 
+Run it before `npm run build`: the main build copies docs/cross-references.html
+into the ZIP as Cross_Reference_Lab.html and adds a second button for it to the
+launcher page, and it quietly leaves both out if that file is not there yet.
+
 Without --full it uses data/crossrefs.json, which holds only the links that
 originate in the four Gospels. The complete dataset is the download recorded in
 the release audit, https://a.openbible.info/data/cross-references.zip; pass the

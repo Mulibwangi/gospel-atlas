@@ -13,6 +13,13 @@ Standalone edition — 2 November 2026
    "1 START HERE - Open Gospel Atlas.html". Your browser shows a short page
    with one button, "Open the Gospel Atlas". Click it.
 
+The same page carries a second button, "Open the Cross-Reference Lab", which
+draws every cross-reference in the Gospels three ways: as an arc, as a circle
+with the chords bundled by book, and as a matrix that keeps the direction of
+each link. Search a book or a chapter to jump to it, or choose a whole book to
+see only what touches it. That file is Cross_Reference_Lab.html and it is
+self-contained in the same way.
+
 Double-clicking Gospel_Atlas_David_Lee.html does the same thing directly; that
 file is the app. If it opens in a text editor instead of a browser, right-click
 it, choose "Open with", and pick Chrome, Firefox, Edge or Safari.

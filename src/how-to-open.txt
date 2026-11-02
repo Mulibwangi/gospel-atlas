@@ -23,6 +23,10 @@ OPEN IT IN THREE STEPS
   You can also skip the button and double-click Gospel_Atlas_David_Lee.html
   directly. That is the app itself.
 
+  The same page carries a second button, "Open the Cross-Reference Lab",
+  which draws every cross-reference in the Gospels as an arc, a circle and
+  a matrix. It is the file Cross_Reference_Lab.html.
+
 
 IF IT OPENS IN THE WRONG PROGRAM
 
@@ -44,6 +48,8 @@ WHAT IS IN THE FOLDER
   1 START HERE - Open Gospel Atlas.html   A page with the open button.
   2 HOW TO OPEN.txt                       This file.
   Gospel_Atlas_David_Lee.html             The app. One self-contained file.
+  Cross_Reference_Lab.html                The cross-references, drawn three
+                                          ways. Also self-contained.
   README.md                               Controls, languages, data sources
                                           and licences. Plain text; any text
                                           editor will open it.
