@@ -70,6 +70,18 @@ book, and a matrix — switching between them without losing your place.
 
 ![The cross-references drawn as a bundled circle](docs/images/crossrefs.png)
 
+Choose a book or a section and the ring closes, turns it to twelve o'clock and
+widens it to about a third of the circumference — a bezel, with every chord
+radiating from it and the panel listing which other books it actually talks to.
+Revelation sends 6,532 links across its boundary to 62 books: Isaiah 717,
+Psalms 539, Matthew 450, Daniel 438, Ezekiel 394.
+
+Click any of those links and the passages open underneath, verse by verse,
+strongest first, with the ASV text on both sides — the same side-by-side
+reading the Atlas gives for the Gospels.
+
+![Revelation turned to twelve o'clock](docs/images/crossrefs-book.png)
+
 The matrix is the only one of the three that keeps direction, so the asymmetry
 of the links is visible: who points at whom, rather than merely what is
 connected. Search a book or a chapter (`Isaiah 53`, `Ps 22`, `Jn 3`, and the
@@ -82,8 +94,11 @@ chords that actually land there, with Isaiah 53 at the head of the list.
 
 ![Only the links into Revelation](docs/images/crossrefs-book.png)
 
-It carries the complete dataset: **344,799 cross-references** over **191,620
-directed chapter pairs**, reaching every one of the Bible's 1,189 chapters. The
+It carries the complete dataset — **344,798 cross-references** over **191,620
+directed chapter pairs**, reaching every one of the Bible's 1,189 chapters —
+together with the full ASV text, so every link can be read rather than only
+counted. One link is left out: it starts at 3 John 1:15, a verse the ASV does
+not have. The
 wash is built progressively, so the page is usable in under a second and fills
 in as it draws. The minimum-links slider starts at 2, because two thirds of all
 chapter pairs rest on a single verse link; drop it to 1 for everything.

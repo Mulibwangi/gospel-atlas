@@ -17,8 +17,10 @@ The same page carries a second button, "Open the Cross-Reference Lab", which
 draws every cross-reference in the Gospels three ways: as an arc, as a circle
 with the chords bundled by book, and as a matrix that keeps the direction of
 each link. Search a book or a chapter to jump to it, or choose a whole book to
-see only what touches it. That file is Cross_Reference_Lab.html and it is
-self-contained in the same way.
+see only what touches it: the ring turns that book to the top and widens it,
+and the panel lists the other books it links to. Choose one of those links and
+the passages open underneath, verse by verse, with the ASV text on both sides.
+That file is Cross_Reference_Lab.html and it is self-contained in the same way.
 
 Double-clicking Gospel_Atlas_David_Lee.html does the same thing directly; that
 file is the app. If it opens in a text editor instead of a browser, right-click

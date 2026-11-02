@@ -75,6 +75,20 @@ canvas:focus-visible{outline:2px solid var(--gold);outline-offset:-3px}
 .legend{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:14px;font-size:10px;color:var(--muted)}
 .legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:-1px}
 .ramp{height:8px;width:104px;border-radius:2px}
+.passages{margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:18px 20px 22px}
+.passages-top{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:13px;margin-bottom:4px}
+.passages-top h2{font-family:var(--serif);font-weight:400;font-size:23px;margin:0;letter-spacing:-.4px}
+.passages-top .sub{font-size:11px;color:var(--muted);margin:0}
+.passages-top .ghost{margin-left:auto}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:15px 0;border-bottom:1px solid var(--line)}
+.pair:last-child{border-bottom:0}
+.verse-card{min-width:0}
+.verse-card h3{font-size:11px;font-weight:650;letter-spacing:.04em;margin:0 0 7px;color:var(--muted)}
+.verse-card h3 b{color:var(--ink);font-weight:650}
+.verse-card p{font-family:var(--serif);font-size:15px;line-height:1.7;margin:0}
+.verse-card.target h3 b{color:var(--gold)}
+.pair-votes{grid-column:1/-1;font-size:10px;color:var(--faint)}
+@media(max-width:700px){.pair{grid-template-columns:1fr;gap:10px}}
 footer{margin-top:26px;border-top:1px solid var(--line);padding-top:18px;font-size:11px;color:var(--faint);line-height:1.8;max-width:80ch}
 footer a{color:inherit}
 footer p{margin:0 0 7px}
@@ -109,12 +123,37 @@ const BOOKS=DATA.books.map(([code,name,first,chapters])=>({code,name,first,chapt
 const CHAPTERS=DATA.chapterVerses;
 const N=CHAPTERS.length;
 const NT=DATA.testamentSplit;
-const LINKS=DATA.links;
 const COMPLETE=DATA.scope==='complete';
+const TEXT=DATA.text.split('\n');
+// Where each chapter starts in the global verse numbering, so a verse index can be named.
+const CHAPTER_START=new Int32Array(DATA.chapterVerses.length);
+for(let c=1,run=DATA.chapterVerses[0];c<DATA.chapterVerses.length;c++){CHAPTER_START[c]=run;run+=DATA.chapterVerses[c]}
+const CHAPTER_OF_VERSE=new Int16Array(TEXT.length);
+for(let c=0,v=0;c<DATA.chapterVerses.length;c++)for(let k=0;k<DATA.chapterVerses[c];k++)CHAPTER_OF_VERSE[v++]=c;
+// Verse-level links, delta-decoded, and the chapter pairs derived from them.
+const COUNT=DATA.links.length/4;
+const VL_FROM=new Int32Array(COUNT),VL_TO=new Int32Array(COUNT),VL_SPAN=new Int16Array(COUNT),VL_VOTES=new Int16Array(COUNT);
+for(let i=0,run=0;i<COUNT;i++){
+  run+=DATA.links[i*4];
+  VL_FROM[i]=run;VL_TO[i]=DATA.links[i*4+1];VL_SPAN[i]=DATA.links[i*4+2];VL_VOTES[i]=Math.min(32767,DATA.links[i*4+3]);
+}
+DATA.links=null;DATA.text=null;
+const LINKS=(()=>{
+  const pairs=new Map();
+  for(let i=0;i<COUNT;i++){
+    const a=CHAPTER_OF_VERSE[VL_FROM[i]],b=CHAPTER_OF_VERSE[VL_TO[i]];
+    const key=a*2000+b;
+    const row=pairs.get(key);
+    if(row){row[2]++;row[3]+=VL_VOTES[i]}else pairs.set(key,[a,b,1,VL_VOTES[i]]);
+  }
+  return [...pairs.values()].sort((x,y)=>y[2]-x[2]);
+})();
 const bookOfChapter=new Int16Array(N),chapterNumber=new Int16Array(N);
 BOOKS.forEach((b,bi)=>{for(let c=0;c<b.chapters;c++){bookOfChapter[b.first+c]=bi;chapterNumber[b.first+c]=c+1}});
 const shortName=n=>n.split(' of ')[0];
 const label=i=>BOOKS[bookOfChapter[i]].name+' '+chapterNumber[i];
+const verseLabel=v=>{const c=CHAPTER_OF_VERSE[v];return label(c)+':'+(v-CHAPTER_START[c]+1)};
+const verseRange=(v,span)=>span?verseLabel(v)+'\u2013'+(v+span-CHAPTER_START[CHAPTER_OF_VERSE[v+span]]+1):verseLabel(v);
 const maxVerses=Math.max.apply(null,CHAPTERS);
 const sources=[...new Set(LINKS.map(l=>l[0]))].sort((a,b)=>a-b);
 const sourceSlot=new Map(sources.map((c,i)=>[c,i]));
@@ -181,9 +220,17 @@ root.innerHTML=`
       <div class="legend" id="legend"></div>
     </aside>
   </div>
+  <section class="passages" id="passages" hidden>
+    <div class="passages-top">
+      <div><p class="eyebrow" id="pass-eyebrow"></p><h2 id="pass-title"></h2></div>
+      <p class="sub" id="pass-sub"></p>
+      <button class="ghost" id="pass-close">Close passages</button>
+    </div>
+    <div id="pairs"></div>
+  </section>
   <footer>
     <p><strong>What this is.</strong> ${DATA.sourceNote} Links are aggregated to directed chapter pairs${COMPLETE?'':', which is why the matrix is a band rather than a square and why the circle’s chords all leave from four sectors'}.</p>
-    <p><strong>Data.</strong> Cross-references from <a href="https://www.openbible.info/labs/cross-references/" target="_blank" rel="noreferrer">OpenBible.info</a>, CC BY, snapshot ${DATA.snapshot||''}${DATA.sourceSha256?', sha256 '+DATA.sourceSha256.slice(0,12):''}, derived chiefly from the Treasury of Scripture Knowledge. The votes are a live tally, so they shift between downloads. Chapter and verse counts from the ASV 1901. The votes order the links; they are not similarity scores, and a missing link does not establish that a passage stands alone.</p>
+    <p><strong>Data.</strong> Cross-references from <a href="https://www.openbible.info/labs/cross-references/" target="_blank" rel="noreferrer">OpenBible.info</a>, CC BY, snapshot ${DATA.snapshot||''}${DATA.sourceSha256?', sha256 '+DATA.sourceSha256.slice(0,12):''}, derived chiefly from the Treasury of Scripture Knowledge. The votes are a live tally, so they shift between downloads. Chapter and verse counts from the ASV 1901.${DATA.dropped?' '+DATA.dropped+' link'+(DATA.dropped===1?'':'s')+' could not be placed, because '+(DATA.unmapped||[]).slice(0,2).join(' and ')+' '+((DATA.unmapped||[]).length>1?'are verses':'is a verse')+' the ASV does not have; ranges reaching past the ASV\u2019s last verse in a chapter stop there rather than collapsing.':''} The votes order the links; they are not similarity scores, and a missing link does not establish that a passage stands alone.</p>
     <p><strong>Form.</strong> The arc diagram follows the one Chris Harrison and Christoph Römhild made in 2007. This is drawn independently, from different data, and uses none of their artwork. Coder: David Lee.</p>
   </footer>`;
 
@@ -246,9 +293,27 @@ function layout(){
     geom.arc={pad,baseY,barMax,step:(W-pad*2)/N};
     geom.x=i=>pad+(i+0.5)*geom.arc.step;
   }else if(state.view==='circle'){
-    const cx=W/2,cy=H/2,R=Math.min(W,H)*0.37,gap=0.26;
-    geom.circle={cx,cy,R,gap,barMax:R*0.14};
-    geom.angle=i=>-Math.PI/2+gap/2+(i/N)*(Math.PI*2-gap);
+    const cx=W/2,cy=H/2,R=Math.min(W,H)*0.37;
+    // A closed ring, turned so the focused run sits at twelve o'clock and widened
+    // to take a third of the circumference — a bezel rather than a sliver.
+    const width=new Float64Array(N),start=new Float64Array(N);
+    if(state.focus){
+      const n=state.focus.to-state.focus.from+1,rest=N-n,SHARE=Math.min(.34,Math.max(.12,n/N*6+.1));
+      for(let i=0;i<N;i++)width[i]=(i>=state.focus.from&&i<=state.focus.to)?SHARE/n:(1-SHARE)/Math.max(1,rest);
+    }else for(let i=0;i<N;i++)width[i]=1/N;
+    let run=0;
+    for(let i=0;i<N;i++){start[i]=run;run+=width[i]}
+    const centre=state.focus?start[state.focus.from]+(start[state.focus.to]+width[state.focus.to]-start[state.focus.from])/2:0;
+    geom.circle={cx,cy,R,centre,width,start,barMax:R*0.14};
+    // Fractional indices are used for book midpoints, so interpolate between slot centres.
+    const posOf=i=>{
+      if(!(i>=0))return start[0]+width[0]/2;
+      const k=Math.floor(i),f=i-k;
+      if(k>=N-1)return start[N-1]+width[N-1]*(0.5+Math.min(1,f));
+      const a=start[k]+width[k]/2,b=start[k+1]+width[k+1]/2;
+      return a+(b-a)*f;
+    };
+    geom.angle=i=>-Math.PI/2+(posOf(i)-centre)*Math.PI*2;
     geom.point=(i,r)=>{const a=geom.angle(i);return[cx+Math.cos(a)*r,cy+Math.sin(a)*r]};
   }else{
     const padL=74,padT=16,padB=36,padR=16;
@@ -320,10 +385,15 @@ function drawFrame(c){
       c.beginPath();c.moveTo(p1[0],p1[1]);c.lineTo(p2[0],p2[1]);c.stroke();
     }
     c.globalAlpha=1;
+    const seam=geom.point(0,R*1.01),seamOut=geom.point(0,R*1.01+barMax+6);
+    c.strokeStyle=faint;c.globalAlpha=.55;c.lineWidth=1;
+    c.beginPath();c.moveTo(seam[0],seam[1]);c.lineTo(seamOut[0],seamOut[1]);c.stroke();
+    c.globalAlpha=1;
     BOOKS.forEach((b,bi)=>{
       const lit=state.focus&&b.first>=state.focus.from&&b.first+b.chapters-1<=state.focus.to;
       if(!(b.chapters>=20||['Matt','Mark','Luke','John','Rev','Gen'].includes(b.code))&&!lit)return;
       const mid=b.first+b.chapters/2,a=geom.angle(mid),p=geom.point(mid,R*1.01+barMax+11);
+      if(!isFinite(p[0])||!isFinite(p[1]))return;
       c.save();c.translate(p[0],p[1]);
       const flip=Math.cos(a)<0;c.rotate(a+(flip?Math.PI:0));
       c.textAlign=flip?'right':'left';
@@ -457,7 +527,7 @@ function paint(){
 function caption(){
   document.getElementById('caption').textContent={
     arc:'Chapters left to right, Genesis 1 to Revelation 22. Bar length is the number of verses; arc height is the distance a link travels.',
-    circle:'Chapters clockwise from Genesis 1 at the top. Chords are pulled toward the centre of each book, so links sharing a destination braid together.',
+    circle:'Chapters clockwise around a closed ring; whatever is in focus is turned to the top, and the tick marks Genesis 1. Chords are pulled toward the centre of each book, so links sharing a destination braid together.',
     matrix:'Each dot is one chapter pair: the chapter a link starts from across the bottom, the chapter it points to down the side. Direction is kept here and nowhere else.'
   }[state.view];
 }
@@ -467,12 +537,14 @@ function render(){sizes();layout();renderBase();caption()}
 function chapterAt(px,py){
   if(state.view==='arc'){const i=Math.round((px-geom.arc.pad)/geom.arc.step-0.5);return i>=0&&i<N?i:null}
   if(state.view==='circle'){
-    const {cx,cy,R,gap}=geom.circle,dx=px-cx,dy=py-cy,r=Math.hypot(dx,dy);
+    const {cx,cy,R,centre,start,width}=geom.circle,dx=px-cx,dy=py-cy,r=Math.hypot(dx,dy);
     if(r<R*0.3||r>R*1.38)return null;
-    let a=Math.atan2(dy,dx)+Math.PI/2-gap/2;
-    while(a<0)a+=Math.PI*2;while(a>Math.PI*2)a-=Math.PI*2;
-    const i=Math.round(a/(Math.PI*2-gap)*N);
-    return i>=0&&i<N?Math.min(N-1,i):null;
+    let a=Math.atan2(dy,dx)+Math.PI/2;
+    while(a<0)a+=Math.PI*2;while(a>=Math.PI*2)a-=Math.PI*2;
+    let u=a/(Math.PI*2)+centre;u-=Math.floor(u);
+    let lo=0,hi=N-1;
+    while(lo<hi){const mid=(lo+hi+1)>>1;if(start[mid]<=u)lo=mid;else hi=mid-1}
+    return lo;
   }
   const m=geom.matrix;
   if(px<m.padL||px>m.padL+sources.length*m.cw)return null;
@@ -511,12 +583,44 @@ function describe(){
         sub=document.getElementById('p-sub'),list=document.getElementById('p-list');
   list.innerHTML='';
   if(focus===null||focus===undefined){
-    eyebrow.textContent=state.focus?'BUSIEST IN '+state.focus.label.toUpperCase():'BUSIEST CHAPTERS';
+    if(state.focus){
+      // Which other books this one actually talks to, which is the question the bezel asks.
+      const byBook=new Map();let crossing=0,internal=0;
+      for(const l of LINKS){
+        if(l[2]<state.min)continue;
+        const a=inFocus(l[0]),b=inFocus(l[1]);
+        if(!a&&!b)continue;
+        if(a&&b){internal+=l[2];continue}
+        if(state.dir==='out'&&!a)continue;
+        if(state.dir==='in'&&!b)continue;
+        const other=bookOfChapter[a?l[1]:l[0]];
+        byBook.set(other,(byBook.get(other)||0)+l[2]);crossing+=l[2];
+      }
+      eyebrow.textContent='LINKED BOOKS';
+      title.textContent=state.focus.label;
+      sub.textContent=crossing
+        ? fmt(crossing)+' links cross its boundary, to '+byBook.size+' other books'+(internal?', and '+fmt(internal)+' stay inside it':'')+'. Pick one to turn the ring to it.'
+        : 'No links cross its boundary in the current subset.';
+      [...byBook.entries()].sort((a,b)=>b[1]-a[1]).slice(0,16).forEach(([bi,n])=>{
+        const b=BOOKS[bi];
+        const li=document.createElement('li');
+        const dot=document.createElement('span');dot.style.background=testamentColour(b.first);
+        const ref=document.createElement('span');ref.className='ref';ref.textContent=shortName(b.name);
+        const cnt=document.createElement('span');cnt.className='n';cnt.textContent=fmt(n)+' links';
+        li.append(dot,ref,cnt);
+        li.addEventListener('click',()=>{
+          state.focus={from:b.first,to:b.first+b.chapters-1,label:shortName(b.name)};
+          state.locked=null;input.value=shortName(b.name);chip();renderBase();describe();
+        });
+        list.appendChild(li);
+      });
+      return;
+    }
+    eyebrow.textContent='BUSIEST CHAPTERS';
     title.textContent='Start anywhere';
     sub.textContent='Move across the drawing to isolate a chapter, or pick one here. Click to hold a selection; arrow keys step through once the drawing has focus.';
     const totals=new Map();
-    const end=(state.focus&&state.dir==='in')?1:0;
-    for(const l of LINKS)if(visible(l))totals.set(l[end],(totals.get(l[end])||0)+l[2]);
+    for(const l of LINKS)if(visible(l))totals.set(l[0],(totals.get(l[0])||0)+l[2]);
     [...totals.entries()].sort((a,b)=>b[1]-a[1]).slice(0,14)
       .forEach(([ci,n])=>list.appendChild(row(ci,COMPLETE?testamentColour(ci):gospelColour(ci),fmt(n)+' links',()=>select(ci))));
     return;
@@ -527,14 +631,48 @@ function describe(){
   eyebrow.textContent=(state.locked!==null?'HELD · ':'')+(out.length?'OUTGOING':'INCOMING');
   title.textContent=label(focus);
   sub.textContent=out.length
-    ?fmt(out.reduce((n,l)=>n+l[2],0))+' links out of '+CHAPTERS[focus]+' verses, reaching '+out.length+' chapters.'
+    ?fmt(out.reduce((n,l)=>n+l[2],0))+' links out of '+CHAPTERS[focus]+' verses, reaching '+out.length+' chapters. Pick one to read the verses.'
     :incoming.length?'No outgoing links in this subset. '+fmt(incoming.reduce((n,l)=>n+l[2],0))+' links arrive here.'
     :'No links in the current subset.';
   rows.slice(0,60).forEach(l=>{
     const other=out.length?l[1]:l[0];
-    list.appendChild(row(other,linkColour(l),l[2]+(l[2]===1?' link':' links'),()=>select(other)));
+    list.appendChild(row(other,linkColour(l),l[2]+(l[2]===1?' link':' links'),
+      ()=>openPassages(out.length?focus:other,out.length?other:focus)));
   });
 }
+function openPassages(a,b){
+  const found=[];
+  for(let i=0;i<COUNT;i++)
+    if(CHAPTER_OF_VERSE[VL_FROM[i]]===a&&CHAPTER_OF_VERSE[VL_TO[i]]===b)found.push(i);
+  found.sort((x,y)=>VL_VOTES[y]-VL_VOTES[x]||VL_FROM[x]-VL_FROM[y]);
+  const box=document.getElementById('passages'),list=document.getElementById('pairs');
+  document.getElementById('pass-eyebrow').textContent='PASSAGES BEHIND THE LINK';
+  document.getElementById('pass-title').textContent=label(a)+' \u2192 '+label(b);
+  document.getElementById('pass-sub').textContent=found.length
+    ? found.length+(found.length===1?' link':' links')+', strongest first \u00b7 American Standard Version 1901'
+    : 'No verse-level links between these chapters.';
+  list.innerHTML='';
+  found.slice(0,40).forEach(i=>{
+    const row=document.createElement('div');row.className='pair';
+    const from=document.createElement('article');from.className='verse-card';
+    from.innerHTML='<h3>FROM <b>'+verseLabel(VL_FROM[i])+'</b></h3>';
+    const fp=document.createElement('p');fp.textContent=TEXT[VL_FROM[i]]||'';from.appendChild(fp);
+    const to=document.createElement('article');to.className='verse-card target';
+    to.innerHTML='<h3>TO <b>'+verseRange(VL_TO[i],VL_SPAN[i])+'</b></h3>';
+    for(let v=VL_TO[i];v<=VL_TO[i]+VL_SPAN[i];v++){
+      const tp=document.createElement('p');
+      tp.textContent=(VL_SPAN[i]?(v-CHAPTER_START[CHAPTER_OF_VERSE[v]]+1)+'. ':'')+(TEXT[v]||'');
+      to.appendChild(tp);
+    }
+    const votes=document.createElement('p');votes.className='pair-votes';
+    votes.textContent=VL_VOTES[i]+(VL_VOTES[i]===1?' vote':' votes')+' at OpenBible';
+    row.append(from,to,votes);list.appendChild(row);
+  });
+  box.hidden=false;
+  box.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});
+}
+document.getElementById('pass-close').addEventListener('click',()=>{document.getElementById('passages').hidden=true});
+
 function legend(){
   const el=document.getElementById('legend');el.innerHTML='';
   if(state.colour==='distance'){
