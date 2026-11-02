@@ -31,12 +31,19 @@ docs/cross-references.html is a second page: the cross-references drawn as an
 arc diagram, a circle and a matrix, with search and a single-book filter. Build
 it with:
 
-    npm run build:crossrefs                                  # Gospel links only
-    node tools/pack-crossrefs.mjs --full cross-references.zip # the whole Bible
+    node tools/pack-crossrefs.mjs --full source-data/cross-references-2026-11-02.zip
+    npm run build:crossrefs    # Gospel-originating links only, from data/
 
 Run it before `npm run build`: the main build copies docs/cross-references.html
 into the ZIP as Cross_Reference_Lab.html and adds a second button for it to the
 launcher page, and it quietly leaves both out if that file is not there yet.
+
+The complete download is included as source-data/cross-references-2026-11-02.zip,
+so the page rebuilds from a clean clone. It is a later snapshot than the one in
+the Atlas release audit: the links are identical, but 2,177 of the 44,469
+Gospel-originating vote counts have moved by one or two, because OpenBible's
+votes are a live tally. The packer prints the SHA-256 of whatever file you pass
+and says whether it matches the audit.
 
 Without --full it uses data/crossrefs.json, which holds only the links that
 originate in the four Gospels. The complete dataset is the download recorded in

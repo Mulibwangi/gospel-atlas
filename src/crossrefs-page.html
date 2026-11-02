@@ -151,7 +151,7 @@ root.innerHTML=`
       </select>
     </div>
     <div class="opt"><label><input type="checkbox" id="cbsafe"> Colour-blind safe</label></div>
-    <div class="opt">Minimum links <input type="range" id="minlinks" min="1" max="12" value="1" aria-label="Minimum verse links per chapter pair"><strong id="minlabel" style="font-variant-numeric:tabular-nums;color:var(--ink)">1</strong></div>
+    <div class="opt">Minimum links <input type="range" id="minlinks" min="1" max="12" value="${COMPLETE?2:1}" aria-label="Minimum verse links per chapter pair"><strong id="minlabel" style="font-variant-numeric:tabular-nums;color:var(--ink)">${COMPLETE?2:1}</strong></div>
     <div class="opt">Focus
       <select id="section" aria-label="Focus on a section of the Bible">
         <option value="">Whole Bible</option>
@@ -183,7 +183,7 @@ root.innerHTML=`
   </div>
   <footer>
     <p><strong>What this is.</strong> ${DATA.sourceNote} Links are aggregated to directed chapter pairs${COMPLETE?'':', which is why the matrix is a band rather than a square and why the circle’s chords all leave from four sectors'}.</p>
-    <p><strong>Data.</strong> Cross-references from <a href="https://www.openbible.info/labs/cross-references/" target="_blank" rel="noreferrer">OpenBible.info</a>, CC BY, snapshot ${DATA.snapshot||''}, derived chiefly from the Treasury of Scripture Knowledge. Chapter and verse counts from the ASV 1901. The votes order the links; they are not similarity scores, and a missing link does not establish that a passage stands alone.</p>
+    <p><strong>Data.</strong> Cross-references from <a href="https://www.openbible.info/labs/cross-references/" target="_blank" rel="noreferrer">OpenBible.info</a>, CC BY, snapshot ${DATA.snapshot||''}${DATA.sourceSha256?', sha256 '+DATA.sourceSha256.slice(0,12):''}, derived chiefly from the Treasury of Scripture Knowledge. The votes are a live tally, so they shift between downloads. Chapter and verse counts from the ASV 1901. The votes order the links; they are not similarity scores, and a missing link does not establish that a passage stands alone.</p>
     <p><strong>Form.</strong> The arc diagram follows the one Chris Harrison and Christoph Römhild made in 2007. This is drawn independently, from different data, and uses none of their artwork. Coder: David Lee.</p>
   </footer>`;
 
@@ -205,7 +205,7 @@ const SECTIONS=[
   const a=BOOKS.find(b=>b.code===from),z=BOOKS.find(b=>b.code===to);
   return a&&z?{name,from:a.first,to:z.first+z.chapters-1,alias}:null;
 }).filter(Boolean);
-const state={view:'circle',colour:'distance',cbsafe:false,min:1,hover:null,locked:null,focus:null,dir:'both'};
+const state={view:'circle',colour:'distance',cbsafe:false,min:COMPLETE?2:1,hover:null,locked:null,focus:null,dir:'both'};
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const GOSPEL={Matt:'--matt',Mark:'--mark',Luke:'--luke',John:'--john'};
 const CB={Matt:'#0072b2',Mark:'#d55e00',Luke:'#009e73',John:'#cc79a7'};
@@ -225,7 +225,7 @@ function testamentColour(ci){return bookOfChapter[ci]>=NT?(state.cbsafe?'#0072b2
 function linkColour(l){
   if(state.colour==='gospel')return gospelColour(l[0]);
   if(state.colour==='testament')return testamentColour(l[1]);
-  return distanceColour(Math.abs(l[1]-l[0])/(N-1));
+  return distanceColour(Math.round(255*Math.abs(l[1]-l[0])/(N-1))/255);
 }
 
 const canvas=document.getElementById('plot'),ctx=canvas.getContext('2d');
@@ -253,6 +253,20 @@ function layout(){
   }else{
     const padL=74,padT=16,padB=36,padR=16;
     geom.matrix={padL,padT,padB,padR,cw:(W-padL-padR)/sources.length,ch:(H-padT-padB)/N};
+  }
+}
+function curveInto(path,l){
+  const a=l[0],b=l[1];
+  if(state.view==='arc'){
+    const x1=geom.x(a),x2=geom.x(b),y=geom.arc.baseY;
+    const h=Math.min(y-10,Math.abs(x2-x1)*0.55);
+    path.moveTo(x1,y);path.bezierCurveTo(x1,y-h*1.1,x2,y-h*1.1,x2,y);
+  }else{
+    const R=geom.circle.R;
+    const p1=geom.point(a,R*0.985),p2=geom.point(b,R*0.985);
+    const ba=BOOKS[bookOfChapter[a]],bb=BOOKS[bookOfChapter[b]];
+    const c1=geom.point(ba.first+ba.chapters/2,R*0.5),c2=geom.point(bb.first+bb.chapters/2,R*0.5);
+    path.moveTo(p1[0],p1[1]);path.bezierCurveTo(c1[0],c1[1],c2[0],c2[1],p2[0],p2[1]);
   }
 }
 function drawLink(c,l,alpha,width){
@@ -370,27 +384,66 @@ function visible(l){
   }
   return true;
 }
+let byChapter=null,linkLayer=null,renderToken=0,progress=1;
+function buildIndex(){
+  byChapter=new Map();
+  const note=(k,l)=>{const a=byChapter.get(k);a?a.push(l):byChapter.set(k,[l])};
+  for(const l of LINKS)if(visible(l)){note(l[0],l);note(l[1],l)}
+}
+// The wash is drawn at one device pixel per CSS pixel and built a slice at a time,
+// so a full-Bible view appears immediately and fills in instead of freezing the page.
 function renderBase(){
-  base=document.createElement('canvas');
-  base.width=canvas.width;base.height=canvas.height;
-  const c=base.getContext('2d');c.scale(dpr,dpr);
-  drawFrame(c);
+  const token=++renderToken;
+  buildIndex();
+  linkLayer=document.createElement('canvas');
+  linkLayer.width=Math.max(1,W);linkLayer.height=Math.max(1,H);
+  const c=linkLayer.getContext('2d');
   const dark=isDark();
-  const alpha=state.view==='matrix'?(dark?.72:.6):(dark?.2:.16);
-  c.lineCap='round';
-  for(const l of LINKS)if(visible(l))drawLink(c,l,alpha,state.view==='circle'?.7:.6);
-  paint();
+  const alpha=state.view==='matrix'?(dark?.72:.6):(dark?.26:.2);
+  c.lineCap='round';c.lineWidth=state.view==='circle'?.7:.6;
+  const list=[];for(const l of LINKS)if(visible(l))list.push(l);
+  const CHUNK=state.view==='matrix'?80000:7000;
+  let i=0;progress=list.length?0:1;
+  (function step(){
+    if(token!==renderToken)return;
+    const stop=Math.min(list.length,i+CHUNK);
+    if(state.view==='matrix'){
+      for(;i<stop;i++)drawLink(c,list[i],alpha,.6);
+    }else{
+      const buckets=new Map();
+      for(;i<stop;i++){
+        const l=list[i],colour=linkColour(l);
+        let path=buckets.get(colour);
+        if(!path){path=new Path2D();buckets.set(colour,path)}
+        curveInto(path,l);
+      }
+      c.globalAlpha=alpha;
+      for(const [colour,path] of buckets){c.strokeStyle=colour;c.stroke(path)}
+      c.globalAlpha=1;
+    }
+    progress=list.length?i/list.length:1;
+    paint();
+    if(i<list.length)requestAnimationFrame(step);
+  })();
+}
+function drawProgress(c){
+  c.save();c.fillStyle=css('--gold');c.globalAlpha=.85;
+  c.fillRect(0,0,W*progress,2);c.restore();
 }
 function paint(){
   ctx.setTransform(1,0,0,1,0,0);
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.drawImage(base,0,0);
-  const focus=state.locked!==null?state.locked:state.hover;
-  if(focus===null||focus===undefined)return;
+  if(linkLayer)ctx.drawImage(linkLayer,0,0,canvas.width,canvas.height);
   ctx.save();ctx.scale(dpr,dpr);
+  const focus=state.locked!==null?state.locked:state.hover;
+  if(focus===null||focus===undefined){
+    drawFrame(ctx);
+    if(progress<1)drawProgress(ctx);
+    ctx.restore();return;
+  }
   ctx.globalAlpha=isDark()?.72:.78;ctx.fillStyle=css('--panel');ctx.fillRect(0,0,W,H);
   ctx.globalAlpha=1;drawFrame(ctx);ctx.lineCap='round';
-  for(const l of LINKS)if(visible(l)&&(l[0]===focus||l[1]===focus))drawLink(ctx,l,state.view==='matrix'?1:.85,state.view==='matrix'?1:1.25);
+  for(const l of (byChapter.get(focus)||[]))drawLink(ctx,l,state.view==='matrix'?1:.85,state.view==='matrix'?1:1.25);
   ctx.fillStyle=css('--ink');
   if(state.view==='arc'){const x=geom.x(focus);ctx.fillRect(x-1,geom.arc.baseY-6,2,12)}
   else if(state.view==='circle'){const p=geom.point(focus,geom.circle.R*1.01);ctx.beginPath();ctx.arc(p[0],p[1],2.6,0,7);ctx.fill()}
@@ -398,6 +451,7 @@ function paint(){
     if(sourceSlot.has(focus))ctx.fillRect(m.padL+sourceSlot.get(focus)*m.cw,m.padT,Math.max(1.2,m.cw),N*m.ch);
     else ctx.fillRect(m.padL,m.padT+focus*m.ch,sources.length*m.cw,Math.max(1.2,m.ch));
     ctx.globalAlpha=1}
+  if(progress<1)drawProgress(ctx);
   ctx.restore();
 }
 function caption(){

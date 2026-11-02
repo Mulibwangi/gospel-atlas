@@ -82,9 +82,17 @@ chords that actually land there, with Isaiah 53 at the head of the list.
 
 ![Only the links into Revelation](docs/images/crossrefs-book.png)
 
-It currently carries the 44,469 links that originate in the Gospels, which is
-what this repository holds; pointing the packer at the complete OpenBible
-download fills out all three views. `SOURCE_README.md` has the command.
+It carries the complete dataset: **344,799 cross-references** over **191,620
+directed chapter pairs**, reaching every one of the Bible's 1,189 chapters. The
+wash is built progressively, so the page is usable in under a second and fills
+in as it draws. The minimum-links slider starts at 2, because two thirds of all
+chapter pairs rest on a single verse link; drop it to 1 for everything.
+
+Ask it a question and it answers from the data. Select Acts 27, Paul's
+shipwreck, and among its links sit **Jonah 1** and **Psalm 107** — the storm at
+sea and "they that go down to the sea in ships" — surfacing from vote-ordered
+cross-references with nothing in the page that knows what the chapter is
+about.
 
 ## Languages
 

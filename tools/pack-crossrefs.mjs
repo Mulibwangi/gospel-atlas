@@ -38,7 +38,7 @@ const chapterOf = ref => {
 };
 
 const pairs = new Map();
-let verseLinks = 0, dropped = 0, scope, sourceNote, sourceHash = null;
+let verseLinks = 0, dropped = 0, scope, sourceNote, sourceHash = null, snapshot = null;
 
 function add(from, to, votes) {
   const a = chapterOf(from), b = chapterOf(to);
@@ -53,8 +53,14 @@ function add(from, to, votes) {
 if (fullPath) {
   const raw = await readFile(fullPath);
   sourceHash = createHash('sha256').update(raw).digest('hex');
-  let text;
+  let text, stamp = null;
   if (fullPath.endsWith('.zip')) {
+    // The archive's own entry date is the snapshot date; the file's mtime is only when it was copied.
+    try {
+      const listing = execFileSync('unzip', ['-l', fullPath]).toString();
+      const m = listing.match(/(\d{4}-\d{2}-\d{2})\s+\d{2}:\d{2}\s+cross_references/);
+      if (m) stamp = m[1];
+    } catch {}
     try {
       text = execFileSync('unzip', ['-p', fullPath], {maxBuffer: 1 << 28}).toString('utf8');
     } catch {
@@ -69,19 +75,23 @@ if (fullPath) {
     add(from, to, Number(votes) || 0);
   }
   scope = 'complete';
-  sourceNote = 'Complete OpenBible.info cross-reference dataset.';
-  if (sourceHash === meta.hashes?.['cross-references.zip']) sourceNote += ' Same file as the Atlas release audit.';
+  snapshot = stamp || new Date().toISOString().slice(0, 10);
+  sourceNote = 'The complete OpenBible.info cross-reference dataset.';
+  sourceNote += sourceHash === meta.hashes?.['cross-references.zip']
+    ? ' This is the same file recorded in the Atlas release audit.'
+    : ' This is a later download than the one in the Atlas release audit, so a few vote counts differ; the links themselves are the same.';
 } else {
   const crossrefs = JSON.parse(await readFile('data/crossrefs.json', 'utf8'));
   for (const [source, targets] of Object.entries(crossrefs)) for (const [target, votes] of targets) add(source, target, votes);
   scope = 'gospels';
+  snapshot = meta.snapshot || '';
   sourceNote = 'Only the cross-references that originate in Matthew, Mark, Luke or John.';
 }
 
 const links = [...pairs.values()].sort((a, b) => b[2] - a[2]);
 const payload = {
   scope, sourceNote,
-  snapshot: meta.snapshot || '',
+  snapshot, sourceSha256: sourceHash,
   testamentSplit: books.findIndex(b => b.code === 'Matt'),
   books: books.map(b => [b.code, b.name, b.first, b.chapters]),
   chapterVerses: chapters,
