@@ -112,6 +112,7 @@ for (const r of rows) { flat.push(r[0] - previous, r[1], r[2], r[3]); previous =
 
 const payload = {
   scope, sourceNote, snapshot, sourceSha256: sourceHash,
+  built: new Date().toISOString().replace('T',' ').slice(0, 16) + ' UTC',
   unmapped, dropped,
   testamentSplit: books.findIndex(b => b.code === 'Matt'),
   books: books.map(b => [b.code, b.name, b.first, b.chapters]),

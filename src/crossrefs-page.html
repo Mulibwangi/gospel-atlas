@@ -106,6 +106,7 @@ canvas:focus-visible{outline:2px solid var(--gold);outline-offset:-3px}
 footer{margin-top:26px;border-top:1px solid var(--line);padding-top:18px;font-size:11px;color:var(--faint);line-height:1.8;max-width:80ch}
 footer a{color:inherit}
 footer p{margin:0 0 7px}
+.build{color:var(--ink);font-variant-numeric:tabular-nums}
 .loading{min-height:52vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;color:var(--muted)}
 .loading h2{font-family:var(--serif);font-weight:400;font-size:26px;margin:0;color:var(--ink)}
 @media(max-width:900px){.stage{grid-template-columns:minmax(0,1fr)}.links{max-height:260px}.counts{gap:18px}.counts strong{font-size:20px}.search{max-width:none}}
@@ -249,7 +250,7 @@ root.innerHTML=`
   <footer>
     <p><strong>What this is.</strong> ${DATA.sourceNote} Links are aggregated to directed chapter pairs${COMPLETE?'':', which is why the matrix is a band rather than a square and why the circle’s chords all leave from four sectors'}.</p>
     <p><strong>Data.</strong> Cross-references from <a href="https://www.openbible.info/labs/cross-references/" target="_blank" rel="noreferrer">OpenBible.info</a>, CC BY, snapshot ${DATA.snapshot||''}${DATA.sourceSha256?', sha256 '+DATA.sourceSha256.slice(0,12):''}, derived chiefly from the Treasury of Scripture Knowledge. The votes are a live tally, so they shift between downloads, and a negative total means a link the community voted down; those sort last and are never removed. Chapter and verse counts from the ASV 1901.${DATA.dropped?' '+DATA.dropped+' link'+(DATA.dropped===1?'':'s')+' could not be placed, because '+(DATA.unmapped||[]).slice(0,2).join(' and ')+' '+((DATA.unmapped||[]).length>1?'are verses':'is a verse')+' the ASV does not have; ranges reaching past the ASV\u2019s last verse in a chapter stop there rather than collapsing.':''} The votes order the links; they are not similarity scores, and a missing link does not establish that a passage stands alone.</p>
-    <p><strong>Form.</strong> The arc diagram follows the one Chris Harrison and Christoph Römhild made in 2007. This is drawn independently, from different data, and uses none of their artwork. Coder: David Lee.</p>
+    <p><strong>Form.</strong> The arc diagram follows the one Chris Harrison and Christoph Römhild made in 2007. This is drawn independently, from different data, and uses none of their artwork. Coder: David Lee. <span class="build">Build ${DATA.built||''}</span> \u2014 if that looks older than you expect, reload the page with Shift held down.</p>
   </footer>`;
 
 // Focus is a contiguous run of chapters, so one book and a section of books
