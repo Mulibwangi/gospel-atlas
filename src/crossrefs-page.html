@@ -193,6 +193,47 @@ const THREADS=[
   ['Light and darkness','light darkness lamp shine dark'],
   ['Temple and tabernacle','temple tabernacle altar holy place sanctuary']
 ];
+// The scarlet thread as it is actually taught: a named chain of passages, in canonical
+// order. The chain is a reading; whether the cross-references attest each step is data.
+const CHAINS=[['Scarlet thread \u2014 the passages',[
+  ['Gen.3.21','Coats of skins for Adam and his wife'],
+  ['Gen.22.13','The ram caught in the thicket, offered in Isaac\u2019s place'],
+  ['Gen.38.28','The midwife binds a scarlet thread on the hand of Zerah'],
+  ['Exod.12.13','The blood a token upon the houses; the plague passes over'],
+  ['Exod.26.1','Scarlet in the ten curtains of the tabernacle'],
+  ['Exod.28.6','Scarlet in the ephod of the high priest'],
+  ['Lev.17.11','The life of the flesh is in the blood, given upon the altar'],
+  ['Josh.2.18','Bind this line of scarlet thread in the window'],
+  ['Josh.2.21','And she bound the scarlet line in the window'],
+  ['Josh.6.23','Rahab and all her kindred brought out alive'],
+  ['Matt.1.3','Judah begat Perez of Tamar, in the line of Jesus Christ'],
+  ['John.1.29','Behold, the Lamb of God, that taketh away the sin of the world'],
+  ['John.19.30','It is finished'],
+  ['Heb.9.22','Apart from shedding of blood there is no remission'],
+  ['Heb.11.31','By faith Rahab the harlot perished not']
+]]];
+const BOOK_BY_CODE=new Map(BOOKS.map((b,i)=>[b.code,i]));
+function resolveRef(ref){
+  const [code,ch,vs]=ref.split('.');
+  const bi=BOOK_BY_CODE.get(code);
+  if(bi===undefined)return null;
+  const chapter=BOOKS[bi].first+(+ch)-1;
+  if(chapter<BOOKS[bi].first||chapter>=BOOKS[bi].first+BOOKS[bi].chapters)return null;
+  const verse=CHAPTER_START[chapter]+(+vs)-1;
+  return verse<TEXT.length?{chapter,verse}:null;
+}
+function buildChain(label,list){
+  const stations=[];
+  for(const [ref,note] of list){
+    const at=resolveRef(ref);
+    if(at)stations.push({ref,note,...at});
+  }
+  const steps=stations.slice(1).map((st,i)=>{
+    const a=stations[i].chapter,b=st.chapter;
+    return {a,b,attested:pairCount(a,b)>0||pairCount(b,a)>0};
+  });
+  state.chain={label,stations,steps,attested:steps.filter(x=>x.attested).length};
+}
 let normText=null;                                  // the ASV, normalised, built once
 let threadVerse=null,threadPairs=null,threadLinkCount=0;
 function buildThread(){
@@ -324,7 +365,7 @@ const SECTIONS=[
   const a=BOOKS.find(b=>b.code===from),z=BOOKS.find(b=>b.code===to);
   return a&&z?{name,from:a.first,to:z.first+z.chapters-1,alias}:null;
 }).filter(Boolean);
-const state={view:'circle',colour:'distance',cbsafe:false,flow:true,thread:null,min:COMPLETE?2:1,hover:null,locked:null,focus:null,dir:'both'};
+const state={view:'circle',colour:'distance',cbsafe:false,flow:true,thread:null,chain:null,min:COMPLETE?2:1,hover:null,locked:null,focus:null,dir:'both'};
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const GOSPEL={Matt:'--matt',Mark:'--mark',Luke:'--luke',John:'--john'};
 const CB={Matt:'#0072b2',Mark:'#d55e00',Luke:'#009e73',John:'#cc79a7'};
@@ -581,6 +622,7 @@ function drawFrame(c){
       c.fillStyle=faint;c.fillText(shortName(b.name),(x1+x2)/2,m.padT+N*m.ch+20);
     });
   }
+  if(state.chain)drawChain(c);
   if(state.focus){
     c.save();c.strokeStyle=css('--gold');c.globalAlpha=.9;
     if(state.view==='arc'){
@@ -598,6 +640,60 @@ function drawFrame(c){
     }
     c.restore();
   }
+  c.restore();
+}
+function chainPoint(ci){
+  if(state.view==='arc')return [geom.x(ci),geom.arc.baseY-4];
+  if(state.view==='circle')return geom.point(ci,geom.circle.R*0.985);
+  const m=geom.matrix;
+  return [m.padL+(sourceSlot.has(ci)?sourceSlot.get(ci):0)*m.cw,m.padT+ci*m.ch];
+}
+// The chain drawn as a route: a mark at every station, and a step between each pair,
+// solid where the cross-references attest it and dashed where they do not.
+function drawChain(c){
+  const scarlet=css('--scarlet'),st=state.chain.stations;
+  c.save();c.lineCap='round';c.lineJoin='round';
+  if(state.view==='matrix'){
+    const m=geom.matrix;
+    state.chain.steps.forEach(step=>{
+      if(!sourceSlot.has(step.a))return;
+      const x=m.padL+sourceSlot.get(step.a)*m.cw,y=m.padT+step.b*m.ch;
+      const w=Math.max(7,m.cw*3),h=Math.max(7,m.ch*3);
+      c.globalAlpha=1;c.strokeStyle=scarlet;c.lineWidth=1.6;
+      c.setLineDash(step.attested?[]:[2,2]);
+      if(step.attested){c.globalAlpha=.9;c.fillStyle=scarlet;c.fillRect(x-w/2,y-h/2,w,h)}
+      c.strokeRect(x-w/2,y-h/2,w,h);
+      c.setLineDash([]);
+    });
+    c.restore();return;
+  }
+  const cx=geom.view==='circle'?0:0;
+  st.forEach((station,i)=>{
+    if(i===0)return;
+    const p1=chainPoint(st[i-1].chapter),p2=chainPoint(station.chapter);
+    const step=state.chain.steps[i-1];
+    c.globalAlpha=step.attested?.95:.5;
+    c.strokeStyle=scarlet;c.lineWidth=step.attested?2:1.4;
+    c.setLineDash(step.attested?[]:[4,4]);
+    c.beginPath();c.moveTo(p1[0],p1[1]);
+    if(state.view==='circle'){
+      const mx=(p1[0]+p2[0])/2,my=(p1[1]+p2[1])/2;
+      c.quadraticCurveTo(geom.circle.cx+(mx-geom.circle.cx)*0.25,geom.circle.cy+(my-geom.circle.cy)*0.25,p2[0],p2[1]);
+    }else{
+      const h=Math.min(geom.arc.baseY-14,Math.abs(p2[0]-p1[0])*0.5);
+      c.bezierCurveTo(p1[0],p1[1]-h,p2[0],p2[1]-h,p2[0],p2[1]);
+    }
+    c.stroke();c.setLineDash([]);
+  });
+  c.globalAlpha=1;c.fillStyle=scarlet;
+  st.forEach((station,i)=>{
+    const p=chainPoint(station.chapter);
+    c.beginPath();c.arc(p[0],p[1],3.4,0,7);c.fill();
+    c.fillStyle=css('--paper');c.font='700 8px '+css('--sans');
+    c.textAlign='center';c.textBaseline='middle';
+    c.fillText(String(i+1),p[0],p[1]+0.5);
+    c.fillStyle=scarlet;
+  });
   c.restore();
 }
 function inFocus(ci){return ci>=state.focus.from&&ci<=state.focus.to}
@@ -638,8 +734,9 @@ function renderBase(){
   const c=linkLayer.getContext('2d');
   const dark=isDark();
   const threading=!!threadPairs;
+  const dimmed=threading||!!state.chain;
   const alpha=state.view==='matrix'?(dark?.72:.6):(dark?.26:.2);
-  const dim=threading?(state.view==='matrix'?.22:.16):1;
+  const dim=dimmed?(state.view==='matrix'?.22:.16):1;
   c.lineCap='round';c.lineWidth=state.view==='circle'?.7:.6;
   const list=[];for(const l of LINKS)if(visible(l))list.push(l);
   if(threading)list.sort((a,b)=>(onThread(a)?1:0)-(onThread(b)?1:0));   // thread last, so it lies on top
@@ -862,6 +959,38 @@ function describe(){
           pair:[state.focus.from,state.focus.to,b.first,b.first+b.chapters-1],
           title:state.focus.label+' \u2194 '+shortName(b.name),extra:turn
         }));
+      });
+      return;
+    }
+    if(state.chain&&!state.focus){
+      const ch=state.chain;
+      eyebrow.textContent='THE CHAIN, IN ORDER';
+      title.textContent=ch.label;
+      sub.textContent=ch.attested+' of '+ch.steps.length+' steps are attested by a direct cross-reference between those chapters; the rest are the reading\u2019s own. Open a station to read it.';
+      ch.stations.forEach((station,i)=>{
+        const li=document.createElement('li');
+        const head=document.createElement('div');head.className='link-head';
+        const dot=document.createElement('span');dot.className='dot';dot.style.background=css('--scarlet');
+        const ref=document.createElement('span');ref.className='ref';
+        ref.textContent=(i+1)+'. '+verseLabel(station.verse);
+        const n=document.createElement('span');n.className='n';
+        n.textContent=i===0?'':(ch.steps[i-1].attested?'linked':'no link');
+        const plus=document.createElement('span');plus.className='plus';plus.textContent='+';
+        head.append(dot,ref,n,plus);
+        const body=document.createElement('div');body.className='link-body';body.hidden=true;
+        li.append(head,body);
+        head.addEventListener('click',()=>{
+          const open=li.classList.toggle('open');plus.textContent=open?'\u2212':'+';body.hidden=!open;
+          if(!open||body.dataset.filled)return;
+          body.dataset.filled='1';
+          const note=document.createElement('span');note.className='ref';note.textContent=station.note;
+          const p=document.createElement('p');p.textContent=TEXT[station.verse]||'';
+          const go=document.createElement('button');go.type='button';go.className='all';
+          go.textContent='Show this chapter\u2019s links \u2193';
+          go.addEventListener('click',e=>{e.stopPropagation();select(station.chapter)});
+          body.append(note,p,go);
+        });
+        list.appendChild(li);
       });
       return;
     }
@@ -1118,26 +1247,46 @@ document.getElementById('colour').addEventListener('change',e=>{state.colour=e.t
 (function(){
   const pick=document.getElementById('threadPick'),wrap=document.getElementById('threadWords'),
         input=document.getElementById('threadInput'),apply=document.getElementById('threadApply');
-  THREADS.forEach(([name,words])=>{const o=document.createElement('option');o.value=words;o.textContent=name;pick.appendChild(o)});
-  const custom=document.createElement('option');custom.value='custom';custom.textContent='Words of my own\u2026';pick.appendChild(custom);
+  const gChain=document.createElement('optgroup');gChain.label='Named chains of passages';
+  CHAINS.forEach(([name],i)=>{const o=document.createElement('option');o.value='chain:'+i;o.textContent=name;gChain.appendChild(o)});
+  pick.appendChild(gChain);
+  const gWords=document.createElement('optgroup');gWords.label='Words in the text at both ends';
+  THREADS.forEach(([name,words])=>{const o=document.createElement('option');o.value=words;o.textContent=name;gWords.appendChild(o)});
+  const custom=document.createElement('option');custom.value='custom';custom.textContent='Words of my own\u2026';gWords.appendChild(custom);
+  pick.appendChild(gWords);
   const run=(label,words)=>{
     const list=textNorm(words).split(' ').filter(w=>w.length>=3);
+    state.chain=null;
     state.thread=list.length?{label,words:list}:null;
     buildThread();renderBase();describe();note();
+  };
+  const runChain=i=>{
+    state.thread=null;buildThread();
+    buildChain(CHAINS[i][0],CHAINS[i][1]);
+    renderBase();describe();note();
   };
   const note=()=>{
     let el=document.getElementById('threadNote');
     if(!el){el=document.createElement('p');el.id='threadNote';el.className='thread-note';
       document.querySelector('.bar').after(el)}
+    if(state.chain){
+      const ch=state.chain;
+      el.innerHTML='<b>'+ch.label+'</b> \u2014 '+ch.stations.length+' passages, in canonical order. '+
+        'The chain is a reading, held in this page as a fixed list; what the data decides is whether each step is attested: '+
+        '<b>'+ch.attested+' of '+ch.steps.length+'</b> consecutive pairs have a direct cross-reference between those chapters. '+
+        'Solid steps are attested, dashed ones are not.';
+      return;
+    }
     if(!state.thread){el.remove();return}
     el.innerHTML='<b>'+state.thread.label+'</b> \u2014 '+fmt(threadLinkCount)+' of '+fmt(COUNT)+
       ' links have one of <em>'+state.thread.words.join(', ')+'</em> in the text at both ends. '+
       'This is a word search over the ASV, not a doctrine: it shows where those words meet across the links, and the words are yours to change.';
   };
   pick.addEventListener('change',e=>{
+    if(e.target.value.startsWith('chain:')){wrap.hidden=true;runChain(+e.target.value.slice(6));return}
     if(e.target.value==='custom'){wrap.hidden=false;input.focus();return}
     wrap.hidden=!e.target.value;
-    if(!e.target.value){run('',''); return}
+    if(!e.target.value){state.chain=null;run('',''); return}
     input.value=e.target.value;
     run(pick.options[pick.selectedIndex].textContent,e.target.value);
   });

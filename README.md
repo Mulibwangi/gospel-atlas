@@ -113,6 +113,27 @@ is new is that you can watch the links either support it or fail to.
 
 ![The scarlet thread through the matrix](docs/images/thread.png)
 
+**Follow a chain.** The same menu offers a second kind of thread: a named list
+of passages in canonical order rather than a word search. "Scarlet thread — the
+passages" is the chain as it is usually told — the coats of skins, the ram in
+the thicket, the scarlet cord on Zerah's hand, the blood on the doorposts, the
+scarlet in the curtains and in the ephod, the life that is in the blood,
+Rahab's line in the window and her rescue, Tamar in Matthew's genealogy, the
+Lamb of God, "It is finished", and the letter to the Hebrews that reads all of
+it backwards. Fifteen stations, numbered around the rim, drawn in order.
+
+What the data decides is not the chain but each step of it. A step is drawn
+solid where the dataset has a direct cross-reference between those two
+chapters and dashed where it does not, and the page says how many: **9 of the
+14 steps are attested**, the other five are the reading's own. Genesis 3 to
+Genesis 22 to Genesis 38 to the Passover is a line the editors did not draw;
+Joshua 2 to Joshua 6 to Matthew 1 to John 1 to John 19 to Hebrews 9 is one they
+did. In the matrix each step becomes a single cell — filled or outlined — so
+the whole chain is fourteen marks you can check one at a time. Open any station
+to read the verse.
+
+![The scarlet thread as a chain of passages](docs/images/chain.png)
+
 The matrix is the only one of the three that keeps direction, so the asymmetry
 of the links is visible: who points at whom, rather than merely what is
 connected. Search a book or a chapter (`Isaiah 53`, `Ps 22`, `Jn 3`, and the

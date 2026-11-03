@@ -77,13 +77,26 @@ unit shows the first verse containing your words.
 not. It reports the chosen index's assignments: a unit absent from one Gospel
 may still share details with something that Gospel records elsewhere.
 
-"Thread" traces a theme through the links. Choose one, or type words of your
-own, and every link whose Scripture at both ends carries one of those words is
-drawn in scarlet while the rest of the field recedes. A thread is a word search
-over the ASV and nothing more: it shows where those words meet across the
-cross-references, and it can just as easily show that they do not. The supplied
-threads are the scarlet thread of redemption, covenant, shepherd and flock,
-light and darkness, and temple and tabernacle.
+"Thread", in the Cross-Reference Lab, traces a theme through the links. The
+menu holds two kinds.
+
+Words in the text at both ends: choose one, or type words of your own, and
+every link whose Scripture at both ends carries one of those words is drawn in
+scarlet while the rest of the field recedes. A thread of this kind is a word
+search over the ASV and nothing more: it shows where those words meet across
+the cross-references, and it can just as easily show that they do not. The
+supplied threads are the scarlet thread of redemption, covenant, shepherd and
+flock, light and darkness, and temple and tabernacle.
+
+Named chains of passages: a fixed list of references in canonical order,
+numbered around the rim and joined step by step. "Scarlet thread — the
+passages" holds the fifteen the reading usually names, from the coats of skins
+to Hebrews 9. The chain itself is a reading and the page says so; what the data
+decides is whether each step is attested. A step is drawn solid where the
+dataset has a direct cross-reference between those two chapters and dashed
+where it does not, and the page reports the count — nine of the fourteen steps
+are attested. In the matrix each step is one cell, filled or outlined. Open a
+station to read its verse.
 
 "Colour-blind palette" switches the five colours to the Okabe-Ito set, so no
 distinction depends on telling red from green. The Mt / Mk / Lk / Jn badges
