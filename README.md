@@ -158,6 +158,60 @@ is the distinction itself, drawn rather than argued.
 
 ![The suffering servant, every step attested](docs/images/chain-servant.png)
 
+**Test a first mention.** The law of first mention says that a concept's first
+occurrence in Scripture governs what follows, and that you should begin your
+study there. Stated that way it is not a query — it is an assertion no dataset
+can confirm. But a narrower claim sits inside it that the data can test: if the
+first mention governs, *the later passages ought to point back to it*.
+
+So the page splits the claim in two. You supply the claimed origin and the
+passages that belong to the concept; both are readings and neither can be
+computed. The data answers one question only — how many of those later passages
+carry a cross-reference back — and reports where the weight of the set actually
+falls. The origin sits at twelve o'clock with a spoke to every other passage:
+solid where it is pointed back to, dashed where it is not. In the matrix the
+origin's row is the claim and its column is what it points at, so the
+asymmetry is visible: being cited is not the same as citing.
+
+Four sets ship with the page, and they come out very differently:
+
+| Concept | Claimed origin | Point back |
+| --- | --- | --- |
+| Marriage | Genesis 2:24 | **4 of 4** |
+| The serpent | Genesis 3:1 | 4 of 5 |
+| Blood | Genesis 4:10 | 2 of 9 |
+| The widow and the fatherless | Genesis 21:17 | **1 of 18** |
+
+Marriage is perfect because the New Testament quotes Genesis 2:24 outright —
+Jesus in Matthew 19 and Mark 10, Paul in 1 Corinthians and Ephesians. Where
+Scripture performs the law of first mention itself, the data records it.
+
+Blood is the example usually given for the rule, and it is nearly the weakest
+set here: Genesis 4:10 ranks 9th of the 10 passages in its own chain, and the
+weight sits on John 1:29 and Hebrews 9:22. The serpent is the counter-case the
+rule's own expositors raise — Genesis 3's serpent is satanic, but the serpent
+lifted up in Numbers 21 is read as a type of Christ — and the data isolates it
+exactly: four of the five later passages link back to Genesis 3, and the one
+that does not is John 3:14.
+
+The widow and the fatherless is the sharpest. Taking God's provision for Hagar
+and Ishmael as the origin, **1 of 18** later passages links back to it, and the
+one link that crosses between Genesis 21 and Exodus 22 runs the wrong way —
+Genesis points forward, the law never points back. The weight of the whole set
+is Isaiah 1:17, and the claimed origin ranks 11th of 19.
+
+![The origin at twelve o'clock, spokes dashed where nothing points back](docs/images/first-mention.png)
+
+None of that refutes the readings. A low count says the connection is the
+reader's rather than one the cross-reference editors marked — and since those
+editors recorded quotation and allusion, a concept that precedes its own
+vocabulary will always score low. "Widow" first appears at Genesis 38:11 and
+"fatherless" at Exodus 22:22; a word search finds neither Hagar nor the point.
+That gap between what a concept means and where its words begin is the reason
+this is worth drawing rather than asserting.
+
+![The origin's row: hollow boxes across the whole canon](docs/images/first-mention-matrix.png)
+
 The matrix is the only one of the three that keeps direction, so the asymmetry
 of the links is visible: who points at whom, rather than merely what is
 connected. Search a book or a chapter (`Isaiah 53`, `Ps 22`, `Jn 3`, and the

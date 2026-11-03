@@ -178,6 +178,9 @@ const textNorm=t=>(t||'').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036
   .replace(/æ/g,'ae').replace(/œ/g,'oe').replace(/[^a-z0-9]+/g,' ').trim();
 const label=i=>BOOKS[bookOfChapter[i]].name+' '+chapterNumber[i];
 const verseLabel=v=>{const c=CHAPTER_OF_VERSE[v];return label(c)+':'+(v-CHAPTER_START[c]+1)};
+// The same reference with the book's short name, for running prose.
+const verseShort=v=>{const c=CHAPTER_OF_VERSE[v];
+  return shortName(BOOKS[bookOfChapter[c]].name)+' '+chapterNumber[c]+':'+(v-CHAPTER_START[c]+1)};
 const verseRange=(v,span)=>span?verseLabel(v)+'\u2013'+(v+span-CHAPTER_START[CHAPTER_OF_VERSE[v+span]]+1):verseLabel(v);
 const maxVerses=Math.max.apply(null,CHAPTERS);
 const sources=[...new Set(LINKS.map(l=>l[0]))].sort((a,b)=>a-b);
@@ -302,6 +305,55 @@ const CHAINS=[['Scarlet thread \u2014 the passages',[
   ['Rev.21.22','God and the Lamb are the city\'s temple'],
   ['Rev.22.1','The river flows from the throne of God and the Lamb']
 ]]];
+// The law of first mention, as a query. The claim is that a concept's first
+// occurrence governs what follows. Which passage comes first is a reading and
+// cannot be computed; whether the later passages point back to it can be.
+// [label, origin reference, origin note, later passages]
+const ORIGINS=[
+['Blood — the worked example of the rule','Gen.4.10','Thy brother’s blood crieth unto me from the ground',[
+  ['Gen.9.6','Whoso sheddeth man’s blood, by man shall his blood be shed'],
+  ['Exod.12.13','The blood a token upon the houses; the plague passes over'],
+  ['Lev.17.11','The life of the flesh is in the blood, given upon the altar'],
+  ['Isa.53.5','He was wounded for our transgressions, bruised for our iniquities'],
+  ['John.1.29','Behold, the Lamb of God, that taketh away the sin of the world'],
+  ['Mark.10.45','To give his life a ransom for many'],
+  ['Heb.9.22','Apart from shedding of blood there is no remission'],
+  ['1John.1.7','The blood of Jesus his Son cleanseth us from all sin'],
+  ['Rev.5.6','A Lamb standing, as though it had been slain']
+]],
+['Marriage — where Jesus appeals to the first mention','Gen.2.24','Therefore shall a man leave his father and his mother',[
+  ['Matt.19.5','Jesus cites it: for this cause shall a man leave his father'],
+  ['Mark.10.7','Cited again in the dispute over divorce'],
+  ['1Cor.6.16','Paul cites it of the one joined to a harlot'],
+  ['Eph.5.31','Paul cites it of Christ and the church']
+]],
+['The serpent — the rule’s own counter-case','Gen.3.1','Now the serpent was more subtle than any beast of the field',[
+  ['Num.21.9','Moses made a serpent of brass and set it upon the standard'],
+  ['John.3.14','As Moses lifted up the serpent in the wilderness'],
+  ['2Cor.11.3','As the serpent beguiled Eve in his craftiness'],
+  ['Rev.12.9','The old serpent, he that is called the Devil and Satan'],
+  ['Rev.20.2','The dragon, the old serpent, bound a thousand years']
+]],
+['The widow and the fatherless','Gen.21.17','God heard the voice of the lad where he is',[
+  ['Gen.16.13','Hagar names the God that seeth her'],
+  ['Exod.22.22','Ye shall not afflict any widow or fatherless child'],
+  ['Deut.10.18','He executeth justice for the fatherless and the widow'],
+  ['Deut.24.17','Thou shalt not wrest the justice due to the fatherless'],
+  ['Deut.27.19','Cursed be he that wresteth the justice due to the fatherless'],
+  ['Job.29.12','I delivered the fatherless that had none to help him'],
+  ['Ps.68.5','A father of the fatherless, and a judge of the widows'],
+  ['Ps.146.9','Jehovah upholdeth the fatherless and widow'],
+  ['Isa.1.17','Judge the fatherless, plead for the widow'],
+  ['Jer.7.6','If ye oppress not the sojourner, the fatherless and the widow'],
+  ['Jer.22.3','Do no wrong to the sojourner, the fatherless, nor the widow'],
+  ['Zech.7.10','Oppress not the widow, nor the fatherless'],
+  ['Mal.3.5','A swift witness against those that oppress the widow'],
+  ['Mark.12.43','This poor widow cast in more than all they'],
+  ['Luke.7.13','He had compassion on the widow of Nain'],
+  ['Acts.6.1','Their widows were neglected in the daily ministration'],
+  ['1Tim.5.3','Honor widows that are widows indeed'],
+  ['Jas.1.27','To visit the fatherless and widows in their affliction']
+]]];
 const BOOK_BY_CODE=new Map(BOOKS.map((b,i)=>[b.code,i]));
 function resolveRef(ref){
   const [code,ch,vs]=ref.split('.');
@@ -322,7 +374,32 @@ function buildChain(label,list){
     const a=stations[i].chapter,b=st.chapter;
     return {a,b,attested:pairCount(a,b)>0||pairCount(b,a)>0};
   });
-  state.chain={label,stations,steps,attested:steps.filter(x=>x.attested).length};
+  state.chain={kind:'chain',label,stations,steps,attested:steps.filter(x=>x.attested).length};
+}
+// A concept's claimed origin against the passages that follow it. Each step is
+// measured in both directions, because a first-mention claim is directional:
+// the later passages are supposed to point back.
+function buildOrigin(label,ref,note,later){
+  const at=resolveRef(ref); if(!at)return;
+  const origin={ref,note,...at};
+  const stations=[origin],steps=[];
+  for(const [r,n] of later){
+    const a=resolveRef(r); if(!a)continue;
+    const st={ref:r,note:n,...a};
+    const back=pairCount(st.chapter,origin.chapter),fwd=pairCount(origin.chapter,st.chapter);
+    steps.push({a:origin.chapter,b:st.chapter,back,fwd,attested:back>0,any:back>0||fwd>0});
+    stations.push(st);
+  }
+  // Where the weight of the set actually falls: links each passage draws from the others.
+  const weight=stations.map((s,i)=>{
+    let n=0; for(const o of stations) if(o.chapter!==s.chapter) n+=pairCount(o.chapter,s.chapter);
+    return {i,n};
+  }).sort((x,y)=>y.n-x.n);
+  state.chain={kind:'origin',label,stations,steps,
+    attested:steps.filter(x=>x.attested).length,
+    linked:steps.filter(x=>x.any).length,
+    top:stations[weight[0].i],topN:weight[0].n,
+    rank:weight.findIndex(w=>w.i===0)+1};
 }
 let normText=null;                                  // the ASV, normalised, built once
 let threadVerse=null,threadPairs=null,threadLinkCount=0;
@@ -745,15 +822,55 @@ function drawChain(c){
   c.save();c.lineCap='round';c.lineJoin='round';
   if(state.view==='matrix'){
     const m=geom.matrix;
-    state.chain.steps.forEach(step=>{
-      if(!sourceSlot.has(step.a))return;
-      const x=m.padL+sourceSlot.get(step.a)*m.cw,y=m.padT+step.b*m.ch;
-      const w=Math.max(7,m.cw*3),h=Math.max(7,m.ch*3);
-      c.globalAlpha=1;c.strokeStyle=scarlet;c.lineWidth=1.6;
-      c.setLineDash(step.attested?[]:[2,2]);
-      if(step.attested){c.globalAlpha=.9;c.fillStyle=scarlet;c.fillRect(x-w/2,y-h/2,w,h)}
+    const cell=(src,tgt,filled,scale,alpha)=>{
+      if(!sourceSlot.has(src))return;
+      const x=m.padL+sourceSlot.get(src)*m.cw,y=m.padT+tgt*m.ch;
+      const w=Math.max(7,m.cw*3)*scale,h=Math.max(7,m.ch*3)*scale;
+      c.globalAlpha=alpha;c.strokeStyle=scarlet;c.lineWidth=1.6;
+      c.setLineDash(filled?[]:[2,2]);
+      if(filled){c.fillStyle=scarlet;c.fillRect(x-w/2,y-h/2,w,h)}
       c.strokeRect(x-w/2,y-h/2,w,h);
       c.setLineDash([]);
+    };
+    if(state.chain.kind==='origin'){
+      const o=state.chain.stations[0].chapter;
+      // The row at the origin is the claim: who points back. The column is what it points at.
+      state.chain.steps.forEach(step=>{
+        cell(step.b,o,step.back>0,1,step.back>0?.9:1);
+        if(step.fwd>0)cell(o,step.b,true,.62,.45);
+      });
+    }else{
+      state.chain.steps.forEach(step=>cell(step.a,step.b,step.attested,1,step.attested?.9:1));
+    }
+    c.restore();return;
+  }
+  if(state.chain.kind==='origin'){
+    const o=chainPoint(st[0].chapter);
+    state.chain.steps.forEach((step,i)=>{
+      const p=chainPoint(st[i+1].chapter);
+      c.globalAlpha=step.attested?.95:(step.fwd>0?.65:.38);
+      c.strokeStyle=scarlet;c.lineWidth=step.attested?2:(step.fwd>0?1.5:1.1);
+      c.setLineDash(step.attested?[]:(step.fwd>0?[6,3]:[3,3]));
+      c.beginPath();c.moveTo(o[0],o[1]);
+      if(state.view==='circle'){
+        const mx=(o[0]+p[0])/2,my=(o[1]+p[1])/2;
+        c.quadraticCurveTo(geom.circle.cx+(mx-geom.circle.cx)*0.25,geom.circle.cy+(my-geom.circle.cy)*0.25,p[0],p[1]);
+      }else{
+        const h=Math.min(geom.arc.baseY-14,Math.abs(p[0]-o[0])*0.5);
+        c.bezierCurveTo(o[0],o[1]-h,p[0],p[1]-h,p[0],p[1]);
+      }
+      c.stroke();c.setLineDash([]);
+    });
+    c.globalAlpha=1;
+    st.forEach((station,i)=>{
+      const p=chainPoint(station.chapter);
+      c.fillStyle=scarlet;
+      c.beginPath();c.arc(p[0],p[1],i?3.4:5.6,0,7);c.fill();
+      if(!i){c.strokeStyle=css('--paper');c.lineWidth=1.6;c.beginPath();c.arc(p[0],p[1],7.6,0,7);c.stroke();
+        c.strokeStyle=scarlet;c.lineWidth=1.2;c.beginPath();c.arc(p[0],p[1],7.6,0,7);c.stroke()}
+      c.fillStyle=css('--paper');c.font='700 '+(i?8:9)+'px '+css('--sans');
+      c.textAlign='center';c.textBaseline='middle';
+      c.fillText(i?String(i):'●',p[0],p[1]+0.5);
     });
     c.restore();return;
   }
@@ -1053,21 +1170,31 @@ function describe(){
       return;
     }
     if(state.chain&&!state.focus){
-      const ch=state.chain;
-      eyebrow.textContent='THE CHAIN, IN ORDER';
+      const ch=state.chain,origin=ch.kind==='origin';
+      eyebrow.textContent=origin?'FIRST MENTION':'THE CHAIN, IN ORDER';
       title.textContent=ch.label;
-      const short=ch.steps.length-ch.attested;
-      sub.textContent=ch.attested+' of '+ch.steps.length+' steps are attested by a direct cross-reference between those chapters'
-        +(short?'; the other '+(short>1?short+' are':'one is')+' the reading\u2019s own':', every one of them')
-        +'. Open a station to read it.';
+      if(origin){
+        sub.textContent=ch.attested+' of the '+ch.steps.length+' later passages '
+          +(ch.attested===1?'carries':'carry')+' a cross-reference back to '
+          +verseShort(ch.stations[0].verse)+'. The most pointed-to passage in this set is '
+          +verseShort(ch.top.verse)+'; the claimed origin ranks '+ch.rank+' of '+ch.stations.length+'.';
+      }else{
+        const short=ch.steps.length-ch.attested;
+        sub.textContent=ch.attested+' of '+ch.steps.length+' steps are attested by a direct cross-reference between those chapters'
+          +(short?'; the other '+(short>1?short+' are':'one is')+' the reading\u2019s own':', every one of them')
+          +'. Open a station to read it.';
+      }
       ch.stations.forEach((station,i)=>{
         const li=document.createElement('li');
         const head=document.createElement('div');head.className='link-head';
         const dot=document.createElement('span');dot.className='dot';dot.style.background=css('--scarlet');
         const ref=document.createElement('span');ref.className='ref';
-        ref.textContent=(i+1)+'. '+verseLabel(station.verse);
+        ref.textContent=(origin?(i?i+'. ':'origin · '):(i+1)+'. ')+verseLabel(station.verse);
         const n=document.createElement('span');n.className='n';
-        n.textContent=i===0?'':(ch.steps[i-1].attested?'linked':'no link');
+        if(!origin)n.textContent=i===0?'':(ch.steps[i-1].attested?'linked':'no link');
+        else if(i){const s=ch.steps[i-1];
+          n.textContent=s.back>0?'points back · '+s.back:(s.fwd>0?'forward only · '+s.fwd:'no link')}
+        else n.textContent='the claim';
         const plus=document.createElement('span');plus.className='plus';plus.textContent='+';
         head.append(dot,ref,n,plus);
         const body=document.createElement('div');body.className='link-body';body.hidden=true;
@@ -1343,6 +1470,9 @@ document.getElementById('colour').addEventListener('change',e=>{state.colour=e.t
   const gChain=document.createElement('optgroup');gChain.label='Named chains of passages';
   CHAINS.forEach(([name],i)=>{const o=document.createElement('option');o.value='chain:'+i;o.textContent=name;gChain.appendChild(o)});
   pick.appendChild(gChain);
+  const gOrigin=document.createElement('optgroup');gOrigin.label='First mention — a concept and where it begins';
+  ORIGINS.forEach(([name],i)=>{const o=document.createElement('option');o.value='origin:'+i;o.textContent=name;gOrigin.appendChild(o)});
+  pick.appendChild(gOrigin);
   const gWords=document.createElement('optgroup');gWords.label='Words in the text at both ends';
   THREADS.forEach(([name,words])=>{const o=document.createElement('option');o.value=words;o.textContent=name;gWords.appendChild(o)});
   const custom=document.createElement('option');custom.value='custom';custom.textContent='Words of my own\u2026';gWords.appendChild(custom);
@@ -1358,10 +1488,26 @@ document.getElementById('colour').addEventListener('change',e=>{state.colour=e.t
     buildChain(CHAINS[i][0],CHAINS[i][1]);
     renderBase();describe();note();
   };
+  const runOrigin=i=>{
+    state.thread=null;buildThread();
+    buildOrigin(ORIGINS[i][0],ORIGINS[i][1],ORIGINS[i][2],ORIGINS[i][3]);
+    renderBase();describe();note();
+  };
   const note=()=>{
     let el=document.getElementById('threadNote');
     if(!el){el=document.createElement('p');el.id='threadNote';el.className='thread-note';
       document.querySelector('.bar').after(el)}
+    if(state.chain&&state.chain.kind==='origin'){
+      const ch=state.chain,fwdOnly=ch.linked-ch.attested;
+      el.innerHTML='<b>'+ch.label+'</b> \u2014 the claimed first mention is <b>'+verseShort(ch.stations[0].verse)+'</b>. '+
+        'Which passage comes first is a reading and cannot be computed; what the data can test is whether the rest point back to it. '+
+        '<b>'+ch.attested+' of '+ch.steps.length+'</b> '+(ch.attested===1?'does':'do')+
+        (fwdOnly?', and '+fwdOnly+' more '+(fwdOnly>1?'are':'is')+' linked only in the other direction':'')+
+        '. The weight of the set falls on <b>'+verseShort(ch.top.verse)+'</b> ('+fmt(ch.topN)+
+        ' links from the others); the claimed origin ranks '+ch.rank+' of '+ch.stations.length+'. '+
+        'A low count does not refute the reading \u2014 it says the connection is the reader\u2019s rather than one the editors marked.';
+      return;
+    }
     if(state.chain){
       const ch=state.chain;
       el.innerHTML='<b>'+ch.label+'</b> \u2014 '+ch.stations.length+' passages, in canonical order. '+
@@ -1377,6 +1523,7 @@ document.getElementById('colour').addEventListener('change',e=>{state.colour=e.t
   };
   pick.addEventListener('change',e=>{
     if(e.target.value.startsWith('chain:')){wrap.hidden=true;runChain(+e.target.value.slice(6));return}
+    if(e.target.value.startsWith('origin:')){wrap.hidden=true;runOrigin(+e.target.value.slice(7));return}
     if(e.target.value==='custom'){wrap.hidden=false;input.focus();return}
     wrap.hidden=!e.target.value;
     if(!e.target.value){state.chain=null;run('',''); return}

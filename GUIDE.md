@@ -88,6 +88,21 @@ the cross-references, and it can just as easily show that they do not. The
 supplied threads are the scarlet thread of redemption, covenant, shepherd and
 flock, light and darkness, and temple and tabernacle.
 
+First mention — a concept and where it begins: the law of first mention holds
+that a concept's first occurrence governs what follows. The page supplies the
+claimed origin and the later passages belonging to the concept, both of which
+are readings, and tests the one part that is data: whether those later passages
+carry a cross-reference back to the origin. The origin is turned to twelve
+o'clock with a spoke to every other passage, solid where it is pointed back to
+and dashed where it is not; in the matrix the origin's row is the claim and its
+column is what it points at, so one-way traffic is visible. Four sets are
+supplied — marriage, where all four later passages point back because the New
+Testament quotes Genesis 2:24 outright; the serpent; blood, the example usually
+given for the rule, where only two of nine point back; and the widow and the
+fatherless, where one of eighteen does. A low count does not refute a reading.
+It reports that the connection is the reader's rather than one the
+cross-reference editors marked.
+
 Named chains of passages: a fixed list of references in canonical order,
 numbered around the rim and joined step by step. Six are supplied — the scarlet
 thread as it is usually told, the seed promise, the Passover lamb, the
