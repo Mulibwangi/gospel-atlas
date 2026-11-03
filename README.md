@@ -159,6 +159,15 @@ is the distinction itself, drawn rather than argued.
 
 ![The suffering servant, every step attested](docs/images/chain-servant.png)
 
+**Every book, named.** All sixty-six are labelled in the circle and along the
+arc. Where the canon is denser than the type, a name moves instead of vanishing:
+out to a second ring, down to a lower row, or a little to one side, with a leader
+line back to where it belongs — so Jude and III John sit on the outer ring while
+Hebrews and James stay on the inner one. Running the pointer along the books acts
+as a magnifier: the one under it swells to its full name while its neighbours
+shrink to their abbreviations to make room. Positions never change, so nothing
+jumps as the pointer travels.
+
 **Test a first mention.** The law of first mention says that a concept's first
 occurrence in Scripture governs what follows, and that you should begin your
 study there. Stated that way it is not a query — it is an assertion no dataset

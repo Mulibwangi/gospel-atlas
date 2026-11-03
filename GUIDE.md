@@ -88,6 +88,15 @@ the cross-references, and it can just as easily show that they do not. The
 supplied threads are the scarlet thread of redemption, covenant, shepherd and
 flock, light and darkness, and temple and tabernacle.
 
+Every one of the sixty-six books is named in the circle and along the arc. Where
+the canon is denser than the type — Obadiah, Philemon and Jude are a chapter
+each, a pixel or two wide — a name moves rather than disappears: further out from
+the ring, further down beneath the arc, or a little to one side, always with a
+faint leader line back to the book it belongs to. Moving the pointer along the
+books works as a magnifier: the book under it swells to its full name and its
+neighbours shrink back to their abbreviations to make the room, and nothing
+shifts position as you travel, so the ring stays still under the eye.
+
 First mention — a concept and where it begins: the law of first mention holds
 that a concept's first occurrence governs what follows. The page supplies the
 claimed origin and the later passages belonging to the concept, both of which

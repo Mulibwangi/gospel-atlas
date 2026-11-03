@@ -583,7 +583,7 @@ function sizes(){
 }
 function layout(){
   if(state.view==='arc'){
-    const pad=26,baseY=H-74,barMax=44;
+    const pad=26,baseY=H-178,barMax=44;   // room below for three rows of upright book names
     geom.arc={pad,baseY,barMax,step:(W-pad*2)/N};
     geom.x=i=>pad+(i+0.5)*geom.arc.step;
   }else if(state.view==='circle'){
@@ -591,7 +591,7 @@ function layout(){
     const focused=state.focus?state.focus.to-state.focus.from+1:0;
     // With a focus, the dial is the book: one full revolution for it, with the rest
     // of the canon kept as a context ring outside. Without one, the ring is the canon.
-    const R=Math.min(W,H)*(focused?0.34:0.32);   // room for three tiers of radial labels
+    const R=Math.min(W,H)*(focused?0.33:0.295);  // room outside for two tiers of radial names
     const Rin=focused?R*0.54:0;
     geom.circle={cx,cy,R,Rin,focused,barMax:R*(focused?0.085:0.14)};
     geom.angle=i=>{                                   // canon ring, Genesis 1 at the top
@@ -683,6 +683,18 @@ function drawLink(c,l,alpha,width){
   }
   c.stroke();c.globalAlpha=1;
 }
+// A fisheye over the book names: the book under the pointer swells to its full
+// name, and its immediate neighbours shrink to their abbreviations to make the
+// room for it. Positions never move, so nothing jumps as the pointer travels.
+function hoverBook(){
+  const f=state.locked!==null?state.locked:state.hover;
+  return (f===null||f===undefined)?-1:bookOfChapter[f];
+}
+function bookMag(bi){
+  const h=hoverBook(); if(h<0)return 1;
+  const d=Math.abs(bi-h);
+  return d===0?2.05:d===1?0.66:d===2?0.76:d===3?0.88:1;
+}
 function drawFrame(c){
   const line=css('--line'),faint=css('--faint'),ink=css('--ink');
   c.save();c.font='9px '+css('--sans');c.textBaseline='middle';
@@ -693,14 +705,57 @@ function drawFrame(c){
       c.fillStyle=bookOfChapter[i]%2?line:faint;c.globalAlpha=.75;
       c.fillRect(x-step*0.42,baseY+3,Math.max(.8,step*0.84),h);
     }
-    c.globalAlpha=1;c.fillStyle=faint;
-    [['Genesis','Gen'],['Psalms','Ps'],['Isaiah','Isa'],['Matthew','Matt'],['Revelation','Rev']].forEach(([name,code])=>{
+    c.globalAlpha=1;
+    ['Gen','Ps','Isa','Matt','Rev'].forEach(code=>{
       const b=BOOKS.find(x=>x.code===code);if(!b)return;
       const x=geom.x(b.first);
-      c.globalAlpha=.4;c.fillRect(x,baseY+3,.7,barMax+12);c.globalAlpha=1;
-      c.textAlign=code==='Rev'?'right':'left';
-      c.fillText(name,code==='Rev'?x-3:x+3,baseY+barMax+22);
+      c.fillStyle=faint;c.globalAlpha=.4;c.fillRect(x,baseY+3,.7,barMax+12);c.globalAlpha=1;
     });
+    // Every book named here too. The names are set vertically, reading upward, so a
+    // label's footprint is a narrow strip whatever its length — the only way sixty-six
+    // of them fit along a line where Obadiah is one chapter wide. Two rows absorb the
+    // dense runs, and a row is spaced far enough below the one above to clear it.
+    const TILT=-Math.PI/2;
+    const rows=[baseY+barMax+10,baseY+barMax+58,baseY+barMax+90];
+    const caps=[46,28,28];               // each row must clear the one below it
+    const used=rows.map(()=>-Infinity);
+    c.font='8px '+css('--sans');c.textBaseline='middle';
+    const fits=(s,cap)=>c.measureText(s).width<=cap;
+    // Where the canon is denser than the type — Philemon, Jude and the letters of John
+    // are a chapter each, a pixel or two wide — a name is allowed to slide to the right
+    // of its book and keep a leader line back to it. Nothing is dropped and nothing lies
+    // about where it belongs.
+    const half=4,DODGE=30;
+    const laid=BOOKS.map((b,bi)=>{
+      const x=geom.x(b.first+b.chapters/2-0.5),full=shortName(b.name);
+      let name=null,row=-1,at=x;
+      for(let t=0;t<rows.length&&row<0;t++){
+        const want=Math.max(x,used[t]+half);
+        if(want-x<=DODGE){used[t]=want+half;row=t;at=want;name=fits(full,caps[t])?full:b.code}
+      }
+      if(row<0){
+        let best=0;for(let t=1;t<rows.length;t++)if(used[t]<used[best])best=t;
+        name=b.code;row=best;at=used[best]+half;used[best]=at+half;
+      }
+      return {b,bi,x,at,name,row};
+    });
+    laid.forEach(({b,bi,x,at,name,row})=>{
+      const lit=state.focus&&b.first>=state.focus.from&&b.first+b.chapters-1<=state.focus.to;
+      const m=bookMag(bi),near=hoverBook()>=0,self=m>1;
+      if(row>0||at!==x){
+        c.strokeStyle=self?css('--accent'):faint;c.globalAlpha=self?.7:.3;c.lineWidth=.7;
+        c.beginPath();c.moveTo(x,baseY+barMax+6);
+        c.lineTo(x,rows[row]-9);c.lineTo(at,rows[row]-4);c.stroke();c.globalAlpha=1;
+      }
+      c.save();c.translate(at,rows[row]);c.rotate(TILT);
+      c.textAlign='right';
+      c.globalAlpha=self?1:(near?(m<1?.45:.7):1);
+      c.fillStyle=self?css('--accent'):(lit?css('--gold'):(bi>=NT?ink:faint));
+      c.font=(self||lit?'700 ':bi>=NT?'600 ':'')+(8*m).toFixed(1)+'px '+css('--sans');
+      c.fillText(self?shortName(b.name):(m<1?b.code:name),0,0);
+      c.globalAlpha=1;c.restore();
+    });
+    c.font='9px '+css('--sans');
   }else if(state.view==='circle'){
     const {R,Rin,barMax,focused,cx,cy}=geom.circle;
     // With a focus, the rim profiles where its links land; otherwise it shows chapter length.
@@ -720,34 +775,62 @@ function drawFrame(c){
     c.strokeStyle=faint;c.globalAlpha=.55;c.lineWidth=1;
     c.beginPath();c.moveTo(seam[0],seam[1]);c.lineTo(seamOut[0],seamOut[1]);c.stroke();
     c.globalAlpha=1;
-    // All sixty-six books are named. Each takes the first tier with room for it,
-    // dropping to the book's abbreviation before labels are allowed to collide.
-    const tiers=[R*1.01+barMax+11,R*1.01+barMax+23,R*1.01+barMax+35];
-    const filled=[-Infinity,-Infinity,-Infinity];
+    // All sixty-six books are named, without exception. Each takes the innermost tier
+    // with room for it, using its abbreviation there before being pushed further out,
+    // and a book that fits nowhere is forced into the emptiest tier rather than dropped.
+    // Angular width is measured against each tier's own circumference: the outer rings
+    // are longer and hold more.
+    // A radial name occupies its line height sideways and its length outwards, so the
+    // angular room it needs is the same whether it reads "Job" or "Deuteronomy" — and
+    // two tiers have to stand further apart than the longest name, or an inner label
+    // runs straight through an outer one.
+    const tiers=[R*1.01+barMax+11,R*1.01+barMax+76];
+    const filled=tiers.map(()=>-Infinity);
     c.textBaseline='middle';c.font='9px '+css('--sans');
-    BOOKS.forEach((b,bi)=>{
-      const lit=focused&&b.first>=state.focus.from&&b.first+b.chapters-1<=state.focus.to;
+    const halfAt=(s,t)=>5.5/(Math.PI*2*tiers[t]);
+    // Packed at the base size so a tier never changes under the pointer; the fisheye
+    // below only changes how big each label is drawn, never where it sits.
+    // A name may slide a little way round the ring, but never past the seam at the end
+    // of Revelation: the angle clamps there, and a label pushed over it would pile onto
+    // whatever else was pushed over it.
+    const DODGE=0.026,LIM=(N-0.6)/N;
+    const placed=BOOKS.map((b,bi)=>{
       const mid=b.first+b.chapters/2,u=mid/N;
-      let name=null,tier=-1;
-      for(const candidate of [shortName(b.name),b.code]){
-        const half=(c.measureText(candidate).width/2+3)/(Math.PI*2*tiers[0]);
-        for(let t=0;t<3;t++)if(u-half>=filled[t]){filled[t]=u+half;tier=t;name=candidate;break}
-        if(tier>=0)break;
+      let name=null,tier=-1,at=u;
+      for(let t=0;t<tiers.length&&tier<0;t++){
+        for(const candidate of [shortName(b.name),b.code]){
+          const half=halfAt(candidate,t),want=Math.max(u,filled[t]+half);
+          if(want<=LIM&&want-u<=DODGE){filled[t]=want+half;tier=t;name=candidate;at=want;break}
+        }
       }
-      if(tier<0)return;
-      const ang=geom.angle(mid),p=geom.point(mid,tiers[tier]);
+      if(tier<0){
+        let best=0;for(let t=1;t<tiers.length;t++)if(filled[t]<filled[best])best=t;
+        name=b.code;tier=best;
+        at=Math.min(LIM,filled[best]+halfAt(name,best));filled[best]=at+halfAt(name,best);
+      }
+      return {b,bi,mid,at:at*N,name,tier};
+    });
+    placed.forEach(({b,bi,mid,at,name,tier})=>{
+      const lit=focused&&b.first>=state.focus.from&&b.first+b.chapters-1<=state.focus.to;
+      const m=bookMag(bi),near=hoverBook()>=0;
+      const ang=geom.angle(at),p=geom.point(at,tiers[tier]);
       if(!isFinite(p[0])||!isFinite(p[1]))return;
-      if(tier>0){
-        const q=geom.point(mid,R*1.01+barMax+4),q2=geom.point(mid,tiers[tier]-4);
-        c.strokeStyle=faint;c.globalAlpha=.3;c.lineWidth=.7;
-        c.beginPath();c.moveTo(q[0],q[1]);c.lineTo(q2[0],q2[1]);c.stroke();c.globalAlpha=1;
+      if(tier>0||at!==mid){
+        const q=geom.point(mid,R*1.01+barMax+4),q2=geom.point(mid,tiers[tier]-9),
+              q3=geom.point(at,tiers[tier]-4);
+        c.strokeStyle=m>1?css('--accent'):faint;c.globalAlpha=m>1?.7:.3;c.lineWidth=.7;
+        c.beginPath();c.moveTo(q[0],q[1]);c.lineTo(q2[0],q2[1]);c.lineTo(q3[0],q3[1]);
+        c.stroke();c.globalAlpha=1;
       }
       c.save();c.translate(p[0],p[1]);
       const flip=Math.cos(ang)<0;c.rotate(ang+(flip?Math.PI:0));
       c.textAlign=flip?'right':'left';
-      c.fillStyle=lit?css('--gold'):(bi>=NT?ink:faint);
-      c.font=(lit?'700 ':bi>=NT?'600 ':'')+'9px '+css('--sans');
-      c.fillText(name,0,0);c.restore();
+      const self=m>1;
+      c.globalAlpha=self?1:(near?(m<1?.45:.7):1);
+      c.fillStyle=self?css('--accent'):(lit?css('--gold'):(bi>=NT?ink:faint));
+      c.font=(self||lit?'700 ':bi>=NT?'600 ':'')+(9*m).toFixed(1)+'px '+css('--sans');
+      c.fillText(self?shortName(b.name):(m<1?b.code:name),0,0);
+      c.globalAlpha=1;c.restore();
     });
     if(focused){
       // The dial: one revolution for the book in focus, its chapters as the scale.
