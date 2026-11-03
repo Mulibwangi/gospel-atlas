@@ -131,7 +131,7 @@ verse.
 
 ![The scarlet thread as a chain of passages](docs/images/chain.png)
 
-Six chains ship with the page, and the interesting result is that they do not
+Seven chains ship with the page, and the interesting result is that they do not
 all hold equally well:
 
 | Chain | Stations | Steps attested |
@@ -142,6 +142,7 @@ all hold equally well:
 | The kinsman-redeemer | 17 | 13 of 16 |
 | The temple and the dwelling of God | 17 | 13 of 16 |
 | Scarlet thread — the passages | 15 | 9 of 14 |
+| The exchange — he was made sin | 12 | 8 of 11 |
 
 The suffering servant is drawn entirely in solid line: Isaiah 42 through 53 and
 then Matthew, Mark, Luke, John, Acts, Romans and 1 Peter, every consecutive
@@ -209,6 +210,16 @@ vocabulary will always score low. "Widow" first appears at Genesis 38:11 and
 "fatherless" at Exodus 22:22; a word search finds neither Hagar nor the point.
 That gap between what a concept means and where its words begin is the reason
 this is worth drawing rather than asserting.
+
+The serpent set repays one more look, because the gap it leaves is not noise.
+John 3:14's strongest link in the whole dataset is Numbers 21:7–9, the serpent
+of brass, and Numbers 21:8 and 21:9 both point back at it — while John 3:14
+touches Genesis 3 nowhere. The editors are treating these as two different
+serpents, and the break falls exactly where the sign inverts: the emblem of the
+curse becomes the means of healing. That inversion is what the chain **The
+exchange — he was made sin** follows, from the fiery serpent on the standard
+through Hezekiah breaking it in pieces to "him who knew no sin he made to be
+sin on our behalf".
 
 ![The origin's row: hollow boxes across the whole canon](docs/images/first-mention-matrix.png)
 
