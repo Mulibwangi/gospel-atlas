@@ -77,6 +77,14 @@ unit shows the first verse containing your words.
 not. It reports the chosen index's assignments: a unit absent from one Gospel
 may still share details with something that Gospel records elsewhere.
 
+"Thread" traces a theme through the links. Choose one, or type words of your
+own, and every link whose Scripture at both ends carries one of those words is
+drawn in scarlet while the rest of the field recedes. A thread is a word search
+over the ASV and nothing more: it shows where those words meet across the
+cross-references, and it can just as easily show that they do not. The supplied
+threads are the scarlet thread of redemption, covenant, shepherd and flock,
+light and darkness, and temple and tabernacle.
+
 "Colour-blind palette" switches the five colours to the Okabe-Ito set, so no
 distinction depends on telling red from green. The Mt / Mk / Lk / Jn badges
 carry the same information as text either way. The choice is remembered in this

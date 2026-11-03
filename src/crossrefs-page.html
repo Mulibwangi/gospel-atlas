@@ -12,18 +12,18 @@
 :root{
   --paper:#f7f6f1; --panel:#eeeee6; --line:#dedfd5; --ink:#26362f; --muted:#747b73; --faint:#949b91;
   --gold:#b49a4b; --accent:#2e4338; --field:#fffef9;
-  --matt:#3e7598; --mark:#b25c51; --luke:#4e8875; --john:#866a9f;
+  --matt:#3e7598; --mark:#b25c51; --luke:#4e8875; --john:#866a9f; --scarlet:#a4161a;
   --serif:Georgia,'Times New Roman',serif;
   --sans:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   color-scheme:light;
 }
 @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --paper:#13181a; --panel:#1b2124; --line:#2c3438; --ink:#e6e8e2; --muted:#9aa49d; --faint:#79837c;
-  --gold:#d4b85e; --accent:#cfe0cf; --field:#1f2629; color-scheme:dark;
+  --gold:#d4b85e; --accent:#cfe0cf; --field:#1f2629; --scarlet:#e5484d; color-scheme:dark;
 }}
 :root[data-theme="dark"]{
   --paper:#13181a; --panel:#1b2124; --line:#2c3438; --ink:#e6e8e2; --muted:#9aa49d; --faint:#79837c;
-  --gold:#d4b85e; --accent:#cfe0cf; --field:#1f2629; color-scheme:dark;
+  --gold:#d4b85e; --accent:#cfe0cf; --field:#1f2629; --scarlet:#e5484d; color-scheme:dark;
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}  /* beats .opt{display:flex} */
@@ -53,6 +53,10 @@ h1 em{color:var(--gold);font-style:italic}
 .opt{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted)}
 .opt select{color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:4px;padding:7px 9px;font-size:11px}
 .opt input[type=range]{width:88px;accent-color:var(--gold)}
+.thread-words input{background:var(--field);border:1px solid var(--line);border-radius:4px;padding:7px 9px;color:var(--ink);font-size:11px;width:270px;max-width:46vw}
+.thread-words button{background:var(--scarlet);color:#fff;border:0;border-radius:4px;padding:8px 12px;font-size:11px;cursor:pointer}
+.thread-note{margin:10px 2px 0;font-size:10px;line-height:1.6;color:var(--muted)}
+.thread-note b{color:var(--scarlet)}
 .opt label{display:flex;align-items:center;gap:7px;cursor:pointer}
 .opt input[type=checkbox]{accent-color:var(--accent);width:14px;height:14px}
 .chip{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:var(--paper);border-radius:20px;padding:5px 7px 5px 13px;font-size:11px}
@@ -170,6 +174,8 @@ const pairCount=(a,b)=>{const r=PAIR_COUNT.get(a*2000+b);return r?r[2]:0};
 const bookOfChapter=new Int16Array(N),chapterNumber=new Int16Array(N);
 BOOKS.forEach((b,bi)=>{for(let c=0;c<b.chapters;c++){bookOfChapter[b.first+c]=bi;chapterNumber[b.first+c]=c+1}});
 const shortName=n=>n.split(' of ')[0];
+const textNorm=t=>(t||'').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'')
+  .replace(/æ/g,'ae').replace(/œ/g,'oe').replace(/[^a-z0-9]+/g,' ').trim();
 const label=i=>BOOKS[bookOfChapter[i]].name+' '+chapterNumber[i];
 const verseLabel=v=>{const c=CHAPTER_OF_VERSE[v];return label(c)+':'+(v-CHAPTER_START[c]+1)};
 const verseRange=(v,span)=>span?verseLabel(v)+'\u2013'+(v+span-CHAPTER_START[CHAPTER_OF_VERSE[v+span]]+1):verseLabel(v);
@@ -177,6 +183,43 @@ const maxVerses=Math.max.apply(null,CHAPTERS);
 const sources=[...new Set(LINKS.map(l=>l[0]))].sort((a,b)=>a-b);
 const sourceSlot=new Map(sources.map((c,i)=>[c,i]));
 const fmt=n=>n.toLocaleString('en-GB');
+
+// A thread is a word search over the text, not a doctrine: a link is on the thread
+// when the ASV at both of its ends carries one of the words. The words are the claim.
+const THREADS=[
+  ['Scarlet thread','blood lamb sacrifice atonement redeem ransom offering slain'],
+  ['Covenant','covenant oath promise sware swear'],
+  ['Shepherd and flock','shepherd sheep flock pasture lamb'],
+  ['Light and darkness','light darkness lamp shine dark'],
+  ['Temple and tabernacle','temple tabernacle altar holy place sanctuary']
+];
+let normText=null;                                  // the ASV, normalised, built once
+let threadVerse=null,threadPairs=null,threadLinkCount=0;
+function buildThread(){
+  threadVerse=null;threadPairs=null;threadLinkCount=0;
+  if(!state.thread||!state.thread.words.length)return;
+  if(!normText){
+    normText=new Array(TEXT.length);
+    for(let v=0;v<TEXT.length;v++)normText[v]=' '+textNorm(TEXT[v])+' ';
+  }
+  const words=state.thread.words.map(w=>' '+w);
+  threadVerse=new Uint8Array(TEXT.length);
+  for(let v=0;v<TEXT.length;v++){
+    const t=normText[v];
+    for(const w of words)if(t.indexOf(w)>=0){threadVerse[v]=1;break}
+  }
+  threadPairs=new Map();
+  for(let i=0;i<COUNT;i++){
+    if(!threadVerse[VL_FROM[i]])continue;
+    let hit=false;
+    for(let v=VL_TO[i];v<=VL_TO[i]+VL_SPAN[i];v++)if(threadVerse[v]){hit=true;break}
+    if(!hit)continue;
+    threadLinkCount++;
+    const key=CHAPTER_OF_VERSE[VL_FROM[i]]*2000+CHAPTER_OF_VERSE[VL_TO[i]];
+    threadPairs.set(key,(threadPairs.get(key)||0)+1);
+  }
+}
+const onThread=l=>threadPairs?threadPairs.has(l[0]*2000+l[1]):false;
 
 root.innerHTML=`
   <header>
@@ -207,6 +250,15 @@ root.innerHTML=`
         <option value="testament">By target testament</option>
         ${COMPLETE?'':'<option value="gospel">By Gospel</option>'}
       </select>
+    </div>
+    <div class="opt">Thread
+      <select id="threadPick" aria-label="Trace a thread through the links">
+        <option value="">None</option>
+      </select>
+    </div>
+    <div class="opt thread-words" id="threadWords" hidden>
+      <input id="threadInput" type="text" aria-label="Words that define the thread" spellcheck="false">
+      <button type="button" id="threadApply">Trace</button>
     </div>
     <div class="opt"><label><input type="checkbox" id="flow" checked> Show direction</label></div>
     <div class="opt"><label><input type="checkbox" id="cbsafe"> Colour-blind safe</label></div>
@@ -272,7 +324,7 @@ const SECTIONS=[
   const a=BOOKS.find(b=>b.code===from),z=BOOKS.find(b=>b.code===to);
   return a&&z?{name,from:a.first,to:z.first+z.chapters-1,alias}:null;
 }).filter(Boolean);
-const state={view:'circle',colour:'distance',cbsafe:false,flow:true,min:COMPLETE?2:1,hover:null,locked:null,focus:null,dir:'both'};
+const state={view:'circle',colour:'distance',cbsafe:false,flow:true,thread:null,min:COMPLETE?2:1,hover:null,locked:null,focus:null,dir:'both'};
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const GOSPEL={Matt:'--matt',Mark:'--mark',Luke:'--luke',John:'--john'};
 const CB={Matt:'#0072b2',Mark:'#d55e00',Luke:'#009e73',John:'#cc79a7'};
@@ -585,41 +637,58 @@ function renderBase(){
   linkLayer.width=Math.max(1,W);linkLayer.height=Math.max(1,H);
   const c=linkLayer.getContext('2d');
   const dark=isDark();
+  const threading=!!threadPairs;
   const alpha=state.view==='matrix'?(dark?.72:.6):(dark?.26:.2);
+  const dim=threading?(state.view==='matrix'?.22:.16):1;
   c.lineCap='round';c.lineWidth=state.view==='circle'?.7:.6;
   const list=[];for(const l of LINKS)if(visible(l))list.push(l);
+  if(threading)list.sort((a,b)=>(onThread(a)?1:0)-(onThread(b)?1:0));   // thread last, so it lies on top
   const CHUNK=state.view==='matrix'?80000:7000;
   let i=0;progress=list.length?0:1;
   (function step(){
     if(token!==renderToken)return;
     const stop=Math.min(list.length,i+CHUNK);
     if(state.view==='matrix'){
-      for(;i<stop;i++)drawLink(c,list[i],alpha,.6);
+      for(;i<stop;i++){
+        const l=list[i],lit=threading&&onThread(l);
+        c.fillStyle=lit?css('--scarlet'):linkColour(l);
+        c.globalAlpha=lit?1:alpha*dim;
+        const m=geom.matrix;
+        if(sourceSlot.has(l[0]))c.fillRect(m.padL+sourceSlot.get(l[0])*m.cw,m.padT+l[1]*m.ch,Math.max(lit?2:1.2,m.cw),Math.max(lit?2:1.2,m.ch));
+        c.globalAlpha=1;
+      }
     }else if(!state.flow){
       const buckets=new Map();
       for(;i<stop;i++){
-        const l=list[i],colour=linkColour(l);
+        const l=list[i],colour=threading&&onThread(l)?css('--scarlet'):linkColour(l);
         let path=buckets.get(colour);
         if(!path){path=new Path2D();buckets.set(colour,path)}
         curveInto(path,l);
       }
-      c.globalAlpha=alpha;
-      for(const [colour,path] of buckets){c.strokeStyle=colour;c.stroke(path)}
+      const scarlet=css('--scarlet');
+      for(const [colour,path] of buckets){
+        const lit=colour===scarlet&&threading;
+        c.globalAlpha=lit?Math.min(1,alpha*4.5):alpha*dim;
+        c.lineWidth=(state.view==='circle'?.7:.6)*(lit?1.9:1);
+        c.strokeStyle=colour;c.stroke(path);
+      }
       c.globalAlpha=1;
     }else{
       const buckets=[new Map(),new Map(),new Map()];
       for(;i<stop;i++){
-        const l=list[i],colour=linkColour(l),parts=thirds(l);
+        const l=list[i],colour=threading&&onThread(l)?css('--scarlet'):linkColour(l),parts=thirds(l);
         for(let k=0;k<3;k++){
           let path=buckets[k].get(colour);
           if(!path){path=new Path2D();buckets[k].set(colour,path)}
           segmentInto(path,parts[k]);
         }
       }
-      const fade=[1,.58,.26],thick=[1.25,.85,.5],w=state.view==='circle'?.7:.6;
-      for(let k=0;k<3;k++){
-        c.globalAlpha=alpha*fade[k];c.lineWidth=w*thick[k];
-        for(const [colour,path] of buckets[k]){c.strokeStyle=colour;c.stroke(path)}
+      const fade=[1,.58,.26],thick=[1.25,.85,.5],w=state.view==='circle'?.7:.6,scarlet=css('--scarlet');
+      for(let k=0;k<3;k++)for(const [colour,path] of buckets[k]){
+        const lit=colour===scarlet&&threading;
+        c.globalAlpha=(lit?Math.min(1,alpha*4.5):alpha*dim)*fade[k];
+        c.lineWidth=w*thick[k]*(lit?1.9:1);
+        c.strokeStyle=colour;c.stroke(path);
       }
       c.globalAlpha=1;c.lineWidth=w;
     }
@@ -793,6 +862,28 @@ function describe(){
           pair:[state.focus.from,state.focus.to,b.first,b.first+b.chapters-1],
           title:state.focus.label+' \u2194 '+shortName(b.name),extra:turn
         }));
+      });
+      return;
+    }
+    if(threadPairs&&!state.focus){
+      eyebrow.textContent='ALONG THE THREAD';
+      title.textContent=state.thread.label;
+      const totals=new Map();
+      for(const l of LINKS)if(visible(l)&&onThread(l)){
+        totals.set(l[0],(totals.get(l[0])||0)+l[2]);totals.set(l[1],(totals.get(l[1])||0)+l[2]);
+      }
+      sub.textContent=totals.size
+        ?fmt(threadLinkCount)+' links carry these words at both ends, touching '+fmt(totals.size)+' chapters.'
+        :'No links carry these words at both ends.';
+      [...totals.entries()].sort((a,b)=>b[1]-a[1]).slice(0,16).forEach(([ci,n])=>{
+        const li=document.createElement('li');
+        const head=document.createElement('div');head.className='link-head';
+        const dot=document.createElement('span');dot.className='dot';dot.style.background=css('--scarlet');
+        const ref=document.createElement('span');ref.className='ref';ref.textContent=label(ci);
+        const cnt=document.createElement('span');cnt.className='n';cnt.textContent=fmt(n)+' links';
+        head.append(dot,ref,cnt);li.appendChild(head);
+        head.addEventListener('click',()=>select(ci));
+        list.appendChild(li);
       });
       return;
     }
@@ -1024,6 +1115,35 @@ document.querySelectorAll('.views button').forEach(b=>b.addEventListener('click'
   render();describe();
 }));
 document.getElementById('colour').addEventListener('change',e=>{state.colour=e.target.value;renderBase();legend();describe()});
+(function(){
+  const pick=document.getElementById('threadPick'),wrap=document.getElementById('threadWords'),
+        input=document.getElementById('threadInput'),apply=document.getElementById('threadApply');
+  THREADS.forEach(([name,words])=>{const o=document.createElement('option');o.value=words;o.textContent=name;pick.appendChild(o)});
+  const custom=document.createElement('option');custom.value='custom';custom.textContent='Words of my own\u2026';pick.appendChild(custom);
+  const run=(label,words)=>{
+    const list=textNorm(words).split(' ').filter(w=>w.length>=3);
+    state.thread=list.length?{label,words:list}:null;
+    buildThread();renderBase();describe();note();
+  };
+  const note=()=>{
+    let el=document.getElementById('threadNote');
+    if(!el){el=document.createElement('p');el.id='threadNote';el.className='thread-note';
+      document.querySelector('.bar').after(el)}
+    if(!state.thread){el.remove();return}
+    el.innerHTML='<b>'+state.thread.label+'</b> \u2014 '+fmt(threadLinkCount)+' of '+fmt(COUNT)+
+      ' links have one of <em>'+state.thread.words.join(', ')+'</em> in the text at both ends. '+
+      'This is a word search over the ASV, not a doctrine: it shows where those words meet across the links, and the words are yours to change.';
+  };
+  pick.addEventListener('change',e=>{
+    if(e.target.value==='custom'){wrap.hidden=false;input.focus();return}
+    wrap.hidden=!e.target.value;
+    if(!e.target.value){run('',''); return}
+    input.value=e.target.value;
+    run(pick.options[pick.selectedIndex].textContent,e.target.value);
+  });
+  apply.addEventListener('click',()=>run('My thread',input.value));
+  input.addEventListener('keydown',e=>{if(e.key==='Enter')run('My thread',input.value)});
+})();
 document.getElementById('flow').addEventListener('change',e=>{state.flow=e.target.checked;renderBase()});
 document.getElementById('cbsafe').addEventListener('change',e=>{state.cbsafe=e.target.checked;renderBase();legend();describe()});
 document.getElementById('minlinks').addEventListener('input',e=>{

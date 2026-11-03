@@ -96,6 +96,23 @@ reading the Atlas gives for the Gospels.
 
 ![Revelation turned to twelve o'clock](docs/images/crossrefs-book.png)
 
+**Trace a thread.** Pick a thread and the field recedes to a wash while the
+links that carry it are drawn in scarlet over the top. A link joins a thread
+when the ASV text at **both** of its ends contains one of the thread's words —
+so a thread is a word search, not a doctrine, and the page says so. The words
+are yours to change.
+
+The scarlet thread — blood, lamb, sacrifice, atonement, redeem, ransom,
+offering, slain — runs through 6,525 of the 344,798 links, touching 485
+chapters. Its heaviest chapters come out as Leviticus 4, Exodus 29, Hebrews 9,
+Leviticus 7 and 16, Hebrews 10: the sacrificial system and the letter that
+reads it. In the matrix the shape is unmistakable — a scarlet block over the
+Torah, a scatter through the Prophets, and a bright band at the bottom left
+where Revelation reaches back to Genesis and Exodus. The reading is old; what
+is new is that you can watch the links either support it or fail to.
+
+![The scarlet thread through the matrix](docs/images/thread.png)
+
 The matrix is the only one of the three that keeps direction, so the asymmetry
 of the links is visible: who points at whom, rather than merely what is
 connected. Search a book or a chapter (`Isaiah 53`, `Ps 22`, `Jn 3`, and the
