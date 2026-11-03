@@ -89,13 +89,15 @@ supplied threads are the scarlet thread of redemption, covenant, shepherd and
 flock, light and darkness, and temple and tabernacle.
 
 Named chains of passages: a fixed list of references in canonical order,
-numbered around the rim and joined step by step. "Scarlet thread — the
-passages" holds the fifteen the reading usually names, from the coats of skins
-to Hebrews 9. The chain itself is a reading and the page says so; what the data
-decides is whether each step is attested. A step is drawn solid where the
-dataset has a direct cross-reference between those two chapters and dashed
-where it does not, and the page reports the count — nine of the fourteen steps
-are attested. In the matrix each step is one cell, filled or outlined. Open a
+numbered around the rim and joined step by step. Six are supplied — the scarlet
+thread as it is usually told, the seed promise, the Passover lamb, the
+suffering servant, the kinsman-redeemer, and the temple and the dwelling of
+God. Each chain is a reading and the page says so; what the data decides is
+whether each step is attested. A step is drawn solid where the dataset has a
+direct cross-reference between those two chapters and dashed where it does not,
+and the page reports the count. They differ: every one of the suffering
+servant's fifteen steps is attested, while nine of the scarlet thread's
+fourteen are. In the matrix each step is one cell, filled or outlined. Open a
 station to read its verse.
 
 "Colour-blind palette" switches the five colours to the Okabe-Ito set, so no

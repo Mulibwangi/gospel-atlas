@@ -123,16 +123,40 @@ Lamb of God, "It is finished", and the letter to the Hebrews that reads all of
 it backwards. Fifteen stations, numbered around the rim, drawn in order.
 
 What the data decides is not the chain but each step of it. A step is drawn
-solid where the dataset has a direct cross-reference between those two
-chapters and dashed where it does not, and the page says how many: **9 of the
-14 steps are attested**, the other five are the reading's own. Genesis 3 to
-Genesis 22 to Genesis 38 to the Passover is a line the editors did not draw;
-Joshua 2 to Joshua 6 to Matthew 1 to John 1 to John 19 to Hebrews 9 is one they
-did. In the matrix each step becomes a single cell — filled or outlined — so
-the whole chain is fourteen marks you can check one at a time. Open any station
-to read the verse.
+solid where the dataset has a direct cross-reference between those two chapters
+and dashed where it does not, and the page says how many. In the matrix each
+step becomes a single cell — filled or outlined — so the whole chain is a
+handful of marks you can check one at a time. Open any station to read the
+verse.
 
 ![The scarlet thread as a chain of passages](docs/images/chain.png)
+
+Six chains ship with the page, and the interesting result is that they do not
+all hold equally well:
+
+| Chain | Stations | Steps attested |
+| --- | --- | --- |
+| The suffering servant | 16 | **15 of 15** |
+| The Passover lamb | 13 | 11 of 12 |
+| The seed promise | 17 | 13 of 16 |
+| The kinsman-redeemer | 17 | 13 of 16 |
+| The temple and the dwelling of God | 17 | 13 of 16 |
+| Scarlet thread — the passages | 15 | 9 of 14 |
+
+The suffering servant is drawn entirely in solid line: Isaiah 42 through 53 and
+then Matthew, Mark, Luke, John, Acts, Romans and 1 Peter, every consecutive
+step already joined in the dataset. That chain is not an interpretation laid
+over the cross-references; it *is* the cross-references. The scarlet thread is
+the weakest of the six — Genesis 3 to Genesis 22 to Genesis 38 to the Passover
+is a line the editors never drew — and the difference between those two
+pictures, all solid against half dashed, is the thing worth looking at.
+
+That is not a verdict on the readings. The OpenBible editors were marking
+quotation and allusion, so a chain built on shared vocabulary scores well and
+one built on typology scores badly almost by construction. What the page offers
+is the distinction itself, drawn rather than argued.
+
+![The suffering servant, every step attested](docs/images/chain-servant.png)
 
 The matrix is the only one of the three that keeps direction, so the asymmetry
 of the links is visible: who points at whom, rather than merely what is
