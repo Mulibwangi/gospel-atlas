@@ -41,3 +41,14 @@
  .compare-hint{width:100%}
 }
 @media print{.compare-row,.search-note,.swipe-hint,.palette-toggle{display:none!important}.passage-grid{display:grid!important;overflow:visible!important}.passage-card{flex:none!important}}
+
+/* Order ribbons between the Gospel maps */
+.grid-wrap{position:relative}
+.ribbon-layer{position:absolute;inset:0;pointer-events:none;z-index:0}
+.gospel-grid{position:relative;z-index:1;background:transparent}
+.grid-wrap .gospel-card{background:#fffef9}
+.with-ribbons .gospel-grid{gap:62px}
+@media(max-width:1200px){.with-ribbons .gospel-grid{gap:44px}}
+@media(max-width:700px){.with-ribbons .gospel-grid{gap:12px}.with-ribbons .ribbon-layer{display:none}}
+.aligned .gospel-card{background:#fffef9}
+.aligned .canvas-frame canvas{cursor:crosshair}

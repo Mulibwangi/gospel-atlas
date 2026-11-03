@@ -53,6 +53,15 @@ Gospel Index. The other four colours identify units assigned only to Matthew,
 Mark, Luke or John in that index. The badges identify the exact combination.
 The colours describe the index, not an exact match of wording.
 
+Two switches under the maps change what they show. "Show order" draws a band
+between the Gospels for every shared story unit: a level band means both put the
+unit in the same place, a steep one means they do not, and the selected story's
+band is drawn solid. "Align parallels" rearranges the maps into synopsis order,
+one row per story unit, so parallels sit level across all four and a Gospel's
+silences appear as the blank space beside them. The two are alternatives; order
+bands are hidden when the maps are aligned, because aligned bands would all be
+level by construction.
+
 Click a square or choose a story to read the parallel passages. Click a verse
 number to view its outgoing cross-references. Arrow keys work when a map has
 keyboard focus. On a phone, swipe sideways to move between the four Gospels and

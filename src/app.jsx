@@ -27,8 +27,9 @@ const MIN_TEXT_QUERY=3;
 const icon=(name)=> name==='search'?<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>:<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>;
 function Mask({story}) {return <span className="mask" aria-label={BOOKS.filter(b=>story.sources[b]).map(b=>NAMES[b]).join(', ')}>{BOOKS.map(b=><span key={b} title={NAMES[b]} className={story.sources[b]?'present':''} style={{'--book':COLORS[b]}}>{SHORT[b]}</span>)}</span>}
 
-function GospelCanvas({book,verses,stories,selected,selectedVerse,onSelect,hover,onHover,matching,focus,columns,palette}) {
+function GospelCanvas({book,verses,stories,selected,selectedVerse,onSelect,hover,onHover,matching,focus,columns,palette,onSpans,alignment}) {
   const ref=useRef(null),frame=useRef(null),geometry=useRef([]),keyboard=useRef(0);
+  const byStory=useMemo(()=>{const m=new Map();for(const v of verses){const a=m.get(v.stories[0]);a?a.push(v):m.set(v.stories[0],[v])}return m},[verses]);
   const [width,setWidth]=useState(260),[height,setHeight]=useState(400);
   useEffect(()=>{const ro=new ResizeObserver(e=>setWidth(e[0].contentRect.width));ro.observe(frame.current);return()=>ro.disconnect()},[]);
   useEffect(()=>{
@@ -36,18 +37,39 @@ function GospelCanvas({book,verses,stories,selected,selectedVerse,onSelect,hover
     const left=24,right=10,step=(width-left-right)/columns,size=Math.max(2,step-1.35),gap=5;
     let y=14;
     const boxes=[],labels=[];
-    const chapters=[...new Set(verses.map(v=>v.chapter))];
-    for(const chapter of chapters){
-      const vs=verses.filter(v=>v.chapter===chapter);
-      labels.push({text:chapter,y:y+size/2});
-      vs.forEach((v,i)=>boxes.push({x:left+(i%columns)*step,y:y+Math.floor(i/columns)*step,w:size,h:size,v}));
-      y+=Math.ceil(vs.length/columns)*step+gap;
+    if(alignment){
+      // Every Gospel uses the same bands, so parallels sit on one row and the
+      // absences show as the empty space they are.
+      for(const band of alignment){
+        const vs=byStory.get(band.id)||[];
+        vs.forEach((v,i)=>boxes.push({x:left+(i%columns)*step,y:14+(band.startRow+Math.floor(i/columns))*step,w:size,h:size,v}));
+        if(band.label)labels.push({text:band.label,y:14+band.startRow*step+size/2});
+      }
+      y=14+alignment.total*step+10;
+    }else{
+      const chapters=[...new Set(verses.map(v=>v.chapter))];
+      for(const chapter of chapters){
+        const vs=verses.filter(v=>v.chapter===chapter);
+        labels.push({text:chapter,y:y+size/2});
+        vs.forEach((v,i)=>boxes.push({x:left+(i%columns)*step,y:y+Math.floor(i/columns)*step,w:size,h:size,v}));
+        y+=Math.ceil(vs.length/columns)*step+gap;
+      }
     }
-    const h=Math.ceil(y+8);setHeight(h);geometry.current=boxes;
+    const h=Math.ceil(alignment?y:y+8);setHeight(h);geometry.current=boxes;
+    // Where each story unit sits down this map, for the ribbons between the Gospels.
+    if(onSpans){
+      const spans=new Map();
+      for(const box of boxes){
+        const id=box.v.stories[0],had=spans.get(id);
+        if(had){had[0]=Math.min(had[0],box.y);had[1]=Math.max(had[1],box.y+box.h)}
+        else spans.set(id,[box.y,box.y+box.h]);
+      }
+      onSpans(book,spans,canvas);
+    }
     const dpr=window.devicePixelRatio||1;canvas.width=Math.ceil(width*dpr);canvas.height=Math.ceil(h*dpr);
     const ctx=canvas.getContext('2d');ctx.scale(dpr,dpr);ctx.clearRect(0,0,width,h);
     ctx.font='9px system-ui';ctx.textBaseline='middle';ctx.fillStyle='#8b8e88';
-    labels.forEach(l=>ctx.fillText(String(l.text).padStart(2,'0'),2,l.y));
+    labels.forEach(l=>ctx.fillText(alignment?String(l.text):String(l.text).padStart(2,'0'),2,l.y));
     const active=hover?.story ?? selected;
     for(const box of boxes){
       const sid=box.v.stories[0],s=stories[sid],isActive=sid===active;
@@ -60,7 +82,7 @@ function GospelCanvas({book,verses,stories,selected,selectedVerse,onSelect,hover
       if(box.v.id===selectedVerse){ctx.globalAlpha=1;ctx.fillStyle='#263e34';ctx.fillRect(box.x+box.w*.3,box.y+box.h*.3,box.w*.4,box.h*.4)}
     }
     ctx.globalAlpha=1;
-  },[width,verses,stories,selected,selectedVerse,hover,matching,focus,columns,book,palette]);
+  },[width,verses,stories,selected,selectedVerse,hover,matching,focus,columns,book,palette,onSpans,alignment,byStory]);
   function hit(e){const r=ref.current.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;return geometry.current.find(b=>x>=b.x-1&&x<=b.x+b.w+1&&y>=b.y-1&&y<=b.y+b.h+1)}
   function selectBox(box){if(box){keyboard.current=verses.indexOf(box.v);onSelect(box.v.stories[0],box.v.id)}}
   function move(e){const box=hit(e);onHover(box?{story:box.v.stories[0],verse:box.v.id,x:e.clientX,y:e.clientY}:null)}
@@ -87,6 +109,24 @@ function App({data}){
   const [selected,setSelected]=useState(initial),[selectedVerse,setSelectedVerse]=useState(openVerse);
   const [hover,setHover]=useState(null),[filter,setFilter]=useState('all'),[query,setQuery]=useState(''),[focus,setFocus]=useState(false),[columns,setColumns]=useState(40);
   const [compare,setCompare]=useState({a:'',b:''});
+  const [ribbons,setRibbons]=useState(false);
+  const [aligned,setAligned]=useState(false);
+  const spans=useRef({}),ribbonCanvas=useRef(null),gridWrap=useRef(null);
+  const [spanTick,setSpanTick]=useState(0);
+  const noteSpans=useMemo(()=>(book,map,el)=>{spans.current[book]={map,el};setSpanTick(t=>t+1)},[]);
+  // Synopsis order: one band per story unit, tall enough for whichever Gospel tells it
+  // at greatest length, so the four maps read across as well as down.
+  const alignment=useMemo(()=>{
+    if(!aligned)return null;
+    const bands=[];let row=0;
+    data.stories.forEach((story,i)=>{
+      const longest=Math.max(1,...BOOKS.map(b=>Math.ceil((story.sources[b]||[]).reduce((n,r)=>n+r.verses.length,0)/columns)));
+      bands.push({id:story.id,startRow:row,rows:longest,label:i%20===0?String(story.id).padStart(3,'0'):''});
+      row+=longest+0.4;
+    });
+    bands.total=row;
+    return bands;
+  },[aligned,data.stories,columns]);
   const [palette,setPalette]=useState(()=>{try{return localStorage.getItem('gospel-atlas-palette')==='accessible'?'accessible':'standard'}catch{return 'standard'}});
   Object.assign(COLORS,PALETTES[palette]);
   const [crossrefs,setCrossrefs]=useState(null),[crossError,setCrossError]=useState(''),[crossScope,setCrossScope]=useState('all'),[crossLimit,setCrossLimit]=useState(12);
@@ -140,6 +180,47 @@ function App({data}){
   useEffect(()=>{const el=reader.current?.querySelector('.active-verse');if(el){const box=el.parentElement;const top=el.getBoundingClientRect().top-box.getBoundingClientRect().top+box.scrollTop;box.scrollTop=Math.max(0,top-8)}},[selected,currentVerse]);
   useEffect(()=>{document.title=`${s.title} · Gospel Atlas`;const u=new URL(location.href);u.searchParams.set('story',selected);if(currentVerse)u.searchParams.set('verse',currentVerse);else u.searchParams.delete('verse');(()=>{try{history.replaceState(null,'',u)}catch{}})()},[selected,s.title,currentVerse]);
   useEffect(()=>{if(!shareMessage)return;const t=setTimeout(()=>setShareMessage(''),2500);return()=>clearTimeout(t)},[shareMessage]);
+  // Bands joining the same story unit across the four maps. Drawn behind the cards,
+  // so only the gutters show them: a horizontal band means both Gospels put the unit
+  // in the same place, a steep one means they do not.
+  useEffect(()=>{
+    const canvas=ribbonCanvas.current,wrap=gridWrap.current;
+    if(!canvas||!wrap)return;
+    const box=wrap.getBoundingClientRect();
+    const dpr=window.devicePixelRatio||1;
+    canvas.width=Math.ceil(box.width*dpr);canvas.height=Math.ceil(box.height*dpr);
+    canvas.style.width=box.width+'px';canvas.style.height=box.height+'px';
+    const c=canvas.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);
+    c.clearRect(0,0,box.width,box.height);
+    if(!ribbons||aligned)return;
+    const place={};
+    for(const b of BOOKS){
+      const entry=spans.current[b];
+      if(!entry||!entry.el)return;
+      const r=entry.el.getBoundingClientRect();
+      place[b]={map:entry.map,left:r.left-box.left,right:r.right-box.left,top:r.top-box.top};
+    }
+    const band=(story,alpha,colour)=>{
+      for(let i=0;i<BOOKS.length-1;i++){
+        const A=place[BOOKS[i]],B=place[BOOKS[i+1]];
+        const a=A.map.get(story.id),z=B.map.get(story.id);
+        if(!a||!z)continue;
+        const x1=A.right,x2=B.left,mx=(x1+x2)/2;
+        const y1=A.top+a[0],y2=A.top+a[1],y3=B.top+z[1],y4=B.top+z[0];
+        c.globalAlpha=alpha;c.fillStyle=colour;
+        c.beginPath();
+        c.moveTo(x1,y1);c.bezierCurveTo(mx,y1,mx,y4,x2,y4);
+        c.lineTo(x2,y3);c.bezierCurveTo(mx,y3,mx,y2,x1,y2);
+        c.closePath();c.fill();
+      }
+    };
+    for(const story of data.stories)if(story.count>1&&matching.has(story.id))band(story,.09,COLORS.shared);
+    const chosen=stories[selected];
+    if(chosen&&chosen.count>1)band(chosen,.8,COLORS.shared);
+    c.globalAlpha=1;
+  },[ribbons,aligned,spanTick,selected,columns,palette,matching,data.stories,stories]);
+  useEffect(()=>{if(!ribbons)return;const f=()=>setSpanTick(t=>t+1);addEventListener('resize',f);return()=>removeEventListener('resize',f)},[ribbons]);
+
   function select(id,vid){if(!stories[id])return;setSelected(id);setSelectedVerse(vid||null);setHover(null)}
   function jump(id){setFilter('all');setQuery('');setCompare({a:'',b:''});select(id)}
   function expandRef(ref){
@@ -164,13 +245,15 @@ function App({data}){
         {query.trim()&&<p className="search-note">{searchesText?`Searching story titles, references and the Gospel text of ${searchEdition?searchEdition.short:'the ASV 1901, because the selected edition is read online'}.`:`Searching story titles and references. Type ${MIN_TEXT_QUERY} letters or more to search the Scripture text as well.`}</p>}
         <div className="legend"><button onClick={()=>setFilter('shared')} className={filter==='shared'?'legend-active':''}><i style={{background:COLORS.shared}}/>Shared by 2–4 Gospels</button><span className="legend-divider"/>{BOOKS.map(b=><button key={b} className={filter===b?'legend-active':''} onClick={()=>setFilter(filter===b?'all':b)}><i style={{background:COLORS[b]}}/>{NAMES[b]} only</button>)}<button className="palette-toggle" aria-pressed={palette==='accessible'} onClick={()=>{const next=palette==='standard'?'accessible':'standard';setPalette(next);try{localStorage.setItem('gospel-atlas-palette',next)}catch{}}}>{palette==='accessible'?'Standard colours':'Colour-blind palette'}</button><span className="legend-note">Story-level classification</span></div>
         <p className="swipe-hint">Swipe sideways to move between the four Gospels.</p>
+        <div className={'grid-wrap'+(ribbons&&!aligned?' with-ribbons':'')+(aligned?' aligned':'')} ref={gridWrap}>
+        <canvas className="ribbon-layer" ref={ribbonCanvas} aria-hidden="true"/>
         <div className="gospel-grid">{BOOKS.map((b,i)=>{
           const exclusive=verses[b].filter(v=>stories[v.stories[0]]?.count===1).length;
           const match=verses[b].filter(v=>matching.has(v.stories[0])).length;
           const ranges=s.sources[b];
-          return <article className="gospel-card" key={b} style={{'--book':COLORS[b]}}><div className="gospel-card-heading"><div><button className="symbol-button" onClick={()=>setSymbolBook(b)} aria-label={`${NAMES[b]}: ${THEMES[b].title}. Open Scripture passages`} title={`${THEMES[b].title} · Read passages`}><Symbol book={b}/></button><div className="gospel-heading-text"><h3>{NAMES[b]}</h3><button className="theme-label" onClick={()=>setSymbolBook(b)}>{THEMES[b].title} ↗</button></div></div><span>{fmt(verses[b].length)} verses</span></div><div className="book-summary"><div className="proportion"><i style={{width:`${100*exclusive/verses[b].length}%`,background:COLORS[b]}}/><i style={{flex:1,background:COLORS.shared}}/></div><span>{Math.round(100*exclusive/verses[b].length)}% in distinctive units</span></div><GospelCanvas book={b} verses={verses[b]} stories={stories} selected={selected} selectedVerse={currentVerse} onSelect={select} hover={hover} onHover={setHover} matching={matching} focus={focus} columns={columns} palette={palette}/><div className="card-footer"><span className={ranges?'has-passage':''}>{ranges?ranges.map(r=>refLabel(r.ref).replace(NAMES[b]+' ','')).join(', '):'No parallel in this unit'}</span><span>{filter!=='all'||q?`${fmt(match)} visible`:`${Object.keys(s.sources).includes(b)?'Selected passage':'—'}`}</span></div></article>
-        })}</div>
-        <div className="atlas-bottom"><p><span className="cursor-mark">↗</span> Select a square to connect the same story across the four accounts.</p><label><input type="checkbox" checked={focus} onChange={e=>setFocus(e.target.checked)}/> Focus selected story</label></div>
+          return <article className="gospel-card" key={b} style={{'--book':COLORS[b]}}><div className="gospel-card-heading"><div><button className="symbol-button" onClick={()=>setSymbolBook(b)} aria-label={`${NAMES[b]}: ${THEMES[b].title}. Open Scripture passages`} title={`${THEMES[b].title} · Read passages`}><Symbol book={b}/></button><div className="gospel-heading-text"><h3>{NAMES[b]}</h3><button className="theme-label" onClick={()=>setSymbolBook(b)}>{THEMES[b].title} ↗</button></div></div><span>{fmt(verses[b].length)} verses</span></div><div className="book-summary"><div className="proportion"><i style={{width:`${100*exclusive/verses[b].length}%`,background:COLORS[b]}}/><i style={{flex:1,background:COLORS.shared}}/></div><span>{Math.round(100*exclusive/verses[b].length)}% in distinctive units</span></div><GospelCanvas book={b} verses={verses[b]} stories={stories} selected={selected} selectedVerse={currentVerse} onSelect={select} hover={hover} onHover={setHover} matching={matching} focus={focus} columns={columns} palette={palette} onSpans={noteSpans} alignment={alignment}/><div className="card-footer"><span className={ranges?'has-passage':''}>{ranges?ranges.map(r=>refLabel(r.ref).replace(NAMES[b]+' ','')).join(', '):'No parallel in this unit'}</span><span>{filter!=='all'||q?`${fmt(match)} visible`:`${Object.keys(s.sources).includes(b)?'Selected passage':'—'}`}</span></div></article>
+        })}</div></div>
+        <div className="atlas-bottom"><p><span className="cursor-mark">↗</span> {aligned?'Synopsis order: every row is one story unit, so parallels sit level and a Gospel\u2019s silences are the blank space beside them. Numbers down the left are unit numbers.':ribbons?'Each band joins one story unit across the Gospels. Level bands mean the same position; steep ones mean the accounts place it differently.':'Select a square to connect the same story across the four accounts.'}</p><label><input type="checkbox" checked={aligned} onChange={e=>setAligned(e.target.checked)}/> Align parallels</label><label><input type="checkbox" checked={ribbons} onChange={e=>setRibbons(e.target.checked)}/> Show order</label><label><input type="checkbox" checked={focus} onChange={e=>setFocus(e.target.checked)}/> Focus selected story</label></div>
         <div className="try-row"><span>EXPLORE A STORY</span>{[122,37,data.stories.find(s=>s.title.toLowerCase().includes('good samaritan'))?.id,1].filter(Boolean).map((id,i)=><button key={id} onClick={()=>jump(id)}>{['Feeding the five thousand','Woman at the well','The Good Samaritan','The Word'][i]} <span>↗</span></button>)}</div>
       </section>
       <section className="story-section" ref={reader} id="reader"><aside className="story-browser"><div className="browser-top"><h2>Story index</h2><span>{visibleStories.length} / {meta.storyCount}</span></div><p className="small">Browse the index or search above.</p><div className="story-list" ref={storyList} role="group" aria-label="Gospel story index">{visibleStories.length?visibleStories.map(story=>{const hit=query.trim()?matchingVerse(story):null;return <button key={story.id} className={story.id===selected?'story-option selected':'story-option'} aria-current={story.id===selected?'true':undefined} onClick={()=>select(story.id,hit)}><span className="story-id">{String(story.id).padStart(3,'0')}</span><span className="story-option-body"><span>{story.title}</span><Mask story={story}/>{hit&&<span className="story-match">{refLabel(hit)}</span>}</span></button>}):<div className="empty-state">{comparing?`No unit is told in ${NAMES[compare.a]} but not in ${NAMES[compare.b]} under the current filter.`:'No stories match this search.'}<button onClick={()=>{setQuery('');setFilter('all');setCompare({a:'',b:''})}}>Clear filters</button></div>}</div></aside>

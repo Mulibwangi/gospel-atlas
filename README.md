@@ -30,6 +30,20 @@ combination. The colours describe the index, not an exact match of wording.
 four columns, with the reference range for each Gospel and a plain note where a
 Gospel has no parallel.
 
+**See the order, not just the overlap.** "Show order" joins each shared story
+unit across the four maps with a band. Level bands mean the Gospels agree on
+where the episode sits; steep ones mean they do not — and the long diagonals
+into John are the clearest statement of the problem any synopsis is trying to
+address.
+
+**Or line them up.** "Align parallels" rearranges the maps into synopsis order:
+one row per story unit, every Gospel on the same row. The blank space becomes
+the argument — Mark with nothing beside Matthew's and Luke's infancy
+narratives, John's early Judean ministry standing alone, Matthew's Sermon block
+with empty columns around it.
+
+![The maps in synopsis order](docs/images/aligned.png)
+
 ![Parallel passages for one story](docs/images/passages.png)
 
 **Follow the cross-references.** Click a verse number to see where else in the
