@@ -208,6 +208,7 @@ root.innerHTML=`
         ${COMPLETE?'':'<option value="gospel">By Gospel</option>'}
       </select>
     </div>
+    <div class="opt"><label><input type="checkbox" id="flow" checked> Show direction</label></div>
     <div class="opt"><label><input type="checkbox" id="cbsafe"> Colour-blind safe</label></div>
     <div class="opt">Minimum links <input type="range" id="minlinks" min="1" max="12" value="${COMPLETE?2:1}" aria-label="Minimum verse links per chapter pair"><strong id="minlabel" style="font-variant-numeric:tabular-nums;color:var(--ink)">${COMPLETE?2:1}</strong></div>
     <div class="opt">Focus
@@ -271,7 +272,7 @@ const SECTIONS=[
   const a=BOOKS.find(b=>b.code===from),z=BOOKS.find(b=>b.code===to);
   return a&&z?{name,from:a.first,to:z.first+z.chapters-1,alias}:null;
 }).filter(Boolean);
-const state={view:'circle',colour:'distance',cbsafe:false,min:COMPLETE?2:1,hover:null,locked:null,focus:null,dir:'both'};
+const state={view:'circle',colour:'distance',cbsafe:false,flow:true,min:COMPLETE?2:1,hover:null,locked:null,focus:null,dir:'both'};
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const GOSPEL={Matt:'--matt',Mark:'--mark',Luke:'--luke',John:'--john'};
 const CB={Matt:'#0072b2',Mark:'#d55e00',Luke:'#009e73',John:'#cc79a7'};
@@ -339,35 +340,51 @@ function layout(){
     geom.matrix={padL,padT,padB,padR,cw:(W-padL-padR)/sources.length,ch:(H-padT-padB)/N};
   }
 }
-function curveInto(path,l){
+// The four control points of a link's curve, so it can be drawn whole or in pieces.
+function curveControls(l){
   const a=l[0],b=l[1];
   if(state.view==='arc'){
     const x1=geom.x(a),x2=geom.x(b),y=geom.arc.baseY;
     const h=Math.min(y-10,Math.abs(x2-x1)*0.55);
-    path.moveTo(x1,y);path.bezierCurveTo(x1,y-h*1.1,x2,y-h*1.1,x2,y);
-    return;
+    return [[x1,y],[x1,y-h*1.1],[x2,y-h*1.1],[x2,y]];
   }
   const {cx,cy,R,Rin,focused}=geom.circle;
   const polar=(t,r)=>[cx+Math.cos(t)*r,cy+Math.sin(t)*r];
   const bookMid=i=>{const bk=BOOKS[bookOfChapter[i]];return geom.angle(bk.first+bk.chapters/2)};
   if(!focused){
-    const p1=geom.point(a,R*0.985),p2=geom.point(b,R*0.985);
-    const c1=polar(bookMid(a),R*0.5),c2=polar(bookMid(b),R*0.5);
-    path.moveTo(p1[0],p1[1]);path.bezierCurveTo(c1[0],c1[1],c2[0],c2[1],p2[0],p2[1]);
-    return;
+    return [geom.point(a,R*0.985),polar(bookMid(a),R*0.5),polar(bookMid(b),R*0.5),geom.point(b,R*0.985)];
   }
   const e1=geom.end(a),e2=geom.end(b);
-  if(e1.inner&&e2.inner){                              // both ends inside the book
-    const c1=polar(e1.a,Rin*0.28),c2=polar(e2.a,Rin*0.28);
-    path.moveTo(e1.p[0],e1.p[1]);path.bezierCurveTo(c1[0],c1[1],c2[0],c2[1],e2.p[0],e2.p[1]);
-    return;
-  }
-  const inner=e1.inner?e1:e2,outer=e1.inner?e2:e1;
-  const other=e1.inner?b:a;
-  const c1=polar(inner.a,Rin*1.22);                    // leaves the dial radially
-  const c2=polar(bookMid(other),R*0.70);               // gathers at its book
-  path.moveTo(inner.p[0],inner.p[1]);
-  path.bezierCurveTo(c1[0],c1[1],c2[0],c2[1],outer.p[0],outer.p[1]);
+  if(e1.inner&&e2.inner)
+    return [e1.p,polar(e1.a,Rin*0.28),polar(e2.a,Rin*0.28),e2.p];
+  // Keep the drawn direction the same as the link's own: source first.
+  const from=e1,to=e2,other=e1.inner?b:a;
+  const mid=polar(bookMid(other),R*0.70);
+  const lift=polar((e1.inner?e1:e2).a,Rin*1.22);
+  return e1.inner?[from.p,lift,mid,to.p]:[from.p,mid,lift,to.p];
+}
+function curveInto(path,l){
+  const k=curveControls(l);
+  path.moveTo(k[0][0],k[0][1]);
+  path.bezierCurveTo(k[1][0],k[1][1],k[2][0],k[2][1],k[3][0],k[3][1]);
+}
+// de Casteljau: cut a cubic at t, returning the two halves' control points.
+function splitCubic(k,t){
+  const L=(p,q)=>[p[0]+(q[0]-p[0])*t,p[1]+(q[1]-p[1])*t];
+  const a=L(k[0],k[1]),b=L(k[1],k[2]),c=L(k[2],k[3]);
+  const d=L(a,b),e=L(b,c),f=L(d,e);
+  return [[k[0],a,d,f],[f,e,c,k[3]]];
+}
+// Three pieces, thinning as they go, so a chord reads from its source to its target.
+function thirds(l){
+  const k=curveControls(l);
+  const [first,rest]=splitCubic(k,1/3);
+  const [second,third]=splitCubic(rest,0.5);
+  return [first,second,third];
+}
+function segmentInto(path,seg){
+  path.moveTo(seg[0][0],seg[0][1]);
+  path.bezierCurveTo(seg[1][0],seg[1][1],seg[2][0],seg[2][1],seg[3][0],seg[3][1]);
 }
 function drawLink(c,l,alpha,width){
   c.globalAlpha=alpha;c.strokeStyle=linkColour(l);c.lineWidth=width;
@@ -412,12 +429,16 @@ function drawFrame(c){
     });
   }else if(state.view==='circle'){
     const {R,Rin,barMax,focused,cx,cy}=geom.circle;
+    // With a focus, the rim profiles where its links land; otherwise it shows chapter length.
+    const profile=focused&&focusHits&&focusHitMax>0;
     for(let i=0;i<N;i++){
-      const h=1.5+(CHAPTERS[i]/maxVerses)*barMax;
+      const share=profile?focusHits[i]/focusHitMax:CHAPTERS[i]/maxVerses;
+      const h=1.5+(profile?Math.sqrt(share):share)*barMax;
       const p1=geom.point(i,R*1.01),p2=geom.point(i,R*1.01+h);
       const lit=focused&&i>=state.focus.from&&i<=state.focus.to;
-      c.strokeStyle=lit?css('--gold'):(bookOfChapter[i]%2?line:faint);
-      c.globalAlpha=lit?.9:.8;c.lineWidth=Math.max(.8,(Math.PI*2*R/N)*0.8);
+      c.strokeStyle=lit?css('--gold'):(profile&&share>0?css('--accent'):(bookOfChapter[i]%2?line:faint));
+      c.globalAlpha=lit?.9:(profile?(share>0?.85:.35):.8);
+      c.lineWidth=Math.max(.8,(Math.PI*2*R/N)*0.8);
       c.beginPath();c.moveTo(p1[0],p1[1]);c.lineTo(p2[0],p2[1]);c.stroke();
     }
     c.globalAlpha=1;
@@ -538,10 +559,21 @@ function visible(l){
   return true;
 }
 let byChapter=null,linkLayer=null,renderToken=0,progress=1;
+let focusHits=null,focusHitMax=0;   // links each chapter exchanges with the focused run
 function buildIndex(){
   byChapter=new Map();
   const note=(k,l)=>{const a=byChapter.get(k);a?a.push(l):byChapter.set(k,[l])};
   for(const l of LINKS)if(visible(l)){note(l[0],l);note(l[1],l)}
+  if(!state.focus){focusHits=null;focusHitMax=0;return}
+  focusHits=new Float32Array(N);focusHitMax=0;
+  for(const l of LINKS){
+    if(!visible(l))continue;
+    const a=inFocus(l[0]),b=inFocus(l[1]);
+    if(a===b)continue;                        // inside the focus, or outside it entirely
+    const other=a?l[1]:l[0];
+    focusHits[other]+=l[2];
+    if(focusHits[other]>focusHitMax)focusHitMax=focusHits[other];
+  }
 }
 // The wash is drawn at one device pixel per CSS pixel and built a slice at a time,
 // so a full-Bible view appears immediately and fills in instead of freezing the page.
@@ -563,7 +595,7 @@ function renderBase(){
     const stop=Math.min(list.length,i+CHUNK);
     if(state.view==='matrix'){
       for(;i<stop;i++)drawLink(c,list[i],alpha,.6);
-    }else{
+    }else if(!state.flow){
       const buckets=new Map();
       for(;i<stop;i++){
         const l=list[i],colour=linkColour(l);
@@ -574,6 +606,22 @@ function renderBase(){
       c.globalAlpha=alpha;
       for(const [colour,path] of buckets){c.strokeStyle=colour;c.stroke(path)}
       c.globalAlpha=1;
+    }else{
+      const buckets=[new Map(),new Map(),new Map()];
+      for(;i<stop;i++){
+        const l=list[i],colour=linkColour(l),parts=thirds(l);
+        for(let k=0;k<3;k++){
+          let path=buckets[k].get(colour);
+          if(!path){path=new Path2D();buckets[k].set(colour,path)}
+          segmentInto(path,parts[k]);
+        }
+      }
+      const fade=[1,.58,.26],thick=[1.25,.85,.5],w=state.view==='circle'?.7:.6;
+      for(let k=0;k<3;k++){
+        c.globalAlpha=alpha*fade[k];c.lineWidth=w*thick[k];
+        for(const [colour,path] of buckets[k]){c.strokeStyle=colour;c.stroke(path)}
+      }
+      c.globalAlpha=1;c.lineWidth=w;
     }
     progress=list.length?i/list.length:1;
     paint();
@@ -616,7 +664,7 @@ function caption(){
   document.getElementById('caption').textContent={
     arc:'Chapters left to right, Genesis 1 to Revelation 22. Bar length is the number of verses; arc height is the distance a link travels.',
     circle:state.focus
-      ?'The dial is '+state.focus.label+': one full turn, its chapters numbered. Every chord runs from a chapter out to where it points on the canon ring.'
+      ?'The dial is '+state.focus.label+': one full turn, its chapters numbered. Every chord runs from a chapter out to where it points, and the rim now profiles how much lands in each chapter.'
       :'The whole canon clockwise from Genesis 1 at the top. Chords are pulled toward the centre of each book, so links sharing a destination braid together. Choose a book to make it the dial.',
     matrix:'Each dot is one chapter pair: the chapter a link starts from across the bottom, the chapter it points to down the side. Direction is kept here and nowhere else.'
   }[state.view];
@@ -976,6 +1024,7 @@ document.querySelectorAll('.views button').forEach(b=>b.addEventListener('click'
   render();describe();
 }));
 document.getElementById('colour').addEventListener('change',e=>{state.colour=e.target.value;renderBase();legend();describe()});
+document.getElementById('flow').addEventListener('change',e=>{state.flow=e.target.checked;renderBase()});
 document.getElementById('cbsafe').addEventListener('change',e=>{state.cbsafe=e.target.checked;renderBase();legend();describe()});
 document.getElementById('minlinks').addEventListener('input',e=>{
   state.min=+e.target.value;document.getElementById('minlabel').textContent=e.target.value;renderBase();describe();
