@@ -171,6 +171,18 @@ const LINKS=(()=>{
 // How many verse links a chapter pair holds, so the passage list obeys the same
 // threshold as the drawing rather than quietly showing more than the row promised.
 const pairCount=(a,b)=>{const r=PAIR_COUNT.get(a*2000+b);return r?r[2]:0};
+// The links arrive sorted by their source verse, so every link out of a given chapter
+// sits in one unbroken run. FROM_AT[c] is where chapter c's run begins, which turns
+// "the links leaving these chapters" into a slice instead of a walk through all of them.
+// If the order is ever not what we expect, the index is left null and the search below
+// falls back to reading everything, which is slower but never wrong.
+const FROM_AT=(()=>{
+  for(let i=1;i<COUNT;i++)if(CHAPTER_OF_VERSE[VL_FROM[i]]<CHAPTER_OF_VERSE[VL_FROM[i-1]])return null;
+  const at=new Int32Array(N+2);
+  for(let c=0,i=0;c<=N;c++){while(i<COUNT&&CHAPTER_OF_VERSE[VL_FROM[i]]<c)i++;at[c]=i}
+  at[N+1]=COUNT;
+  return at;
+})();
 const bookOfChapter=new Int16Array(N),chapterNumber=new Int16Array(N);
 BOOKS.forEach((b,bi)=>{for(let c=0;c<b.chapters;c++){bookOfChapter[b.first+c]=bi;chapterNumber[b.first+c]=c+1}});
 const shortName=n=>n.split(' of ')[0];
@@ -373,9 +385,15 @@ function resolveRef(ref){
   const [code,ch,vs]=ref.split('.');
   const bi=BOOK_BY_CODE.get(code);
   if(bi===undefined)return null;
-  const chapter=BOOKS[bi].first+(+ch)-1;
+  const cn=Number(ch),vn=Number(vs);
+  if(!Number.isInteger(cn)||cn<1||!Number.isInteger(vn)||vn<1)return null;
+  const chapter=BOOKS[bi].first+cn-1;
   if(chapter<BOOKS[bi].first||chapter>=BOOKS[bi].first+BOOKS[bi].chapters)return null;
-  const verse=CHAPTER_START[chapter]+(+vs)-1;
+  // Bound by the chapter's own length, not by the whole text: without this a verse
+  // number past the end of its chapter resolves silently into the next one, and a
+  // mistyped reference would be shown under the label it was asked for.
+  if(vn>CHAPTERS[chapter])return null;
+  const verse=CHAPTER_START[chapter]+vn-1;
   return verse<TEXT.length?{chapter,verse}:null;
 }
 function buildChain(label,list){
@@ -1160,7 +1178,23 @@ function chapterAt(px,py){
   if(px<m.padL||px>m.padL+sources.length*m.cw)return null;
   return sources[Math.max(0,Math.min(sources.length-1,Math.floor((px-m.padL)/m.cw)))];
 }
-function select(ci){state.locked=ci;renderBase();describe()}
+// Holding a chapter only changes the picture itself in one case: on the focused circle,
+// where the bezel turns to bring the held chapter to twelve o'clock, so every chord has
+// to be laid out again. Anywhere else the held chapter is drawn over the top of a layer
+// that has not changed, and rebuilding a hundred and ninety thousand chords to move a
+// highlight is work nobody asked for. Both the chapter being let go and the one being
+// taken count, since either can be the one the dial was pointing at.
+function turnsTheDial(next){
+  if(state.view!=='circle'||!state.focus)return false;
+  const inside=i=>i!==null&&i>=state.focus.from&&i<=state.focus.to;
+  return inside(next)||inside(state.locked);
+}
+function select(ci){
+  const rebuild=turnsTheDial(ci);
+  state.locked=ci;
+  if(rebuild)renderBase();else paint();
+  describe();
+}
 canvas.addEventListener('pointermove',e=>{
   const r=canvas.getBoundingClientRect(),i=chapterAt(e.clientX-r.left,e.clientY-r.top);
   if(i!==state.hover){state.hover=i;paint();describe()}
@@ -1168,14 +1202,17 @@ canvas.addEventListener('pointermove',e=>{
 canvas.addEventListener('pointerleave',()=>{if(state.hover!==null){state.hover=null;paint();describe()}});
 canvas.addEventListener('click',e=>{
   const r=canvas.getBoundingClientRect(),i=chapterAt(e.clientX-r.left,e.clientY-r.top);
-  state.locked=(i===state.locked)?null:i;renderBase();describe();
+  select(i===state.locked?null:i);          // one path, so a click and an arrow key agree
 });
 canvas.addEventListener('keydown',e=>{
   const step={ArrowRight:1,ArrowLeft:-1,ArrowUp:-10,ArrowDown:10}[e.key];
-  if(step){e.preventDefault();const from=state.locked!==null?state.locked:0;select(Math.max(0,Math.min(N-1,from+step)));return}
+  if(step){e.preventDefault();
+    // Carry on from whatever is held, else from whatever is under the pointer.
+    const from=state.locked!==null?state.locked:(state.hover==null?0:state.hover);
+    select(Math.max(0,Math.min(N-1,from+step)));return}
   if(e.key==='Home'){e.preventDefault();select(0)}
   if(e.key==='End'){e.preventDefault();select(N-1)}
-  if(e.key==='Escape'){state.locked=null;paint();describe()}
+  if(e.key==='Escape'){select(null)}   // same path as clicking it off, so the dial resets too
 });
 
 // ---- panel --------------------------------------------------------------
@@ -1373,7 +1410,19 @@ let passageState=null;
 // Every link row opens the text behind it, whether that row is one chapter or a whole book.
 function findLinks(aFrom,aTo,bFrom,bTo){
   const found=[];
-  for(let i=0;i<COUNT;i++){
+  // A link can only count here if it leaves one of the two ranges, so only those two
+  // runs need reading. Every test inside the loop is the one the exhaustive form used,
+  // so the answer is the same set in the same order — just reached without walking the
+  // three hundred thousand links that cannot qualify.
+  const spans=[];
+  if(FROM_AT){
+    const a=[FROM_AT[Math.max(0,aFrom)],FROM_AT[Math.min(N,aTo+1)]];
+    const b=[FROM_AT[Math.max(0,bFrom)],FROM_AT[Math.min(N,bTo+1)]];
+    const lo=a[0]<=b[0]?a:b,hi=a[0]<=b[0]?b:a;
+    if(hi[0]<=lo[1])spans.push([lo[0],Math.max(lo[1],hi[1])]);   // they touch: one run
+    else{spans.push(lo);spans.push(hi)}
+  }else spans.push([0,COUNT]);
+  for(const [lo,hi] of spans)for(let i=lo;i<hi;i++){
     const ca=CHAPTER_OF_VERSE[VL_FROM[i]],cb=CHAPTER_OF_VERSE[VL_TO[i]];
     const forward=ca>=aFrom&&ca<=aTo&&cb>=bFrom&&cb<=bTo;
     const back=ca>=bFrom&&ca<=bTo&&cb>=aFrom&&cb<=aTo;
@@ -1385,7 +1434,8 @@ function findLinks(aFrom,aTo,bFrom,bTo){
     }
     found.push(i);
   }
-  found.sort((x,y)=>VL_VOTES[y]-VL_VOTES[x]||VL_FROM[x]-VL_FROM[y]);
+  // Total order, so the list does not depend on the order candidates were reached.
+  found.sort((x,y)=>VL_VOTES[y]-VL_VOTES[x]||VL_FROM[x]-VL_FROM[y]||x-y);
   return found;
 }
 function renderPassages(){
