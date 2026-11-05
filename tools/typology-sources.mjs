@@ -103,3 +103,47 @@ if (oneSided.length) {
   console.log('\nclaims the source anchors on one testament only, so there is nothing to join (' + oneSided.length + '):');
   for (const r of oneSided) console.log('   ' + r.type + '  (' + r.ot + ' Old Testament, ' + r.nt + ' New)');
 }
+
+// ---- the types of the Antichrist ------------------------------------------
+// These sources name a figure and leave the other end implied, so the other end
+// is supplied once, from the passages that describe the Antichrist directly, and
+// used identically for every claim. Nobody's claim is helped or hindered by it.
+if (DB.antichrist_claims) {
+  const target = new Set();
+  for (const ref of DB.antichrist_passages) {
+    const r = parse(ref);
+    if (r.error) { notes.push('antichrist passage: ' + ref + ' — ' + r.error); continue; }
+    for (const k of r.missing) notes.push('antichrist passage ' + k + ' is not in the ASV');
+    for (const k of r.keys) target.add(verseChapter.get(k));
+  }
+  const ac = [];
+  for (const c of DB.antichrist_claims) {
+    const own = new Set(); let bad = 0;
+    for (const ref of c.refs) {
+      const r = parse(ref);
+      if (r.error) { bad++; notes.push(`${c.source}/${c.type}: ${ref} — ${r.error}`); continue; }
+      if (r.missing.length) { bad++; notes.push(`${c.source}/${c.type}: ${r.missing.join(', ')} not in the ASV`); }
+      for (const k of r.keys) own.add(verseChapter.get(k));
+    }
+    let total = 0, best = 0, where = '';
+    for (const a of own) for (const b of target) {
+      const n = joined(a, b); total += n;
+      if (n > best) { best = n; where = chapterName[a] + ' / ' + chapterName[b]; }
+    }
+    ac.push({...c, chapters: own.size, total, best, where, bad});
+  }
+  const joinedCount = ac.filter(r => r.total > 0).length;
+  console.log('\n\n=== types of the Antichrist ===');
+  console.log(JSON.stringify({claims: ac.length,
+    sources: [...new Set(ac.map(r => r.source))],
+    antichristChapters: target.size,
+    joinedByCrossReferences: joinedCount,
+    joinedByNothing: ac.length - joinedCount}));
+  console.log('\n  links   claim                                        strongest pairing');
+  for (const r of [...ac].sort((a, b) => b.best - a.best))
+    console.log('   ' + String(r.best).padStart(4) + '    ' + (r.source + '/' + r.type).padEnd(42) +
+      (r.where || '—'));
+  console.log('\n  For comparison the types of Christ, whose other end each source names itself,');
+  console.log('  are joined in ' + corroborated.length + ' cases of ' + twoSided.length + '.');
+}
+if (notes.length) { console.log('\nfurther reference problems:'); for (const n of notes.slice(-12)) console.log('   ' + n); }

@@ -6,53 +6,643 @@
       "citation": "R. A. Torrey, The New Topical Text Book (1897), article 'Types of Christ'. Public domain.",
       "retrieved": "https://www.studylight.org/concordances/ttt/t/types-of-christ.html",
       "note": "Transcribed as given. Two transcription corrections are recorded in the claims themselves: the entry printed 'Man' is 'Manna' (its references are Exodus 16:11-15 and John 6:32-35), and 'Vail' is the veil of the tabernacle. Torrey's references follow the King James versification; where that differs from the ASV the tool reports it rather than silently adjusting."
+    },
+    {
+      "id": "pink",
+      "citation": "A. W. Pink, The Antichrist (1923), chapter 13, 'Types of the Antichrist'. Public domain.",
+      "retrieved": "https://www.ccel.org/ccel/pink/antichrist.chap13.html",
+      "note": "Ten characters are profiled in detail; six more are named in passing. Both are transcribed, marked by how the chapter treats them."
+    },
+    {
+      "id": "yetter",
+      "citation": "A. H. Yetter, 'The Anti-Christ in the Types', Grace and Truth Magazine.",
+      "retrieved": "https://www.swartzentrover.com/cotor/bible/Doctrines/LastThings/The%20Anti-Christ%20in%20the%20Types.htm",
+      "note": "Four types with detailed reference runs. One printed reference, Daniel 1:24-27, does not exist; the passage described is Daniel 3:24-27, and it is recorded here as printed with the discrepancy noted rather than silently corrected."
     }
   ],
   "claims": [
-    {"source": "torrey", "type": "Adam", "refs": ["Romans 5:14", "1 Corinthians 15:45"]},
-    {"source": "torrey", "type": "Abel", "refs": ["Genesis 4:8", "Genesis 4:10", "Hebrews 12:24"]},
-    {"source": "torrey", "type": "Abraham", "refs": ["Genesis 17:5", "Ephesians 3:15"]},
-    {"source": "torrey", "type": "Aaron", "refs": ["Exodus 28:1", "Hebrews 5:4", "Hebrews 5:5", "Leviticus 16:15", "Hebrews 9:7", "Hebrews 9:24"]},
-    {"source": "torrey", "type": "Ark", "refs": ["Genesis 7:16", "1 Peter 3:20", "1 Peter 3:21"]},
-    {"source": "torrey", "type": "Ark of the Covenant", "refs": ["Exodus 25:16", "Psalm 40:8", "Isaiah 42:6"]},
-    {"source": "torrey", "type": "Atonement, sacrifices offered on the day of", "refs": ["Leviticus 16:15", "Leviticus 16:16", "Hebrews 9:12", "Hebrews 9:24"]},
-    {"source": "torrey", "type": "Brazen serpent", "refs": ["Numbers 21:9", "John 3:14", "John 3:15"]},
-    {"source": "torrey", "type": "Brazen altar", "refs": ["Exodus 27:1", "Exodus 27:2", "Hebrews 13:10"]},
-    {"source": "torrey", "type": "Burnt offering", "refs": ["Leviticus 1:2", "Leviticus 1:4", "Hebrews 10:10"]},
-    {"source": "torrey", "type": "Cities of refuge", "refs": ["Numbers 35:6", "Hebrews 6:18"]},
-    {"source": "torrey", "type": "David", "refs": ["2 Samuel 8:15", "Ezekiel 37:24", "Psalm 89:19", "Psalm 89:20", "Philippians 2:9"]},
-    {"source": "torrey", "type": "Eliakim", "refs": ["Isaiah 22:20-22", "Revelation 3:7"]},
-    {"source": "torrey", "type": "First-fruits", "refs": ["Exodus 22:29", "1 Corinthians 15:20"]},
-    {"source": "torrey", "type": "Golden candlestick", "refs": ["Exodus 25:31", "John 8:12"]},
-    {"source": "torrey", "type": "Golden altar", "refs": ["Exodus 40:5", "Exodus 40:26", "Exodus 40:27", "Revelation 8:3", "Hebrews 13:15"]},
-    {"source": "torrey", "type": "Isaac", "refs": ["Genesis 22:1", "Genesis 22:2", "Hebrews 11:17-19"]},
-    {"source": "torrey", "type": "Jacob", "refs": ["Genesis 32:28", "John 11:42", "Hebrews 7:25"]},
-    {"source": "torrey", "type": "Jacob's ladder", "refs": ["Genesis 28:12", "John 1:51"]},
-    {"source": "torrey", "type": "Joseph", "refs": ["Genesis 50:19", "Genesis 50:20"]},
-    {"source": "torrey", "type": "Joshua", "refs": ["Joshua 1:5", "Joshua 1:6", "Hebrews 4:8", "Hebrews 4:9", "Joshua 11:23", "Acts 20:32"]},
-    {"source": "torrey", "type": "Jonah", "refs": ["Jonah 1:17", "Matthew 12:40"]},
-    {"source": "torrey", "type": "Laver of brass", "refs": ["Exodus 30:18-20", "Zechariah 13:1", "Ephesians 5:26", "Ephesians 5:27"]},
-    {"source": "torrey", "type": "Leper's offering", "refs": ["Leviticus 14:4-7", "Romans 4:25"]},
-    {"source": "torrey", "type": "Manna", "refs": ["Exodus 16:11-15", "John 6:32-35"], "transcription": "printed as 'Man'"},
-    {"source": "torrey", "type": "Melchizedek", "refs": ["Genesis 14:18-20", "Hebrews 7:1-17"]},
-    {"source": "torrey", "type": "Mercy-seat", "refs": ["Exodus 25:17-22", "Romans 3:25", "Hebrews 4:16"]},
-    {"source": "torrey", "type": "Morning and evening sacrifices", "refs": ["Exodus 29:38-41", "John 1:29", "John 1:36"]},
-    {"source": "torrey", "type": "Moses", "refs": ["Numbers 12:7", "Hebrews 3:2", "Deuteronomy 18:15", "Acts 3:20-22"]},
-    {"source": "torrey", "type": "Noah", "refs": ["Genesis 5:29", "2 Corinthians 1:5"]},
-    {"source": "torrey", "type": "Paschal lamb", "refs": ["Exodus 12:3-6", "Exodus 12:46", "John 19:36", "1 Corinthians 5:7"]},
-    {"source": "torrey", "type": "Peace offerings", "refs": ["Leviticus 3:1", "Ephesians 2:14", "Ephesians 2:16"]},
-    {"source": "torrey", "type": "Red heifer", "refs": ["Numbers 19:2-6", "Hebrews 9:13", "Hebrews 9:14"]},
-    {"source": "torrey", "type": "Rock of Horeb", "refs": ["Exodus 17:6", "1 Corinthians 10:4"]},
-    {"source": "torrey", "type": "Samson", "refs": ["Judges 16:30", "Colossians 2:14", "Colossians 2:15"]},
-    {"source": "torrey", "type": "Scape goat", "refs": ["Leviticus 16:20-22", "Isaiah 53:6", "Isaiah 53:12"]},
-    {"source": "torrey", "type": "Sin offering", "refs": ["Leviticus 4:2", "Leviticus 4:3", "Leviticus 4:12", "Hebrews 13:11", "Hebrews 13:12"]},
-    {"source": "torrey", "type": "Solomon", "refs": ["2 Samuel 7:12", "2 Samuel 7:13", "Luke 1:32", "Luke 1:33", "1 Peter 2:5"]},
-    {"source": "torrey", "type": "Tabernacle", "refs": ["Exodus 40:2", "Exodus 40:34", "Hebrews 9:11", "Colossians 2:9"]},
-    {"source": "torrey", "type": "Table and show bread", "refs": ["Exodus 25:23-30", "John 1:16", "John 6:48"]},
-    {"source": "torrey", "type": "Temple", "refs": ["1 Kings 6:1", "1 Kings 6:38", "John 2:19", "John 2:21"]},
-    {"source": "torrey", "type": "Tree of life", "refs": ["Genesis 2:9", "John 1:4", "Revelation 22:2"]},
-    {"source": "torrey", "type": "Trespass offering", "refs": ["Leviticus 6:1-7", "Isaiah 53:10"]},
-    {"source": "torrey", "type": "Veil of the tabernacle and temple", "refs": ["Exodus 40:21", "2 Chronicles 3:14", "Hebrews 10:20"], "transcription": "printed as 'Vail'"},
-    {"source": "torrey", "type": "Zerubbabel", "refs": ["Zechariah 4:7-9", "Hebrews 12:2", "Hebrews 12:3"]}
+    {
+      "source": "torrey",
+      "type": "Adam",
+      "refs": [
+        "Romans 5:14",
+        "1 Corinthians 15:45"
+      ]
+    },
+    {
+      "source": "torrey",
+      "type": "Abel",
+      "refs": [
+        "Genesis 4:8",
+        "Genesis 4:10",
+        "Hebrews 12:24"
+      ]
+    },
+    {
+      "source": "torrey",
+      "type": "Abraham",
+      "refs": [
+        "Genesis 17:5",
+        "Ephesians 3:15"
+      ]
+    },
+    {
+      "source": "torrey",
+      "type": "Aaron",
+      "refs": [
+        "Exodus 28:1",
+        "Hebrews 5:4",
+        "Hebrews 5:5",
+        "Leviticus 16:15",
+        "Hebrews 9:7",
+        "Hebrews 9:24"
+      ]
+    },
+    {
+      "source": "torrey",
+      "type": "Ark",
+      "refs": [
+        "Genesis 7:16",
+        "1 Peter 3:20",
+        "1 Peter 3:21"
+      ]
+    },
+    {
+      "source": "torrey",
+      "type": "Ark of the Covenant",
+      "refs": [
+        "Exodus 25:16",
+        "Psalm 40:8",
+        "Isaiah 42:6"
+      ]
+    },
+    {
+      "source": "torrey",
+      "type": "Atonement, sacrifices offered on the day of",
+      "refs": [
+        "Leviticus 16:15",
+        "Leviticus 16:16",
+        "Hebrews 9:12",
+        "Hebrews 9:24"
+      ]
+    },
+    {
+      "source": "torrey",
+      "type": "Brazen serpent",
+      "refs": [
+        "Numbers 21:9",
+        "John 3:14",
+        "John 3:15"
+      ]
+    },
+    {
+      "source": "torrey",
+      "type": "Brazen altar",
+      "refs": [
+        "Exodus 27:1",
+        "Exodus 27:2",
+        "Hebrews 13:10"
+      ]
+    },
+    {
+      "source": "torrey",
+      "type": "Burnt offering",
+      "refs": [
+        "Leviticus 1:2",
+        "Leviticus 1:4",
+        "Hebrews 10:10"
+      ]
+    },
+    {
+      "source": "torrey",
+      "type": "Cities of refuge",
+      "refs": [
+        "Numbers 35:6",
+        "Hebrews 6:18"
+      ]
+    },
+    {
+      "source": "torrey",
+      "type": "David",
+      "refs": [
+        "2 Samuel 8:15",
+        "Ezekiel 37:24",
+        "Psalm 89:19",
+        "Psalm 89:20",
+        "Philippians 2:9"
+      ]
+    },
+    {
+      "source": "torrey",
+      "type": "Eliakim",
+      "refs": [
+        "Isaiah 22:20-22",
+        "Revelation 3:7"
+      ]
+    },
+    {
+      "source": "torrey",
+      "type": "First-fruits",
+      "refs": [
+        "Exodus 22:29",
+        "1 Corinthians 15:20"
+      ]
+    },
+    {
+      "source": "torrey",
+      "type": "Golden candlestick",
+      "refs": [
+        "Exodus 25:31",
+        "John 8:12"
+      ]
+    },
+    {
+      "source": "torrey",
+      "type": "Golden altar",
+      "refs": [
+        "Exodus 40:5",
+        "Exodus 40:26",
+        "Exodus 40:27",
+        "Revelation 8:3",
+        "Hebrews 13:15"
+      ]
+    },
+    {
+      "source": "torrey",
+      "type": "Isaac",
+      "refs": [
+        "Genesis 22:1",
+        "Genesis 22:2",
+        "Hebrews 11:17-19"
+      ]
+    },
+    {
+      "source": "torrey",
+      "type": "Jacob",
+      "refs": [
+        "Genesis 32:28",
+        "John 11:42",
+        "Hebrews 7:25"
+      ]
+    },
+    {
+      "source": "torrey",
+      "type": "Jacob's ladder",
+      "refs": [
+        "Genesis 28:12",
+        "John 1:51"
+      ]
+    },
+    {
+      "source": "torrey",
+      "type": "Joseph",
+      "refs": [
+        "Genesis 50:19",
+        "Genesis 50:20"
+      ]
+    },
+    {
+      "source": "torrey",
+      "type": "Joshua",
+      "refs": [
+        "Joshua 1:5",
+        "Joshua 1:6",
+        "Hebrews 4:8",
+        "Hebrews 4:9",
+        "Joshua 11:23",
+        "Acts 20:32"
+      ]
+    },
+    {
+      "source": "torrey",
+      "type": "Jonah",
+      "refs": [
+        "Jonah 1:17",
+        "Matthew 12:40"
+      ]
+    },
+    {
+      "source": "torrey",
+      "type": "Laver of brass",
+      "refs": [
+        "Exodus 30:18-20",
+        "Zechariah 13:1",
+        "Ephesians 5:26",
+        "Ephesians 5:27"
+      ]
+    },
+    {
+      "source": "torrey",
+      "type": "Leper's offering",
+      "refs": [
+        "Leviticus 14:4-7",
+        "Romans 4:25"
+      ]
+    },
+    {
+      "source": "torrey",
+      "type": "Manna",
+      "refs": [
+        "Exodus 16:11-15",
+        "John 6:32-35"
+      ],
+      "transcription": "printed as 'Man'"
+    },
+    {
+      "source": "torrey",
+      "type": "Melchizedek",
+      "refs": [
+        "Genesis 14:18-20",
+        "Hebrews 7:1-17"
+      ]
+    },
+    {
+      "source": "torrey",
+      "type": "Mercy-seat",
+      "refs": [
+        "Exodus 25:17-22",
+        "Romans 3:25",
+        "Hebrews 4:16"
+      ]
+    },
+    {
+      "source": "torrey",
+      "type": "Morning and evening sacrifices",
+      "refs": [
+        "Exodus 29:38-41",
+        "John 1:29",
+        "John 1:36"
+      ]
+    },
+    {
+      "source": "torrey",
+      "type": "Moses",
+      "refs": [
+        "Numbers 12:7",
+        "Hebrews 3:2",
+        "Deuteronomy 18:15",
+        "Acts 3:20-22"
+      ]
+    },
+    {
+      "source": "torrey",
+      "type": "Noah",
+      "refs": [
+        "Genesis 5:29",
+        "2 Corinthians 1:5"
+      ]
+    },
+    {
+      "source": "torrey",
+      "type": "Paschal lamb",
+      "refs": [
+        "Exodus 12:3-6",
+        "Exodus 12:46",
+        "John 19:36",
+        "1 Corinthians 5:7"
+      ]
+    },
+    {
+      "source": "torrey",
+      "type": "Peace offerings",
+      "refs": [
+        "Leviticus 3:1",
+        "Ephesians 2:14",
+        "Ephesians 2:16"
+      ]
+    },
+    {
+      "source": "torrey",
+      "type": "Red heifer",
+      "refs": [
+        "Numbers 19:2-6",
+        "Hebrews 9:13",
+        "Hebrews 9:14"
+      ]
+    },
+    {
+      "source": "torrey",
+      "type": "Rock of Horeb",
+      "refs": [
+        "Exodus 17:6",
+        "1 Corinthians 10:4"
+      ]
+    },
+    {
+      "source": "torrey",
+      "type": "Samson",
+      "refs": [
+        "Judges 16:30",
+        "Colossians 2:14",
+        "Colossians 2:15"
+      ]
+    },
+    {
+      "source": "torrey",
+      "type": "Scape goat",
+      "refs": [
+        "Leviticus 16:20-22",
+        "Isaiah 53:6",
+        "Isaiah 53:12"
+      ]
+    },
+    {
+      "source": "torrey",
+      "type": "Sin offering",
+      "refs": [
+        "Leviticus 4:2",
+        "Leviticus 4:3",
+        "Leviticus 4:12",
+        "Hebrews 13:11",
+        "Hebrews 13:12"
+      ]
+    },
+    {
+      "source": "torrey",
+      "type": "Solomon",
+      "refs": [
+        "2 Samuel 7:12",
+        "2 Samuel 7:13",
+        "Luke 1:32",
+        "Luke 1:33",
+        "1 Peter 2:5"
+      ]
+    },
+    {
+      "source": "torrey",
+      "type": "Tabernacle",
+      "refs": [
+        "Exodus 40:2",
+        "Exodus 40:34",
+        "Hebrews 9:11",
+        "Colossians 2:9"
+      ]
+    },
+    {
+      "source": "torrey",
+      "type": "Table and show bread",
+      "refs": [
+        "Exodus 25:23-30",
+        "John 1:16",
+        "John 6:48"
+      ]
+    },
+    {
+      "source": "torrey",
+      "type": "Temple",
+      "refs": [
+        "1 Kings 6:1",
+        "1 Kings 6:38",
+        "John 2:19",
+        "John 2:21"
+      ]
+    },
+    {
+      "source": "torrey",
+      "type": "Tree of life",
+      "refs": [
+        "Genesis 2:9",
+        "John 1:4",
+        "Revelation 22:2"
+      ]
+    },
+    {
+      "source": "torrey",
+      "type": "Trespass offering",
+      "refs": [
+        "Leviticus 6:1-7",
+        "Isaiah 53:10"
+      ]
+    },
+    {
+      "source": "torrey",
+      "type": "Veil of the tabernacle and temple",
+      "refs": [
+        "Exodus 40:21",
+        "2 Chronicles 3:14",
+        "Hebrews 10:20"
+      ],
+      "transcription": "printed as 'Vail'"
+    },
+    {
+      "source": "torrey",
+      "type": "Zerubbabel",
+      "refs": [
+        "Zechariah 4:7-9",
+        "Hebrews 12:2",
+        "Hebrews 12:3"
+      ]
+    }
+  ],
+  "antichrist_passages": [
+    "Daniel 7:8",
+    "Daniel 7:25",
+    "Daniel 8:23",
+    "Daniel 8:25",
+    "Daniel 9:26",
+    "Daniel 11:36",
+    "2 Thessalonians 2:3",
+    "2 Thessalonians 2:4",
+    "2 Thessalonians 2:8",
+    "2 Thessalonians 2:9",
+    "1 John 2:18",
+    "1 John 2:22",
+    "1 John 4:3",
+    "2 John 1:7",
+    "Revelation 13:1",
+    "Revelation 13:5",
+    "Revelation 13:12",
+    "Revelation 13:15",
+    "Revelation 17:8",
+    "Revelation 19:20"
+  ],
+  "antichrist_claims": [
+    {
+      "source": "pink",
+      "type": "Cain",
+      "treatment": "profiled",
+      "refs": [
+        "Genesis 4:5",
+        "Genesis 4:7",
+        "Genesis 4:9",
+        "Genesis 4:10",
+        "Genesis 4:13"
+      ]
+    },
+    {
+      "source": "pink",
+      "type": "Lamech",
+      "treatment": "profiled",
+      "refs": [
+        "Genesis 4:17-19",
+        "Genesis 4:23-24"
+      ]
+    },
+    {
+      "source": "pink",
+      "type": "Nimrod",
+      "treatment": "profiled",
+      "refs": [
+        "Genesis 10:8-11",
+        "Genesis 11:4"
+      ]
+    },
+    {
+      "source": "pink",
+      "type": "Chedorlaomer",
+      "treatment": "profiled",
+      "refs": [
+        "Genesis 14:1",
+        "Genesis 14:5",
+        "Genesis 14:9",
+        "Genesis 14:17"
+      ]
+    },
+    {
+      "source": "pink",
+      "type": "Pharaoh",
+      "treatment": "profiled",
+      "refs": [
+        "Exodus 5:1",
+        "Exodus 5:2",
+        "Exodus 7:10",
+        "Exodus 7:11",
+        "Exodus 8:8",
+        "Exodus 8:15"
+      ]
+    },
+    {
+      "source": "pink",
+      "type": "Abimelech",
+      "treatment": "profiled",
+      "refs": [
+        "Judges 9:5",
+        "Judges 9:6",
+        "Judges 9:22",
+        "Judges 9:54"
+      ]
+    },
+    {
+      "source": "pink",
+      "type": "Saul",
+      "treatment": "profiled",
+      "refs": [
+        "1 Samuel 9:2",
+        "1 Samuel 10:23",
+        "1 Samuel 13:9",
+        "1 Samuel 15:11",
+        "1 Samuel 22:18",
+        "1 Samuel 31:4"
+      ]
+    },
+    {
+      "source": "pink",
+      "type": "Goliath",
+      "treatment": "profiled",
+      "refs": [
+        "1 Samuel 17:4-7",
+        "1 Samuel 17:10",
+        "1 Samuel 17:51"
+      ]
+    },
+    {
+      "source": "pink",
+      "type": "Absalom",
+      "treatment": "profiled",
+      "refs": [
+        "2 Samuel 15:2-6",
+        "2 Samuel 18:14",
+        "2 Samuel 18:18"
+      ]
+    },
+    {
+      "source": "pink",
+      "type": "Herod",
+      "treatment": "profiled",
+      "refs": [
+        "Matthew 2:3",
+        "Matthew 2:13",
+        "Matthew 2:16"
+      ]
+    },
+    {
+      "source": "pink",
+      "type": "Adoni-zedek",
+      "treatment": "named in passing",
+      "refs": [
+        "Joshua 10:1",
+        "Joshua 10:3"
+      ]
+    },
+    {
+      "source": "pink",
+      "type": "Sennacherib",
+      "treatment": "named in passing",
+      "refs": [
+        "2 Kings 18:13",
+        "2 Kings 18:35"
+      ]
+    },
+    {
+      "source": "pink",
+      "type": "Haman",
+      "treatment": "named in passing",
+      "refs": [
+        "Esther 3:10",
+        "Esther 7:6"
+      ]
+    },
+    {
+      "source": "yetter",
+      "type": "Nimrod",
+      "treatment": "detailed",
+      "refs": [
+        "Genesis 10:9",
+        "Genesis 10:11",
+        "Genesis 11:1-4",
+        "Genesis 11:5-9"
+      ]
+    },
+    {
+      "source": "yetter",
+      "type": "Pharaoh of the oppression",
+      "treatment": "detailed",
+      "refs": [
+        "Exodus 5:1-2",
+        "Exodus 7:11-12",
+        "Exodus 7:20-22",
+        "Exodus 8:6-7",
+        "Exodus 9:1-11",
+        "Exodus 10:21-23",
+        "Exodus 14:5-9",
+        "Exodus 14:13-28"
+      ]
+    },
+    {
+      "source": "yetter",
+      "type": "Haman",
+      "treatment": "detailed",
+      "refs": [
+        "Esther 3:1",
+        "Esther 3:2",
+        "Esther 3:5",
+        "Esther 3:8-13",
+        "Esther 7:1-10",
+        "Esther 9:17-18"
+      ]
+    },
+    {
+      "source": "yetter",
+      "type": "Nebuchadnezzar",
+      "treatment": "detailed",
+      "refs": [
+        "Daniel 3:1",
+        "Daniel 3:4-5",
+        "Daniel 3:6",
+        "Daniel 3:8-18",
+        "Daniel 3:19-23",
+        "Daniel 3:28-30"
+      ]
+    }
   ]
 }
