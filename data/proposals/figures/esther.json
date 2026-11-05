@@ -1,0 +1,47 @@
+{
+  "id": "esther",
+  "label": "Esther and Mordecai",
+  "chapters": [
+    "Esth.3",
+    "Esth.6",
+    "Esth.7",
+    "Esth.8"
+  ],
+  "verses": 56,
+  "describedBlind": true,
+  "source": "file:tools/fixtures/simulated-esther.json",
+  "model": null,
+  "written": "2026-11-05",
+  "motifs": [
+    {
+      "motif": "conspired-against",
+      "ref": "Esth.3.6",
+      "quote": "to destroy all the Jews"
+    },
+    {
+      "motif": "they-bow-before-him",
+      "ref": "Esth.3.2",
+      "quote": "bowed down, and did reverence to Haman"
+    },
+    {
+      "motif": "exalted-by-the-ruler",
+      "ref": "Esth.6.11",
+      "quote": "Thus shall it be done unto the man whom the king delighteth to honor"
+    },
+    {
+      "motif": "given-authority-over-all",
+      "ref": "Esth.8.2",
+      "quote": "the king took off his ring"
+    },
+    {
+      "motif": "preserves-life",
+      "ref": "Esth.8.11",
+      "quote": "to gather themselves together, and to stand for their life"
+    },
+    {
+      "motif": "exposed-as-false",
+      "ref": "Esth.7.10",
+      "quote": "So they hanged Haman on the gallows"
+    }
+  ]
+}

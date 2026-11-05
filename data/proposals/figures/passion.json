@@ -1,0 +1,88 @@
+{
+  "id": "passion",
+  "label": "the Passion and after",
+  "chapters": [
+    "Matt.26",
+    "Matt.27",
+    "Matt.28",
+    "Luke.23",
+    "Luke.24"
+  ],
+  "verses": 270,
+  "describedBlind": true,
+  "source": "file:tools/fixtures/simulated-passion.json",
+  "model": null,
+  "written": "2026-11-05",
+  "motifs": [
+    {
+      "motif": "conspired-against",
+      "ref": "Matt.26.4",
+      "quote": "they might take Jesus by subtlety, and kill him"
+    },
+    {
+      "motif": "sold-or-betrayed-for-silver",
+      "ref": "Matt.26.15",
+      "quote": "thirty pieces of silver"
+    },
+    {
+      "motif": "falsely-accused",
+      "ref": "Matt.26.60",
+      "quote": "though many false witnesses came"
+    },
+    {
+      "motif": "bound",
+      "ref": "Matt.27.2",
+      "quote": "they bound him, and led him away"
+    },
+    {
+      "motif": "stripped-of-his-garment",
+      "ref": "Matt.27.28",
+      "quote": "And they stripped him"
+    },
+    {
+      "motif": "numbered-with-two-condemned",
+      "ref": "Luke.23.33",
+      "quote": "one on the right hand and the other on the left"
+    },
+    {
+      "motif": "forgives",
+      "ref": "Luke.23.34",
+      "quote": "Father, forgive them"
+    },
+    {
+      "motif": "one-restored-one-condemned",
+      "ref": "Luke.23.43",
+      "quote": "To-day shalt thou be with me in Paradise"
+    },
+    {
+      "motif": "descent-into-the-pit",
+      "ref": "Matt.27.60",
+      "quote": "laid it in his own new tomb"
+    },
+    {
+      "motif": "brought-up-alive",
+      "ref": "Matt.28.6",
+      "quote": "He is not here; for he is risen"
+    },
+    {
+      "motif": "not-recognised",
+      "ref": "Luke.24.16",
+      "quote": "their eyes were holden"
+    },
+    {
+      "motif": "reveals-himself",
+      "ref": "Luke.24.31",
+      "quote": "their eyes were opened, and they knew him"
+    },
+    {
+      "motif": "they-are-afraid",
+      "ref": "Luke.24.37",
+      "quote": "they were terrified and affrighted"
+    },
+    {
+      "motif": "given-authority-over-all",
+      "ref": "Matt.28.18",
+      "quote": "All authority hath been given unto me"
+    }
+  ]
+}

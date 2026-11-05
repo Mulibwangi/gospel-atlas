@@ -1,0 +1,30 @@
+{
+  "a": "Joseph",
+  "b": "the Passion and after",
+  "bothDescribedBlind": true,
+  "shared": 9,
+  "order": 0.6666666666666666,
+  "chiastic": false,
+  "p": 0.09699515024248788,
+  "attested": 9,
+  "motifs": [
+    "conspired-against",
+    "stripped-of-his-garment",
+    "descent-into-the-pit",
+    "sold-or-betrayed-for-silver",
+    "falsely-accused",
+    "one-restored-one-condemned",
+    "not-recognised",
+    "reveals-himself",
+    "forgives"
+  ],
+  "controls": [
+    {
+      "against": "Esther and Mordecai",
+      "shared": 3,
+      "order": 1,
+      "p": 0.3327333633318334
+    }
+  ],
+  "written": "2026-11-05"
+}
