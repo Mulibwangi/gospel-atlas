@@ -609,7 +609,7 @@ function layout(){
     const focused=state.focus?state.focus.to-state.focus.from+1:0;
     // With a focus, the dial is the book: one full revolution for it, with the rest
     // of the canon kept as a context ring outside. Without one, the ring is the canon.
-    const R=Math.min(W,H)*(focused?0.33:0.295);  // room outside for two tiers of radial names
+    const R=Math.min(W,H)*(focused?0.32:0.275);  // room outside for two tiers of radial names
     const Rin=focused?R*0.54:0;
     geom.circle={cx,cy,R,Rin,focused,barMax:R*(focused?0.085:0.14)};
     geom.angle=i=>{                                   // canon ring, Genesis 1 at the top
@@ -713,7 +713,9 @@ function bookMag(bi){
   const d=Math.abs(bi-h);
   return d===0?2.05:d===1?0.66:d===2?0.76:d===3?0.88:1;
 }
+let labelHits=[];          // where each book's name was drawn this frame, for pointing at
 function drawFrame(c){
+  labelHits=[];
   const line=css('--line'),faint=css('--faint'),ink=css('--ink');
   c.save();c.font='9px '+css('--sans');c.textBaseline='middle';
   if(state.view==='arc'){
@@ -770,7 +772,11 @@ function drawFrame(c){
       c.globalAlpha=self?1:(near?(m<1?.45:.7):1);
       c.fillStyle=self?css('--accent'):(lit?css('--gold'):(bi>=NT?ink:faint));
       c.font=(self||lit?'700 ':bi>=NT?'600 ':'')+(8*m).toFixed(1)+'px '+css('--sans');
-      c.fillText(self?shortName(b.name):(m<1?b.code:name),0,0);
+      const shown=self?shortName(b.name):(m<1?b.code:name);
+      c.fillText(shown,0,0);
+      c.font='8px '+css('--sans');
+      labelHits.push({chapter:b.first+((b.chapters-1)>>1),x:at,y:rows[row],
+        rot:TILT,w:Math.max(c.measureText(shortName(b.name)).width,c.measureText(shown).width),h:10,flip:true});
       c.globalAlpha=1;c.restore();
     });
     c.font='9px '+css('--sans');
@@ -802,7 +808,7 @@ function drawFrame(c){
     // angular room it needs is the same whether it reads "Job" or "Deuteronomy" — and
     // two tiers have to stand further apart than the longest name, or an inner label
     // runs straight through an outer one.
-    const tiers=[R*1.01+barMax+11,R*1.01+barMax+76];
+    const tiers=[R*1.01+barMax+11,R*1.01+barMax+68];
     const filled=tiers.map(()=>-Infinity);
     c.textBaseline='middle';c.font='9px '+css('--sans');
     const halfAt=(s,t)=>5.5/(Math.PI*2*tiers[t]);
@@ -816,7 +822,9 @@ function drawFrame(c){
       const mid=b.first+b.chapters/2,u=mid/N;
       let name=null,tier=-1,at=u;
       for(let t=0;t<tiers.length&&tier<0;t++){
-        for(const candidate of [shortName(b.name),b.code]){
+        // The outer tier takes abbreviations only: a long name there reaches past the
+        // edge of the frame and loses its last letter.
+        for(const candidate of (t===0?[shortName(b.name),b.code]:[b.code])){
           const half=halfAt(candidate,t),want=Math.max(u,filled[t]+half);
           if(want<=LIM&&want-u<=DODGE){filled[t]=want+half;tier=t;name=candidate;at=want;break}
         }
@@ -847,7 +855,16 @@ function drawFrame(c){
       c.globalAlpha=self?1:(near?(m<1?.45:.7):1);
       c.fillStyle=self?css('--accent'):(lit?css('--gold'):(bi>=NT?ink:faint));
       c.font=(self||lit?'700 ':bi>=NT?'600 ':'')+(9*m).toFixed(1)+'px '+css('--sans');
-      c.fillText(self?shortName(b.name):(m<1?b.code:name),0,0);
+      const shown=self?shortName(b.name):(m<1?b.code:name);
+      c.fillText(shown,0,0);
+      // Remember where the name was drawn. A name slid round the ring or pushed to the
+      // outer tier no longer sits over the chapters it belongs to, so pointing at it has
+      // to be answered from here rather than from the angle. The target is measured at
+      // the ordinary size and never at the magnified one, so that it does not grow and
+      // shrink under the pointer as neighbouring names swell and recede.
+      c.font='9px '+css('--sans');
+      labelHits.push({chapter:b.first+((b.chapters-1)>>1),x:p[0],y:p[1],
+        rot:ang+(flip?Math.PI:0),w:Math.max(c.measureText(shortName(b.name)).width,c.measureText(shown).width),h:11,flip});
       c.globalAlpha=1;c.restore();
     });
     if(focused){
@@ -1160,7 +1177,31 @@ function caption(){
 function render(){sizes();layout();renderBase();caption()}
 
 // ---- selection ----------------------------------------------------------
+// A name is a target in its own right. The point is carried into the label's own
+// frame - undoing the rotation that drew it - and tested against the box the text
+// actually occupies, so the answer is the book whose name is under the pointer
+// rather than whatever the ring happens to hold at that angle.
+function labelAt(px,py){
+  let best=null,bestD=Infinity;
+  for(const L of labelHits){
+    const dx=px-L.x,dy=py-L.y;
+    const co=Math.cos(-L.rot),si=Math.sin(-L.rot);
+    const u=dx*co-dy*si,v=dx*si+dy*co;          // along the text, and across it
+    const pad=4;
+    if(v<-L.h-pad||v>L.h*0.45+pad)continue;
+    if(L.flip?(u<-L.w-pad||u>pad):(u<-pad||u>L.w+pad))continue;
+    // Names crowd and their boxes overlap, so prefer the one the pointer is nearest the
+    // middle of rather than whichever was drawn last.
+    const mid=L.flip?-L.w/2:L.w/2;
+    const d=Math.abs(u-mid)/Math.max(8,L.w)+Math.abs(v+L.h*0.3)/Math.max(8,L.h);
+    if(d<bestD){bestD=d;best=L.chapter}
+  }
+  return best;
+}
 function chapterAt(px,py){
+  if(state.view==='matrix')return matrixAt(px,py);
+  const named=labelAt(px,py);
+  if(named!==null)return named;
   if(state.view==='arc'){const i=Math.round((px-geom.arc.pad)/geom.arc.step-0.5);return i>=0&&i<N?i:null}
   if(state.view==='circle'){
     const {cx,cy,R,Rin,focused}=geom.circle,dx=px-cx,dy=py-cy,r=Math.hypot(dx,dy);
@@ -1174,6 +1215,9 @@ function chapterAt(px,py){
     if(r<R*0.62||r>R*1.3)return null;
     return wrap(a/(Math.PI*2)*N,N);
   }
+  return null;
+}
+function matrixAt(px,py){
   const m=geom.matrix;
   if(px<m.padL||px>m.padL+sources.length*m.cw)return null;
   return sources[Math.max(0,Math.min(sources.length-1,Math.floor((px-m.padL)/m.cw)))];
