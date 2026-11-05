@@ -31,6 +31,14 @@ nav button[aria-current="true"]{background:var(--panel);border-left-color:var(--
 .said{background:var(--field);border:1px solid var(--line);border-left:3px solid var(--gold);
   border-radius:4px;padding:14px 16px;margin:0 0 20px}
 .said .ref{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);font-weight:700}
+.said.read{border-left-color:var(--faint);border-left-style:dashed;background:var(--panel)}
+.said.read .ref{color:var(--muted)}
+.said.read blockquote{font-family:var(--sans);font-size:13.5px;color:var(--muted);line-height:1.5}
+.toggle{display:flex;gap:7px;align-items:flex-start;font-size:12.5px;color:var(--muted);
+  margin:0 0 18px;cursor:pointer;line-height:1.35}
+.toggle input{margin:2px 0 0}
+nav button.read{color:var(--muted)}
+nav button.read::after{content:' \00b7 a reading';font-size:10px;letter-spacing:.05em;color:var(--faint)}
 .said blockquote{margin:6px 0 0;font-family:var(--serif);font-size:16.5px;line-height:1.55}
 h3{font-family:var(--serif);font-weight:400;font-size:22px;margin:0 0 4px}
 .sub{color:var(--muted);font-size:13px;margin:0 0 18px}
@@ -67,16 +75,17 @@ footer p{max-width:78ch;margin:0 0 9px}
 <header><div class="wrap">
   <h1>Shadow and Substance</h1>
   <p>Places where Scripture reads itself: a verse states that one passage answers another, and
-     the verse is given. Nothing here is inferred, and nothing is included because it is
-     traditional. Every line opens to the text it rests on.</p>
+     the verse is given. The readings the typological tradition adds can be shown beside
+     them for comparison, marked as readings throughout. Every line opens to the text it
+     rests on.</p>
 </div></header>
 <main>
   <nav>
     <h2>Scripture says so</h2>
     <ul id="list"></ul>
+    <label class="toggle"><input type="checkbox" id="trad"> Also show the readings tradition adds</label>
     <h2>What this is</h2>
-    <p style="font-size:12px;color:var(--muted);margin:0">Twelve correspondences, each asserted by a
-       verse that is quoted in full. The readings tradition adds to these are not here.</p>
+    <p style="font-size:12px;color:var(--muted);margin:0" id="whatis"></p>
   </nav>
   <section>
     <div class="said"><span class="ref" id="a-ref"></span><blockquote id="a-text"></blockquote></div>
@@ -146,8 +155,18 @@ function show(i){
   current=i;
   const t=DATA.typologies[i];
   [...el('list').children].forEach((li,k)=>li.firstChild.setAttribute('aria-current',k===i));
-  el('a-ref').textContent='Scripture says so — '+t.assertion.label;
-  el('a-text').textContent='“'+t.assertion.text+'”';
+  const said=document.querySelector('.said');
+  said.classList.toggle('read',!t.asserted);
+  if(t.asserted){
+    el('a-ref').textContent='Scripture says so — '+t.assertion.label;
+    el('a-text').textContent='“'+t.assertion.text+'”';
+  }else{
+    el('a-ref').textContent='No verse asserts this';
+    el('a-text').textContent='The typological tradition reads the two together — Patrick Fairbairn, '
+      +'The Typology of Scripture (1845–47), and Ada Habershon, The Study of the Types (1898), are its '
+      +'standard references. The passages below are real and checked; the correspondence between them is '
+      +'a reading, and no verse of Scripture states it.';
+  }
   el('title').textContent=t.name;
   const n=t.type.motifs.length;
   el('sub').textContent=n+' answering passages, in the order the text gives them.';
@@ -171,10 +190,24 @@ function show(i){
 }
 DATA.typologies.forEach((t,i)=>{
   const li=document.createElement('li'),b=document.createElement('button');
-  b.type='button'; b.textContent=t.name; b.addEventListener('click',()=>show(i));
+  b.type='button'; b.textContent=t.name; if(!t.asserted)b.className='read';
+  b.addEventListener('click',()=>show(i));
   li.appendChild(b); el('list').appendChild(li);
 });
-el('foot-count').textContent=DATA.typologies.length+' correspondences, each one asserted by the verse quoted with it. '
+const nAsserted=DATA.typologies.filter(t=>t.asserted).length;
+function applyToggle(){
+  const on=el('trad').checked;
+  [...el('list').children].forEach((li,k)=>{li.hidden=!on&&!DATA.typologies[k].asserted});
+  el('whatis').textContent=on
+    ? nAsserted+' correspondences a verse asserts, and '+(DATA.typologies.length-nAsserted)
+      +' the tradition reads without one. The second kind is marked wherever it appears.'
+    : nAsserted+' correspondences, each asserted by a verse that is quoted in full. The readings '
+      +'tradition adds to these are hidden until you ask for them.';
+  if(!on&&!DATA.typologies[current].asserted)show(0);
+}
+el('trad').addEventListener('change',applyToggle);
+applyToggle();
+el('foot-count').textContent=nAsserted+' correspondences asserted by the verse quoted with them, and '+(DATA.typologies.length-nAsserted)+' more the typological tradition reads without one. '
   +DATA.verses+' verses of Scripture are embedded in this file, which needs nothing else to open. Built '+DATA.built+'.';
 show(0);
 </script>

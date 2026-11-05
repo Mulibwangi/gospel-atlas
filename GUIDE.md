@@ -22,12 +22,21 @@ and the panel lists the other books it links to. Choose one of those links and
 the passages open underneath, verse by verse, with the ASV text on both sides.
 That file is Cross_Reference_Lab.html and it is self-contained in the same way.
 
+"Order" lays the books out either as they are bound or in the order their events are
+usually dated — Job beside Genesis, the prophets among the kings, Paul's letters by
+when they are thought to have been written. Whole books move, never split. The dates
+behind any such order are widely contested, which the page says plainly: a second
+published plan places Joel four centuries from where this one does. Nothing in the
+data changes, only where each chapter is drawn.
+
 A third button, "Open Shadow and Substance", holds the places where Scripture reads
 itself: twelve correspondences in which a verse states that one passage answers
 another, with that verse quoted in full. The two passages are set side by side in the
 order the text gives them, with a line joining each answering pair, and every line
-opens to the ASV on both sides. Readings the typological tradition adds to these are
-deliberately not included. A line is drawn solid where the cross-reference dataset
+opens to the ASV on both sides. A switch brings in the readings the typological
+tradition adds — Joseph, Boaz, Samson and five more — so the two kinds can be compared
+side by side. They are off by default, marked as readings wherever they appear, and
+carry no asserting verse because there is none. A line is drawn solid where the cross-reference dataset
 records a direct reference between those two chapters and dashed where it does not,
 which is a fact about that dataset and not a judgement about the correspondence. That
 file is Shadow_and_Substance.html.

@@ -1,9 +1,10 @@
 // Builds docs/typology.html, a self-contained teaching page, from data/typology.json.
 //
-// Only the correspondences a verse of Scripture asserts are carried over; the ones
-// attributed to the typological tradition are left out, because the page's whole claim
-// is that it shows what Scripture says about itself rather than what is said about
-// Scripture. Every reference is resolved against the ASV and every quotation checked
+// Both kinds are carried over and each is marked for what it is: a correspondence a
+// verse of Scripture states, with that verse, or one the typological tradition reads
+// into the text with no verse behind it. The page shows the first kind by default and
+// the second only when asked, so the two can be compared without being confused.
+// Every reference is resolved against the ASV and every quotation checked
 // against the verse that is cited, exactly as tools/typology.mjs does, so nothing can
 // reach the page unverified.
 //
@@ -42,7 +43,7 @@ const problems = [];
 const need = new Set();
 const out = [];
 for (const t of DB.typologies) {
-  if (t.asserted_by !== 'scripture') continue;
+  const asserted = t.asserted_by === 'scripture';
   const check = (where, ref, quote) => {
     const text = bible[ref];
     if (text === undefined) { problems.push(`${where}: ${ref} is not a verse in the ASV`); return false; }
@@ -51,7 +52,7 @@ for (const t of DB.typologies) {
     }
     need.add(ref); return true;
   };
-  if (!check(t.id + ' assertion', t.assertion.ref, t.assertion.quote)) continue;
+  if (asserted && !check(t.id + ' assertion', t.assertion.ref, t.assertion.quote)) continue;
   let ok = true;
   for (const side of ['type', 'antitype'])
     for (const m of t[side].motifs) if (!check(`${t.id}.${side}`, m.ref, m.quote)) ok = false;
@@ -77,8 +78,8 @@ for (const t of DB.typologies) {
     motif: m.motif, ref: label(m.ref), text: bible[m.ref], label: m.quote
   }));
   out.push({
-    id: t.id, name: t.name,
-    assertion: {label: label(t.assertion.ref), text: bible[t.assertion.ref]},
+    id: t.id, name: t.name, asserted,
+    assertion: asserted ? {label: label(t.assertion.ref), text: bible[t.assertion.ref]} : null,
     type: {label: t.type.label, motifs: side('type')},
     antitype: {label: t.antitype.label, motifs: side('antitype')},
     pairs: pairMarks,
@@ -100,7 +101,7 @@ await mkdir('docs', {recursive: true});
 const html = template.replace('__DATA__', JSON.stringify(payload));
 await writeFile('docs/typology.html', html);
 console.log(JSON.stringify({
-  asserted: out.length, skippedAsTradition: DB.typologies.length - out.length,
+  asserted: out.filter(t => t.asserted).length, tradition: out.filter(t => !t.asserted).length,
   versesEmbedded: need.size, chiastic: out.filter(t => t.chiastic).length,
   pagePretty: (Buffer.byteLength(html) / 1024).toFixed(0) + ' KB'
 }));

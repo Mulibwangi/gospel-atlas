@@ -195,8 +195,31 @@ const verseShort=v=>{const c=CHAPTER_OF_VERSE[v];
   return shortName(BOOKS[bookOfChapter[c]].name)+' '+chapterNumber[c]+':'+(v-CHAPTER_START[c]+1)};
 const verseRange=(v,span)=>span?verseLabel(v)+'\u2013'+(v+span-CHAPTER_START[CHAPTER_OF_VERSE[v+span]]+1):verseLabel(v);
 const maxVerses=Math.max.apply(null,CHAPTERS);
-const sources=[...new Set(LINKS.map(l=>l[0]))].sort((a,b)=>a-b);
-const sourceSlot=new Map(sources.map((c,i)=>[c,i]));
+let sources=[...new Set(LINKS.map(l=>l[0]))].sort((a,b)=>a-b);
+let sourceSlot=new Map(sources.map((c,i)=>[c,i]));
+// A second order for the ring, kept entirely separate from the data: the links, the
+// index and every chapter number stay canonical, and only where a chapter is *drawn*
+// changes. SLOT maps a chapter to its place on the page and ATSLOT maps back.
+const CHRONO=['Gen','Job','Exod','Lev','Num','Deut','Josh','Judg','Ruth','1Sam','2Sam','1Chr','Ps',
+ '1Kgs','2Chr','Prov','Eccl','Song','2Kgs','Jonah','Amos','Hos','Isa','Mic','Zeph','Nah','Hab','Jer',
+ 'Lam','Obad','Ezek','Dan','Ezra','Neh','Hag','Zech','Joel','Esth','Mal',
+ 'Matt','Mark','John','Luke','Acts','Jas','1Thess','2Thess','Gal','1Cor','2Cor','Phil','Phlm','Rom',
+ 'Col','Eph','1Tim','2Tim','Titus','1Pet','2Pet','Heb','Jude','1John','2John','3John','Rev'];
+let SLOT=new Int32Array(N),ATSLOT=new Int32Array(N);
+function buildOrder(){
+  const order=state.order==='chronological'
+    ? CHRONO.map(code=>BOOKS.findIndex(b=>b.code===code)).filter(i=>i>=0)
+    : BOOKS.map((b,i)=>i);
+  const missing=BOOKS.map((b,i)=>i).filter(i=>!order.includes(i));
+  let slot=0;
+  for(const bi of order.concat(missing)){
+    const b=BOOKS[bi];
+    for(let c=0;c<b.chapters;c++){SLOT[b.first+c]=slot;ATSLOT[slot]=b.first+c;slot++}
+  }
+  sources=[...new Set(LINKS.map(l=>l[0]))].sort((x,y)=>SLOT[x]-SLOT[y]);
+  sourceSlot=new Map(sources.map((c,i)=>[c,i]));
+}
+const booksInOrder=()=>BOOKS.map((b,bi)=>({b,bi})).sort((x,y)=>SLOT[x.b.first]-SLOT[y.b.first]);
 const fmt=n=>n.toLocaleString('en-GB');
 
 // A thread is a word search over the text, not a doctrine: a link is on the thread
@@ -484,6 +507,12 @@ root.innerHTML=`
       <input id="q" type="search" autocomplete="off" placeholder="Search — Isaiah 53, Ps 22, the Prophets, Paul" aria-label="Search for a book or chapter">
       <div id="results" hidden></div>
     </div>
+    <div class="opt">Order
+      <select id="order" aria-label="The order the books are laid out in">
+        <option value="canonical">Canonical</option>
+        <option value="chronological">Chronological</option>
+      </select>
+    </div>
     <div class="opt">Colour
       <select id="colour" aria-label="Colour mode">
         <option value="distance">By distance</option>
@@ -564,7 +593,7 @@ const SECTIONS=[
   const a=BOOKS.find(b=>b.code===from),z=BOOKS.find(b=>b.code===to);
   return a&&z?{name,from:a.first,to:z.first+z.chapters-1,alias}:null;
 }).filter(Boolean);
-const state={view:'circle',colour:'distance',cbsafe:false,flow:true,thread:null,chain:null,min:COMPLETE?2:1,hover:null,locked:null,focus:null,dir:'both'};
+const state={view:'circle',colour:'distance',cbsafe:false,flow:true,thread:null,chain:null,min:COMPLETE?2:1,hover:null,locked:null,focus:null,dir:'both',order:'canonical'};
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const GOSPEL={Matt:'--matt',Mark:'--mark',Luke:'--luke',John:'--john'};
 const CB={Matt:'#0072b2',Mark:'#d55e00',Luke:'#009e73',John:'#cc79a7'};
@@ -603,7 +632,8 @@ function layout(){
   if(state.view==='arc'){
     const pad=26,baseY=H-178,barMax=44;   // room below for three rows of upright book names
     geom.arc={pad,baseY,barMax,step:(W-pad*2)/N};
-    geom.x=i=>pad+(i+0.5)*geom.arc.step;
+    geom.xAt=u=>pad+(u+0.5)*geom.arc.step;
+    geom.x=i=>geom.xAt(SLOT[i]);
   }else if(state.view==='circle'){
     const cx=W/2,cy=H/2;
     const focused=state.focus?state.focus.to-state.focus.from+1:0;
@@ -612,16 +642,15 @@ function layout(){
     const R=Math.min(W,H)*(focused?0.32:0.275);  // room outside for two tiers of radial names
     const Rin=focused?R*0.54:0;
     geom.circle={cx,cy,R,Rin,focused,barMax:R*(focused?0.085:0.14)};
-    geom.angle=i=>{                                   // canon ring, Genesis 1 at the top
-      const k=Math.max(0,Math.min(N-1,i));
-      return -Math.PI/2+(k/N)*Math.PI*2;
-    };
+    geom.angleAt=u=>-Math.PI/2+(Math.max(0,Math.min(N-1,u))/N)*Math.PI*2;
+    geom.angle=i=>geom.angleAt(SLOT[Math.max(0,Math.min(N-1,Math.round(i)))]);
+    geom.pointAt=(u,r)=>{const t=geom.angleAt(u);return[cx+Math.cos(t)*r,cy+Math.sin(t)*r]};
     // The bezel turns: whichever chapter is held comes to twelve o'clock.
     const held=(state.locked!==null&&state.focus&&state.locked>=state.focus.from&&state.locked<=state.focus.to)
       ? state.locked : (state.focus?state.focus.from:0);
     geom.dialZero=held;
     geom.dial=i=>-Math.PI/2+((((i-held)%focused)+focused)%focused)/focused*Math.PI*2;
-    geom.point=(i,r)=>{const t=geom.angle(i);return[cx+Math.cos(t)*r,cy+Math.sin(t)*r]};
+    geom.point=(i,r)=>geom.pointAt(SLOT[Math.max(0,Math.min(N-1,Math.round(i)))],r);
     geom.dialPoint=(i,r)=>{const t=geom.dial(i);return[cx+Math.cos(t)*r,cy+Math.sin(t)*r]};
     // Where a link's end sits: on the dial when it is inside the focus, else on the canon ring.
     geom.end=i=>(focused&&i>=state.focus.from&&i<=state.focus.to)
@@ -696,7 +725,7 @@ function drawLink(c,l,alpha,width){
     const m=geom.matrix;
     if(!sourceSlot.has(a)){c.globalAlpha=1;return}
     c.fillStyle=linkColour(l);
-    c.fillRect(m.padL+sourceSlot.get(a)*m.cw,m.padT+b*m.ch,Math.max(1.2,m.cw),Math.max(1.2,m.ch));
+    c.fillRect(m.padL+sourceSlot.get(a)*m.cw,m.padT+SLOT[b]*m.ch,Math.max(1.2,m.cw),Math.max(1.2,m.ch));
     c.globalAlpha=1;return;
   }
   c.stroke();c.globalAlpha=1;
@@ -746,8 +775,8 @@ function drawFrame(c){
     // of its book and keep a leader line back to it. Nothing is dropped and nothing lies
     // about where it belongs.
     const half=4,DODGE=30;
-    const laid=BOOKS.map((b,bi)=>{
-      const x=geom.x(b.first+b.chapters/2-0.5),full=shortName(b.name);
+    const laid=booksInOrder().map(({b,bi})=>{
+      const x=geom.xAt(SLOT[b.first]+b.chapters/2-0.5),full=shortName(b.name);
       let name=null,row=-1,at=x;
       for(let t=0;t<rows.length&&row<0;t++){
         const want=Math.max(x,used[t]+half);
@@ -818,8 +847,8 @@ function drawFrame(c){
     // of Revelation: the angle clamps there, and a label pushed over it would pile onto
     // whatever else was pushed over it.
     const DODGE=0.026,LIM=(N-0.6)/N;
-    const placed=BOOKS.map((b,bi)=>{
-      const mid=b.first+b.chapters/2,u=mid/N;
+    const placed=booksInOrder().map(({b,bi})=>{
+      const mid=SLOT[b.first]+b.chapters/2,u=mid/N;
       let name=null,tier=-1,at=u;
       for(let t=0;t<tiers.length&&tier<0;t++){
         // The outer tier takes abbreviations only: a long name there reaches past the
@@ -839,11 +868,11 @@ function drawFrame(c){
     placed.forEach(({b,bi,mid,at,name,tier})=>{
       const lit=focused&&b.first>=state.focus.from&&b.first+b.chapters-1<=state.focus.to;
       const m=bookMag(bi),near=hoverBook()>=0;
-      const ang=geom.angle(at),p=geom.point(at,tiers[tier]);
+      const ang=geom.angleAt(at),p=geom.pointAt(at,tiers[tier]);
       if(!isFinite(p[0])||!isFinite(p[1]))return;
       if(tier>0||at!==mid){
-        const q=geom.point(mid,R*1.01+barMax+4),q2=geom.point(mid,tiers[tier]-9),
-              q3=geom.point(at,tiers[tier]-4);
+        const q=geom.pointAt(mid,R*1.01+barMax+4),q2=geom.pointAt(mid,tiers[tier]-9),
+              q3=geom.pointAt(at,tiers[tier]-4);
         c.strokeStyle=m>1?css('--accent'):faint;c.globalAlpha=m>1?.7:.3;c.lineWidth=.7;
         c.beginPath();c.moveTo(q[0],q[1]);c.lineTo(q2[0],q2[1]);c.lineTo(q3[0],q3[1]);
         c.stroke();c.globalAlpha=1;
@@ -1160,7 +1189,7 @@ function paint(){
   }
   else{const m=geom.matrix;ctx.globalAlpha=.25;
     if(sourceSlot.has(focus))ctx.fillRect(m.padL+sourceSlot.get(focus)*m.cw,m.padT,Math.max(1.2,m.cw),N*m.ch);
-    else ctx.fillRect(m.padL,m.padT+focus*m.ch,sources.length*m.cw,Math.max(1.2,m.ch));
+    else ctx.fillRect(m.padL,m.padT+SLOT[focus]*m.ch,sources.length*m.cw,Math.max(1.2,m.ch));
     ctx.globalAlpha=1}
   if(progress<1)drawProgress(ctx);
   ctx.restore();
@@ -1173,8 +1202,15 @@ function caption(){
       :'The whole canon clockwise from Genesis 1 at the top. Chords are pulled toward the centre of each book, so links sharing a destination braid together. Choose a book to make it the dial.',
     matrix:'Each dot is one chapter pair: the chapter a link starts from across the bottom, the chapter it points to down the side. Direction is kept here and nowhere else.'
   }[state.view];
+  if(state.order==='chronological')
+    document.getElementById('caption').textContent+=
+      ' The books are laid out in the order the events are usually dated rather than the order they are bound in'
+      +' \u2014 Job beside Genesis, the prophets among the kings, Paul\u2019s letters by when they are thought'
+      +' to have been written. Whole books are moved, never split, and the dates behind such an order are'
+      +' widely contested; a second published plan puts Joel four centuries from where this one does.'
+      +' Nothing in the data changes, only where each chapter is drawn.';
 }
-function render(){sizes();layout();renderBase();caption()}
+function render(){sizes();buildOrder();layout();renderBase();caption()}
 
 // ---- selection ----------------------------------------------------------
 // A name is a target in its own right. The point is carried into the label's own
@@ -1202,7 +1238,7 @@ function chapterAt(px,py){
   if(state.view==='matrix')return matrixAt(px,py);
   const named=labelAt(px,py);
   if(named!==null)return named;
-  if(state.view==='arc'){const i=Math.round((px-geom.arc.pad)/geom.arc.step-0.5);return i>=0&&i<N?i:null}
+  if(state.view==='arc'){const u=Math.round((px-geom.arc.pad)/geom.arc.step-0.5);return u>=0&&u<N?ATSLOT[u]:null}
   if(state.view==='circle'){
     const {cx,cy,R,Rin,focused}=geom.circle,dx=px-cx,dy=py-cy,r=Math.hypot(dx,dy);
     let a=Math.atan2(dy,dx)+Math.PI/2;
@@ -1213,7 +1249,7 @@ function chapterAt(px,py){
       return state.focus.from+(((geom.dialZero-state.focus.from)+wrap(a/(Math.PI*2)*n,n))%n);
     }
     if(r<R*0.62||r>R*1.3)return null;
-    return wrap(a/(Math.PI*2)*N,N);
+    return ATSLOT[wrap(a/(Math.PI*2)*N,N)];
   }
   return null;
 }
@@ -1655,6 +1691,9 @@ document.querySelectorAll('.views button').forEach(b=>b.addEventListener('click'
   render();describe();
 }));
 document.getElementById('colour').addEventListener('change',e=>{state.colour=e.target.value;renderBase();legend();describe()});
+document.getElementById('order').addEventListener('change',e=>{
+  state.order=e.target.value;buildOrder();renderBase();describe();caption();
+});
 (function(){
   const pick=document.getElementById('threadPick'),wrap=document.getElementById('threadWords'),
         input=document.getElementById('threadInput'),apply=document.getElementById('threadApply');
