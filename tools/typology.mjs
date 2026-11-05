@@ -93,12 +93,22 @@ for (const t of DB.typologies) {
   const A = t.type.motifs.map(m => m.motif), B = t.antitype.motifs.map(m => m.motif);
   const common = new Set(A.filter(m => B.includes(m)));
   const a = A.filter(m => common.has(m)), b = B.filter(m => common.has(m));
-  const run = lcs(a, b);
+  // Forward and reversed, because Scripture answers itself in both directions.
+  // Ezekiel 34:16 lists the shepherd's duties in exactly the reverse of the order
+  // 34:4 indicts the shepherds for neglecting: seek, bring, bind, strengthen against
+  // strengthen, bind, bring, seek. Measuring forward alone scores that perfect
+  // correspondence at 0.25 and calls a chiasm noise.
+  const fwd = lcs(a, b), rev = lcs(a, [...b].reverse());
+  const run = Math.max(fwd, rev);
+  const chiastic = rev > fwd;
   const order = common.size ? run / common.size : 0;
-  // null: how often does a random ordering of one side do as well?
+  // null: how often does a random ordering of one side do as well, either way round?
   const rnd = mulberry(20261105);
   let ge = 0;
-  for (let i = 0; i < TRIALS; i++) if (lcs(a, shuffle(b, rnd)) >= run) ge++;
+  for (let i = 0; i < TRIALS; i++) {
+    const s = shuffle(b, rnd);
+    if (Math.max(lcs(a, s), lcs(a, [...s].reverse())) >= run) ge++;
+  }
   const p = (ge + 1) / (TRIALS + 1);
   // attestation of the shared motifs
   let att = 0;
@@ -107,7 +117,8 @@ for (const t of DB.typologies) {
     if (linked(r1, r2)) att++;
   }
   rows.push({id: t.id, name: t.name, by: t.asserted_by, nA: A.length, nB: B.length,
-             shared: common.size, run, order, p, att, attFrac: common.size ? att / common.size : 0});
+             shared: common.size, run, order, p, att, chiastic,
+             attFrac: common.size ? att / common.size : 0});
 }
 
 // ---- controls: the same measure on pairings nobody claims -----------------
@@ -129,7 +140,7 @@ console.log('\n  order   p      attested  shared  asserted by  typology');
 for (const r of [...rows].sort((x, y) => y.order - x.order || y.shared - x.shared))
   console.log('   ' + r.order.toFixed(2) + '   ' + (r.p < 0.001 ? '<.001' : r.p.toFixed(3)) +
     '   ' + String(r.att + '/' + r.shared).padStart(6) + '   ' + String(r.shared).padStart(4) +
-    '    ' + r.by.padEnd(11) + '  ' + r.name);
+    '    ' + r.by.padEnd(11) + '  ' + r.name + (r.chiastic ? '   [reversed]' : ''));
 const mean = xs => xs.reduce((a, b) => a + b, 0) / (xs.length || 1);
 const big = rows.filter(r => r.shared >= 4);
 for (const [label, set] of [['all', rows], ['4 or more shared motifs', big]]) {
