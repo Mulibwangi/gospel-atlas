@@ -1,0 +1,401 @@
+{
+  "about": "Claimed typological correspondences, recorded as two independently annotated passage sequences. A motif is drawn from the fixed vocabulary below and must carry a verbatim ASV fragment; tools/typology.mjs rejects any reference that does not resolve and any quotation that is not present in the ASV verse it cites. Who asserts the correspondence is recorded, never assumed: 'scripture' means a verse states it, and that verse is given; 'tradition' means the classical typological literature reads it so, with no scriptural assertion. Nothing here measures whether a reading is true.",
+  "sources": {
+    "scripture": "A verse of Scripture asserts the correspondence; the asserting reference is given in each record.",
+    "tradition": "The classical typological literature, represented by Patrick Fairbairn, The Typology of Scripture (1845-47) and Ada Habershon, The Study of the Types (1898). Attributed to the tradition as a whole, not to a located page in either work."
+  },
+  "vocabulary": [
+    "beloved-son", "sent-by-the-father", "rejected-by-his-own", "conspired-against",
+    "sold-or-betrayed-for-silver", "stripped-of-his-garment", "falsely-accused",
+    "silent-before-accusers", "bound", "descent-into-the-pit", "numbered-with-two-condemned",
+    "one-restored-one-condemned", "brought-up-alive", "exalted-by-the-ruler",
+    "given-a-new-name", "given-authority-over-all", "they-bow-before-him",
+    "giver-of-bread", "all-nations-come-to-him", "not-recognised", "reveals-himself",
+    "they-are-afraid", "forgives", "evil-meant-but-god-meant-good", "preserves-life",
+    "gentile-bride", "thirty-years-old", "carries-the-wood", "three-days",
+    "substitute-provided", "father-gives-him-up", "lifted-up-on-a-pole", "look-and-live",
+    "lamb-without-blemish", "slain-at-passover", "blood-protects", "no-bone-broken",
+    "bread-from-heaven", "given-in-the-wilderness", "struck", "water-flows",
+    "priest-and-king", "bread-and-wine", "blesses", "without-recorded-genealogy",
+    "water-of-judgement", "few-saved-through-water", "preaching-to-gentiles",
+    "gentiles-repent", "descent-into-the-deep", "one-man-head-of-many",
+    "made-after-a-pattern", "entered-with-blood", "bondwoman-and-freewoman",
+    "son-by-promise", "cast-out", "leads-into-the-land", "builds-the-house",
+    "raises-the-dead", "cleanses-the-leper", "multiplies-bread", "strength-in-weakness",
+    "dies-destroying-the-enemy", "redeems-the-inheritance", "takes-a-foreign-bride"
+  ],
+  "typologies": [
+    {
+      "id": "jonah",
+      "name": "Jonah and the Son of man",
+      "asserted_by": "scripture",
+      "assertion": {"ref": "Matt.12.40", "quote": "as Jonah was three days and three nights in the belly of the whale"},
+      "type": {
+        "label": "Jonah",
+        "motifs": [
+          {"motif": "descent-into-the-deep", "ref": "Jonah.1.15", "quote": "and cast him forth into the sea"},
+          {"motif": "three-days", "ref": "Jonah.1.17", "quote": "three days and three nights"},
+          {"motif": "brought-up-alive", "ref": "Jonah.2.10", "quote": "it vomited out Jonah upon the dry land"},
+          {"motif": "preaching-to-gentiles", "ref": "Jonah.3.4", "quote": "Yet forty days, and Nineveh shall be overthrown"},
+          {"motif": "gentiles-repent", "ref": "Jonah.3.5", "quote": "the people of Nineveh believed God"}
+        ]
+      },
+      "antitype": {
+        "label": "the Son of man",
+        "motifs": [
+          {"motif": "descent-into-the-deep", "ref": "Matt.12.40", "quote": "in the heart of the earth"},
+          {"motif": "three-days", "ref": "Matt.16.21", "quote": "the third day be raised up"},
+          {"motif": "brought-up-alive", "ref": "Matt.28.6", "quote": "He is not here; for he is risen"},
+          {"motif": "preaching-to-gentiles", "ref": "Matt.28.19", "quote": "make disciples of all the nations"},
+          {"motif": "gentiles-repent", "ref": "Acts.11.18", "quote": "to the Gentiles also hath God granted repentance unto life"}
+        ]
+      }
+    },
+    {
+      "id": "serpent",
+      "name": "The serpent of brass and the Son of man lifted up",
+      "asserted_by": "scripture",
+      "assertion": {"ref": "John.3.14", "quote": "as Moses lifted up the serpent in the wilderness"},
+      "type": {
+        "label": "the serpent of brass",
+        "motifs": [
+          {"motif": "lifted-up-on-a-pole", "ref": "Num.21.9", "quote": "set it upon the standard"},
+          {"motif": "look-and-live", "ref": "Num.21.9", "quote": "when he looked unto the serpent of brass, he lived"},
+          {"motif": "preserves-life", "ref": "Num.21.8", "quote": "every one that is bitten, when he seeth it, shall live"}
+        ]
+      },
+      "antitype": {
+        "label": "the Son of man",
+        "motifs": [
+          {"motif": "lifted-up-on-a-pole", "ref": "John.3.14", "quote": "even so must the Son of man be lifted up"},
+          {"motif": "look-and-live", "ref": "John.3.15", "quote": "whosoever believeth may in him have eternal life"},
+          {"motif": "preserves-life", "ref": "John.3.16", "quote": "should not perish, but have eternal life"}
+        ]
+      }
+    },
+    {
+      "id": "passover",
+      "name": "The passover lamb and Christ",
+      "asserted_by": "scripture",
+      "assertion": {"ref": "1Cor.5.7", "quote": "For our passover also hath been sacrificed, even Christ"},
+      "type": {
+        "label": "the passover lamb",
+        "motifs": [
+          {"motif": "lamb-without-blemish", "ref": "Exod.12.5", "quote": "Your lamb shall be without blemish"},
+          {"motif": "slain-at-passover", "ref": "Exod.12.6", "quote": "shall kill it at even"},
+          {"motif": "blood-protects", "ref": "Exod.12.13", "quote": "when I see the blood, I will pass over you"},
+          {"motif": "no-bone-broken", "ref": "Exod.12.46", "quote": "neither shall ye break a bone thereof"}
+        ]
+      },
+      "antitype": {
+        "label": "Christ",
+        "motifs": [
+          {"motif": "lamb-without-blemish", "ref": "1Pet.1.19", "quote": "as of a lamb without blemish and without spot"},
+          {"motif": "slain-at-passover", "ref": "John.19.14", "quote": "Now it was the Preparation of the passover"},
+          {"motif": "blood-protects", "ref": "Rom.5.9", "quote": "being now justified by his blood"},
+          {"motif": "no-bone-broken", "ref": "John.19.36", "quote": "A bone of him shall not be broken"}
+        ]
+      }
+    },
+    {
+      "id": "manna",
+      "name": "The manna and the bread of life",
+      "asserted_by": "scripture",
+      "assertion": {"ref": "John.6.32", "quote": "it was not Moses that gave you the bread out of heaven"},
+      "type": {
+        "label": "the manna",
+        "motifs": [
+          {"motif": "bread-from-heaven", "ref": "Exod.16.4", "quote": "I will rain bread from heaven for you"},
+          {"motif": "given-in-the-wilderness", "ref": "Exod.16.14", "quote": "upon the face of the wilderness a small round thing"},
+          {"motif": "preserves-life", "ref": "Exod.16.15", "quote": "It is the bread which Jehovah hath given you to eat"}
+        ]
+      },
+      "antitype": {
+        "label": "the bread of life",
+        "motifs": [
+          {"motif": "bread-from-heaven", "ref": "John.6.33", "quote": "the bread of God is that which cometh down out of heaven"},
+          {"motif": "given-in-the-wilderness", "ref": "John.6.31", "quote": "He gave them bread out of heaven to eat"},
+          {"motif": "preserves-life", "ref": "John.6.51", "quote": "if any man eat of this bread, he shall live for ever"}
+        ]
+      }
+    },
+    {
+      "id": "rock",
+      "name": "The rock in the wilderness and Christ",
+      "asserted_by": "scripture",
+      "assertion": {"ref": "1Cor.10.4", "quote": "and the rock was Christ"},
+      "type": {
+        "label": "the rock",
+        "motifs": [
+          {"motif": "struck", "ref": "Exod.17.6", "quote": "thou shalt smite the rock"},
+          {"motif": "water-flows", "ref": "Exod.17.6", "quote": "there shall come water out of it"},
+          {"motif": "preserves-life", "ref": "Ps.78.20", "quote": "he smote the rock, so that waters gushed out"}
+        ]
+      },
+      "antitype": {
+        "label": "Christ",
+        "motifs": [
+          {"motif": "struck", "ref": "Isa.53.4", "quote": "smitten of God, and afflicted"},
+          {"motif": "water-flows", "ref": "John.19.34", "quote": "and straightway there came out blood and water"},
+          {"motif": "preserves-life", "ref": "John.7.38", "quote": "from within him shall flow rivers of living water"}
+        ]
+      }
+    },
+    {
+      "id": "melchizedek",
+      "name": "Melchizedek and Christ",
+      "asserted_by": "scripture",
+      "assertion": {"ref": "Heb.6.20", "quote": "a high priest for ever after the order of Melchizedek"},
+      "type": {
+        "label": "Melchizedek",
+        "motifs": [
+          {"motif": "priest-and-king", "ref": "Gen.14.18", "quote": "king of Salem brought forth bread and wine"},
+          {"motif": "bread-and-wine", "ref": "Gen.14.18", "quote": "brought forth bread and wine"},
+          {"motif": "blesses", "ref": "Gen.14.19", "quote": "Blessed be Abram of God Most High"},
+          {"motif": "without-recorded-genealogy", "ref": "Heb.7.3", "quote": "without father, without mother, without genealogy"}
+        ]
+      },
+      "antitype": {
+        "label": "Christ",
+        "motifs": [
+          {"motif": "priest-and-king", "ref": "Heb.7.2", "quote": "King of righteousness, and then also King of Salem"},
+          {"motif": "bread-and-wine", "ref": "Matt.26.26", "quote": "Jesus took bread, and blessed"},
+          {"motif": "blesses", "ref": "Luke.24.50", "quote": "he lifted up his hands, and blessed them"},
+          {"motif": "without-recorded-genealogy", "ref": "Heb.7.16", "quote": "after the power of an endless life"}
+        ]
+      }
+    },
+    {
+      "id": "isaac",
+      "name": "The binding of Isaac and the Son given up",
+      "asserted_by": "scripture",
+      "assertion": {"ref": "Heb.11.19", "quote": "from whence he did also in a figure receive him back"},
+      "type": {
+        "label": "Isaac",
+        "motifs": [
+          {"motif": "beloved-son", "ref": "Gen.22.2", "quote": "thine only son, whom thou lovest"},
+          {"motif": "father-gives-him-up", "ref": "Gen.22.2", "quote": "offer him there for a burnt-offering"},
+          {"motif": "three-days", "ref": "Gen.22.4", "quote": "On the third day Abraham lifted up his eyes"},
+          {"motif": "carries-the-wood", "ref": "Gen.22.6", "quote": "laid it upon Isaac his son"},
+          {"motif": "bound", "ref": "Gen.22.9", "quote": "bound Isaac his son, and laid him on the altar"},
+          {"motif": "substitute-provided", "ref": "Gen.22.13", "quote": "a ram caught in the thicket"},
+          {"motif": "brought-up-alive", "ref": "Heb.11.19", "quote": "God is able to raise up, even from the dead"}
+        ]
+      },
+      "antitype": {
+        "label": "the Son",
+        "motifs": [
+          {"motif": "beloved-son", "ref": "Matt.3.17", "quote": "This is my beloved Son"},
+          {"motif": "father-gives-him-up", "ref": "Rom.8.32", "quote": "spared not his own Son, but delivered him up"},
+          {"motif": "carries-the-wood", "ref": "John.19.17", "quote": "bearing the cross for himself"},
+          {"motif": "bound", "ref": "John.18.12", "quote": "seized Jesus and bound him"},
+          {"motif": "substitute-provided", "ref": "John.1.29", "quote": "Behold, the Lamb of God"},
+          {"motif": "three-days", "ref": "1Cor.15.4", "quote": "he hath been raised on the third day"},
+          {"motif": "brought-up-alive", "ref": "Matt.28.6", "quote": "He is not here; for he is risen"}
+        ]
+      }
+    },
+    {
+      "id": "flood",
+      "name": "The flood and baptism",
+      "asserted_by": "scripture",
+      "assertion": {"ref": "1Pet.3.21", "quote": "which also after a true likeness doth now save you, even baptism"},
+      "type": {
+        "label": "the flood",
+        "motifs": [
+          {"motif": "water-of-judgement", "ref": "Gen.7.21", "quote": "And all flesh died that moved upon the earth"},
+          {"motif": "few-saved-through-water", "ref": "1Pet.3.20", "quote": "eight souls, were saved through water"},
+          {"motif": "brought-up-alive", "ref": "Gen.8.18", "quote": "And Noah went forth"}
+        ]
+      },
+      "antitype": {
+        "label": "baptism",
+        "motifs": [
+          {"motif": "water-of-judgement", "ref": "Rom.6.3", "quote": "were baptized into his death"},
+          {"motif": "few-saved-through-water", "ref": "1Pet.3.21", "quote": "doth now save you, even baptism"},
+          {"motif": "brought-up-alive", "ref": "Rom.6.4", "quote": "so we also might walk in newness of life"}
+        ]
+      }
+    },
+    {
+      "id": "joseph",
+      "name": "Joseph and Christ",
+      "asserted_by": "tradition",
+      "assertion": null,
+      "type": {
+        "label": "Joseph",
+        "motifs": [
+          {"motif": "beloved-son", "ref": "Gen.37.3", "quote": "Israel loved Joseph more than all his children"},
+          {"motif": "sent-by-the-father", "ref": "Gen.37.14", "quote": "see whether it is well with thy brethren"},
+          {"motif": "rejected-by-his-own", "ref": "Gen.37.4", "quote": "they hated him, and could not speak peaceably unto him"},
+          {"motif": "conspired-against", "ref": "Gen.37.18", "quote": "they conspired against him to slay him"},
+          {"motif": "stripped-of-his-garment", "ref": "Gen.37.23", "quote": "they stripped Joseph of his coat"},
+          {"motif": "descent-into-the-pit", "ref": "Gen.37.24", "quote": "and cast him into the pit"},
+          {"motif": "sold-or-betrayed-for-silver", "ref": "Gen.37.28", "quote": "sold Joseph to the Ishmaelites for twenty pieces of silver"},
+          {"motif": "falsely-accused", "ref": "Gen.39.17", "quote": "The Hebrew servant, whom thou hast brought unto us, came in unto me to mock me"},
+          {"motif": "numbered-with-two-condemned", "ref": "Gen.40.3", "quote": "into the prison, the place where Joseph was bound"},
+          {"motif": "one-restored-one-condemned", "ref": "Gen.40.21", "quote": "he restored the chief butler unto his butlership"},
+          {"motif": "thirty-years-old", "ref": "Gen.41.46", "quote": "Joseph was thirty years old when he stood before Pharaoh"},
+          {"motif": "exalted-by-the-ruler", "ref": "Gen.41.41", "quote": "I have set thee over all the land of Egypt"},
+          {"motif": "given-a-new-name", "ref": "Gen.41.45", "quote": "Pharaoh called Joseph's name Zaphenath-paneah"},
+          {"motif": "given-authority-over-all", "ref": "Gen.41.44", "quote": "without thee shall no man lift up his hand or his foot"},
+          {"motif": "they-bow-before-him", "ref": "Gen.41.43", "quote": "they cried before him, Bow the knee"},
+          {"motif": "gentile-bride", "ref": "Gen.41.45", "quote": "gave him to wife Asenath"},
+          {"motif": "giver-of-bread", "ref": "Gen.41.55", "quote": "Go unto Joseph; what he saith to you, do"},
+          {"motif": "all-nations-come-to-him", "ref": "Gen.41.57", "quote": "all countries came into Egypt to Joseph to buy grain"},
+          {"motif": "not-recognised", "ref": "Gen.42.8", "quote": "but they knew not him"},
+          {"motif": "reveals-himself", "ref": "Gen.45.3", "quote": "I am Joseph"},
+          {"motif": "they-are-afraid", "ref": "Gen.45.3", "quote": "his brethren could not answer him; for they were troubled"},
+          {"motif": "forgives", "ref": "Gen.45.5", "quote": "be not grieved, nor angry with yourselves"},
+          {"motif": "evil-meant-but-god-meant-good", "ref": "Gen.50.20", "quote": "ye meant evil against me; but God meant it for good"},
+          {"motif": "preserves-life", "ref": "Gen.45.5", "quote": "God did send me before you to preserve life"}
+        ]
+      },
+      "antitype": {
+        "label": "Christ",
+        "motifs": [
+          {"motif": "beloved-son", "ref": "Matt.3.17", "quote": "This is my beloved Son"},
+          {"motif": "sent-by-the-father", "ref": "John.3.17", "quote": "God sent not the Son into the world to judge the world"},
+          {"motif": "rejected-by-his-own", "ref": "John.1.11", "quote": "his own received him not"},
+          {"motif": "conspired-against", "ref": "Matt.26.4", "quote": "they took counsel together that they might take Jesus by subtlety, and kill him"},
+          {"motif": "sold-or-betrayed-for-silver", "ref": "Matt.26.15", "quote": "they weighed unto him thirty pieces of silver"},
+          {"motif": "falsely-accused", "ref": "Matt.26.60", "quote": "though many false witnesses came"},
+          {"motif": "stripped-of-his-garment", "ref": "Matt.27.28", "quote": "And they stripped him"},
+          {"motif": "numbered-with-two-condemned", "ref": "Luke.23.33", "quote": "they crucified him, and the malefactors, one on the right hand and the other on the left"},
+          {"motif": "one-restored-one-condemned", "ref": "Luke.23.43", "quote": "To-day shalt thou be with me in Paradise"},
+          {"motif": "forgives", "ref": "Luke.23.34", "quote": "Father, forgive them; for they know not what they do"},
+          {"motif": "descent-into-the-pit", "ref": "Matt.27.60", "quote": "laid it in his own new tomb"},
+          {"motif": "exalted-by-the-ruler", "ref": "Acts.2.33", "quote": "Being therefore by the right hand of God exalted"},
+          {"motif": "given-a-new-name", "ref": "Phil.2.9", "quote": "gave unto him the name which is above every name"},
+          {"motif": "given-authority-over-all", "ref": "Matt.28.18", "quote": "All authority hath been given unto me in heaven and on earth"},
+          {"motif": "they-bow-before-him", "ref": "Phil.2.10", "quote": "in the name of Jesus every knee should bow"},
+          {"motif": "gentile-bride", "ref": "Eph.5.32", "quote": "I speak in regard of Christ and of the church"},
+          {"motif": "giver-of-bread", "ref": "John.6.35", "quote": "I am the bread of life"},
+          {"motif": "all-nations-come-to-him", "ref": "John.12.32", "quote": "will draw all men unto myself"},
+          {"motif": "not-recognised", "ref": "Luke.24.16", "quote": "But their eyes were holden that they should not know him"},
+          {"motif": "reveals-himself", "ref": "Luke.24.31", "quote": "And their eyes were opened, and they knew him"},
+          {"motif": "they-are-afraid", "ref": "Luke.24.37", "quote": "But they were terrified and affrighted"},
+          {"motif": "evil-meant-but-god-meant-good", "ref": "Acts.2.23", "quote": "him, being delivered up by the determinate counsel and foreknowledge of God"},
+          {"motif": "preserves-life", "ref": "John.6.51", "quote": "the bread which I will give is my flesh, for the life of the world"},
+          {"motif": "thirty-years-old", "ref": "Luke.3.23", "quote": "Jesus himself, when he began to teach, was about thirty years of age"}
+        ]
+      }
+    },
+    {
+      "id": "boaz",
+      "name": "Boaz the kinsman-redeemer and Christ",
+      "asserted_by": "tradition",
+      "assertion": null,
+      "type": {
+        "label": "Boaz",
+        "motifs": [
+          {"motif": "redeems-the-inheritance", "ref": "Ruth.4.9", "quote": "I have bought all that was Elimelech's"},
+          {"motif": "takes-a-foreign-bride", "ref": "Ruth.4.10", "quote": "Ruth the Moabitess, the wife of Mahlon, have I purchased to be my wife"},
+          {"motif": "giver-of-bread", "ref": "Ruth.2.14", "quote": "Come hither, and eat of the bread"},
+          {"motif": "blesses", "ref": "Ruth.2.12", "quote": "Jehovah recompense thy work"}
+        ]
+      },
+      "antitype": {
+        "label": "Christ",
+        "motifs": [
+          {"motif": "redeems-the-inheritance", "ref": "Eph.1.14", "quote": "unto the redemption of God's own possession"},
+          {"motif": "takes-a-foreign-bride", "ref": "Eph.5.32", "quote": "I speak in regard of Christ and of the church"},
+          {"motif": "giver-of-bread", "ref": "John.6.35", "quote": "I am the bread of life"},
+          {"motif": "blesses", "ref": "Luke.24.50", "quote": "he lifted up his hands, and blessed them"}
+        ]
+      }
+    },
+    {
+      "id": "joshua",
+      "name": "Joshua and Christ",
+      "asserted_by": "tradition",
+      "assertion": null,
+      "type": {
+        "label": "Joshua",
+        "motifs": [
+          {"motif": "given-a-new-name", "ref": "Num.13.16", "quote": "And Moses called Hoshea the son of Nun Joshua"},
+          {"motif": "leads-into-the-land", "ref": "Josh.1.6", "quote": "thou shalt cause this people to inherit the land"},
+          {"motif": "given-authority-over-all", "ref": "Josh.1.5", "quote": "There shall not any man be able to stand before thee"}
+        ]
+      },
+      "antitype": {
+        "label": "Christ",
+        "motifs": [
+          {"motif": "given-a-new-name", "ref": "Matt.1.21", "quote": "thou shalt call his name JESUS"},
+          {"motif": "leads-into-the-land", "ref": "Heb.4.8", "quote": "For if Joshua had given them rest"},
+          {"motif": "given-authority-over-all", "ref": "Matt.28.18", "quote": "All authority hath been given unto me in heaven and on earth"}
+        ]
+      }
+    },
+    {
+      "id": "solomon",
+      "name": "Solomon and Christ",
+      "asserted_by": "tradition",
+      "assertion": null,
+      "type": {
+        "label": "Solomon",
+        "motifs": [
+          {"motif": "builds-the-house", "ref": "1Kgs.6.14", "quote": "So Solomon built the house, and finished it"},
+          {"motif": "all-nations-come-to-him", "ref": "1Kgs.10.24", "quote": "all the earth sought the presence of Solomon"},
+          {"motif": "they-bow-before-him", "ref": "1Kgs.1.47", "quote": "And the king bowed himself upon the bed"}
+        ]
+      },
+      "antitype": {
+        "label": "Christ",
+        "motifs": [
+          {"motif": "builds-the-house", "ref": "Matt.16.18", "quote": "upon this rock I will build my church"},
+          {"motif": "all-nations-come-to-him", "ref": "John.12.32", "quote": "will draw all men unto myself"},
+          {"motif": "they-bow-before-him", "ref": "Phil.2.10", "quote": "in the name of Jesus every knee should bow"}
+        ]
+      }
+    },
+    {
+      "id": "samson",
+      "name": "Samson and Christ",
+      "asserted_by": "tradition",
+      "assertion": null,
+      "type": {
+        "label": "Samson",
+        "motifs": [
+          {"motif": "takes-a-foreign-bride", "ref": "Judg.14.2", "quote": "I have seen a woman in Timnah of the daughters of the Philistines"},
+          {"motif": "sold-or-betrayed-for-silver", "ref": "Judg.16.5", "quote": "we will give thee every one of us eleven hundred pieces of silver"},
+          {"motif": "bound", "ref": "Judg.16.21", "quote": "bound him with fetters of brass"},
+          {"motif": "strength-in-weakness", "ref": "Judg.16.28", "quote": "strengthen me, I pray thee, only this once"},
+          {"motif": "dies-destroying-the-enemy", "ref": "Judg.16.30", "quote": "the dead that he slew at his death were more than they that he slew in his life"}
+        ]
+      },
+      "antitype": {
+        "label": "Christ",
+        "motifs": [
+          {"motif": "sold-or-betrayed-for-silver", "ref": "Matt.26.15", "quote": "they weighed unto him thirty pieces of silver"},
+          {"motif": "bound", "ref": "John.18.12", "quote": "seized Jesus and bound him"},
+          {"motif": "strength-in-weakness", "ref": "2Cor.13.4", "quote": "he was crucified through weakness, yet he liveth through the power of God"},
+          {"motif": "dies-destroying-the-enemy", "ref": "Heb.2.14", "quote": "that through death he might bring to nought him that had the power of death"},
+          {"motif": "takes-a-foreign-bride", "ref": "Eph.5.32", "quote": "I speak in regard of Christ and of the church"}
+        ]
+      }
+    },
+    {
+      "id": "elisha",
+      "name": "Elisha and Christ",
+      "asserted_by": "tradition",
+      "assertion": null,
+      "type": {
+        "label": "Elisha",
+        "motifs": [
+          {"motif": "cleanses-the-leper", "ref": "2Kgs.5.14", "quote": "his flesh came again like unto the flesh of a little child, and he was clean"},
+          {"motif": "raises-the-dead", "ref": "2Kgs.4.35", "quote": "and the child opened his eyes"},
+          {"motif": "multiplies-bread", "ref": "2Kgs.4.44", "quote": "So he set it before them, and they did eat, and left thereof"}
+        ]
+      },
+      "antitype": {
+        "label": "Christ",
+        "motifs": [
+          {"motif": "cleanses-the-leper", "ref": "Matt.8.3", "quote": "And straightway his leprosy was cleansed"},
+          {"motif": "raises-the-dead", "ref": "Luke.7.15", "quote": "And he that was dead sat up, and began to speak"},
+          {"motif": "multiplies-bread", "ref": "Matt.14.20", "quote": "And they all ate, and were filled"}
+        ]
+      }
+    }
+  ]
+}
