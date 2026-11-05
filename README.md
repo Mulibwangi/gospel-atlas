@@ -159,6 +159,27 @@ is the distinction itself, drawn rather than argued.
 
 ![The suffering servant, every step attested](docs/images/chain-servant.png)
 
+## Shadow and Substance
+
+A third page, built by `tools/pack-typology.mjs` to `docs/typology.html`, holds only
+the correspondences **Scripture asserts about itself** - where a verse says that one
+passage answers another, and that verse is quoted. Twelve of them: Jonah and the Son
+of man, the serpent of brass, the passover lamb, the manna, the rock, Melchizedek, the
+binding of Isaac, the flood and baptism, and four in the other direction - Jannes and
+Jambres, Balaam, Cain and Korah.
+
+The eight correspondences in `data/typology.json` attributed to the typological
+tradition rather than to a verse are **excluded by the builder**, Joseph among them.
+That is the point of the page: it shows what Scripture says about itself, not what is
+said about Scripture.
+
+The two passages are drawn side by side in the order the text gives them, one line per
+answering pair, solid where the cross-reference dataset joins those chapters and dashed
+where it does not. Where the lines cross rather than run parallel, the second passage
+answers the first in reverse. Every reference is resolved against the ASV and every
+quotation checked against the verse it cites before the page is written, so nothing
+unverified can reach it. 93 verses are embedded; the page is 39 KB and needs nothing.
+
 **Every book, named.** All sixty-six are labelled in the circle and along the
 arc. Where the canon is denser than the type, a name moves instead of vanishing:
 out to a second ring, down to a lower row, or a little to one side, with a leader

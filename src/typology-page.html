@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; connect-src 'none'">
+<title>Shadow and Substance — where Scripture reads itself</title>
+<style>
+:root{
+  --paper:#f7f6f1; --panel:#eeeee6; --line:#dedfd5; --ink:#26362f; --muted:#747b73; --faint:#949b91;
+  --gold:#b49a4b; --accent:#2e4338; --field:#fffef9; --scarlet:#a4161a;
+  --serif:Georgia,'Times New Roman',serif;
+  --sans:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.5}
+header{padding:28px 20px 18px;border-bottom:1px solid var(--line);background:var(--field)}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+h1{font-family:var(--serif);font-weight:400;font-size:26px;margin:0 0 6px}
+header p{margin:0;color:var(--muted);font-size:14px;max-width:62ch}
+main{max-width:1180px;margin:0 auto;padding:20px;display:grid;grid-template-columns:270px 1fr;gap:26px;align-items:start}
+nav{position:sticky;top:16px}
+nav h2,.panel h2{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:0 0 8px;font-weight:600}
+nav ul{list-style:none;margin:0 0 18px;padding:0}
+nav li{margin:0}
+nav button{display:block;width:100%;text-align:left;border:0;background:none;padding:7px 9px;border-radius:5px;
+  font:inherit;font-size:13.5px;color:var(--ink);cursor:pointer;border-left:2px solid transparent}
+nav button:hover{background:var(--panel)}
+nav button[aria-current="true"]{background:var(--panel);border-left-color:var(--scarlet);font-weight:600}
+.said{background:var(--field);border:1px solid var(--line);border-left:3px solid var(--gold);
+  border-radius:4px;padding:14px 16px;margin:0 0 20px}
+.said .ref{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);font-weight:700}
+.said blockquote{margin:6px 0 0;font-family:var(--serif);font-size:16.5px;line-height:1.55}
+h3{font-family:var(--serif);font-weight:400;font-size:22px;margin:0 0 4px}
+.sub{color:var(--muted);font-size:13px;margin:0 0 18px}
+.align{background:var(--field);border:1px solid var(--line);border-radius:4px;padding:6px 0 10px;margin-bottom:18px;overflow-x:auto}
+svg{display:block;min-width:560px;width:100%}
+svg text{font-family:var(--sans);font-size:11px;fill:var(--ink)}
+svg text.side{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;fill:var(--faint);font-weight:600}
+svg text.motif{font-size:9.5px;fill:var(--muted)}
+svg .rail{stroke:var(--line);stroke-width:1}
+svg .join{stroke:var(--scarlet);fill:none}
+svg circle{fill:var(--scarlet)}
+.legend{font-size:11.5px;color:var(--muted);padding:0 14px}
+.legend b{color:var(--ink);font-weight:600}
+.rows{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.rows li{border-bottom:1px solid var(--line)}
+.head{display:flex;gap:10px;align-items:baseline;padding:9px 4px;cursor:pointer}
+.head:hover{background:var(--panel)}
+.n{width:18px;color:var(--faint);font-size:11px;flex:none;text-align:right}
+.refs{flex:1;font-size:13px}
+.refs em{font-style:normal;color:var(--muted)}
+.mark{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);flex:none}
+.mark.yes{color:var(--accent)}
+.body{display:none;padding:2px 4px 14px 32px;font-family:var(--serif);font-size:15px}
+li.open .body{display:block}
+.body p{margin:0 0 10px}
+.body .who{font-family:var(--sans);font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--faint);font-weight:600}
+footer{border-top:1px solid var(--line);margin-top:34px;padding:20px;color:var(--muted);font-size:12.5px}
+footer p{max-width:78ch;margin:0 0 9px}
+@media(max-width:860px){main{grid-template-columns:1fr}nav{position:static}}
+@media print{nav,header p{display:none}main{display:block}.body{display:block}}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <h1>Shadow and Substance</h1>
+  <p>Places where Scripture reads itself: a verse states that one passage answers another, and
+     the verse is given. Nothing here is inferred, and nothing is included because it is
+     traditional. Every line opens to the text it rests on.</p>
+</div></header>
+<main>
+  <nav>
+    <h2>Scripture says so</h2>
+    <ul id="list"></ul>
+    <h2>What this is</h2>
+    <p style="font-size:12px;color:var(--muted);margin:0">Twelve correspondences, each asserted by a
+       verse that is quoted in full. The readings tradition adds to these are not here.</p>
+  </nav>
+  <section>
+    <div class="said"><span class="ref" id="a-ref"></span><blockquote id="a-text"></blockquote></div>
+    <h3 id="title"></h3>
+    <p class="sub" id="sub"></p>
+    <div class="align"><svg id="plot" role="img" aria-labelledby="title"></svg>
+      <p class="legend" id="legend"></p></div>
+    <h2 style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:0 0 2px">The passages</h2>
+    <ul class="rows" id="rows"></ul>
+  </section>
+</main>
+<footer><div class="wrap">
+  <p id="foot-count"></p>
+  <p>Scripture is the American Standard Version of 1901, which is in the public domain. A mark of
+     <b>linked</b> beside a pair means the OpenBible.info cross-reference dataset, CC BY, records a
+     direct reference between those two chapters; <b>no link</b> means it does not. That is a fact
+     about an editorial dataset and not a judgement about the correspondence.</p>
+  <p>The short description beside each pair is a plain label for what the verse says happens, not a
+     comment on it. Where the two columns join in crossing lines rather than parallel ones, the
+     second passage answers the first in reverse order.</p>
+  <p>Coder: David Lee. Part of the Gospel Atlas. No account, no network, no analytics: this page
+     works with the connection switched off.</p>
+</div></footer>
+<script>
+const DATA=__DATA__;
+const el=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const clip=(s,n)=>{s=String(s||'');return s.length>n?s.slice(0,n-1).replace(/[ ,;]+$/,'')+'\u2026':s};
+let current=0;
+
+function draw(t){
+  const A=t.type.motifs,B=t.antitype.motifs;
+  const rowH=26,padT=34,padB=14,labelW=150;
+  const h=padT+Math.max(A.length,B.length)*rowH+padB;
+  const w=720,lx=labelW+14,rx=w-labelW-14;
+  const put=(n,i)=>padT+i*rowH+9;
+  let s=`<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" style="height:${h}px">`;
+  s+=`<text class="side" x="${lx}" y="18" text-anchor="middle">${esc(t.type.label.toUpperCase())}</text>`;
+  s+=`<text class="side" x="${rx}" y="18" text-anchor="middle">${esc(t.antitype.label.toUpperCase())}</text>`;
+  s+=`<line class="rail" x1="${lx}" y1="${padT-4}" x2="${lx}" y2="${h-padB+2}"/>`;
+  s+=`<line class="rail" x1="${rx}" y1="${padT-4}" x2="${rx}" y2="${h-padB+2}"/>`;
+  // one line per shared motif, from where it falls on the left to where it falls on the right
+  A.forEach((m,i)=>{
+    const j=B.findIndex(x=>x.motif===m.motif); if(j<0)return;
+    const y1=put(m,i),y2=put(B[j],j),mid=(lx+rx)/2;
+    const pair=t.pairs[m.motif];
+    s+=`<path class="join" d="M${lx+4} ${y1} C ${mid} ${y1}, ${mid} ${y2}, ${rx-4} ${y2}"
+         stroke-width="${pair?1.8:1.1}" stroke-opacity="${pair?0.95:0.45}"
+         stroke-dasharray="${pair?'':'4 4'}"/>`;
+  });
+  A.forEach((m,i)=>{
+    const y=put(m,i);
+    s+=`<circle cx="${lx}" cy="${y}" r="3.2"/>`;
+    s+=`<text x="${lx-10}" y="${y+3.5}" text-anchor="end">${esc(clip(m.label,38))}</text>`;
+    s+=`<text class="motif" x="${lx-10}" y="${y+14}" text-anchor="end">${esc(m.motif.replace(/-/g,' '))}</text>`;
+  });
+  B.forEach((m,i)=>{
+    const y=put(m,i);
+    s+=`<circle cx="${rx}" cy="${y}" r="3.2"/>`;
+    s+=`<text x="${rx+10}" y="${y+3.5}">${esc(clip(m.label,38))}</text>`;
+    s+=`<text class="motif" x="${rx+10}" y="${y+14}">${esc(m.motif.replace(/-/g,' '))}</text>`;
+  });
+  return s+'</svg>';
+}
+
+function show(i){
+  current=i;
+  const t=DATA.typologies[i];
+  [...el('list').children].forEach((li,k)=>li.firstChild.setAttribute('aria-current',k===i));
+  el('a-ref').textContent='Scripture says so — '+t.assertion.label;
+  el('a-text').textContent='“'+t.assertion.text+'”';
+  el('title').textContent=t.name;
+  const n=t.type.motifs.length;
+  el('sub').textContent=n+' answering passages, in the order the text gives them.';
+  el('plot').outerHTML=draw(t).replace('<svg','<svg id="plot"');
+  const linked=Object.values(t.pairs).filter(Boolean).length;
+  el('legend').innerHTML='A solid line is a pair the cross-reference dataset joins directly ('
+    +linked+' of '+n+'); a dashed line is one it does not.'
+    +(t.chiastic?' <b>The lines cross: the second passage answers the first in reverse.</b>':'');
+  const rows=el('rows'); rows.innerHTML='';
+  t.type.motifs.forEach((m,k)=>{
+    const o=t.antitype.motifs.find(x=>x.motif===m.motif); if(!o)return;
+    const li=document.createElement('li');
+    li.innerHTML='<div class="head"><span class="n">'+(k+1)+'</span>'
+      +'<span class="refs">'+esc(m.label)+' <em>·</em> '+esc(m.ref)+' <em>and</em> '+esc(o.ref)+'</span>'
+      +'<span class="mark '+(t.pairs[m.motif]?'yes':'')+'">'+(t.pairs[m.motif]?'linked':'no link')+'</span></div>'
+      +'<div class="body"><p><span class="who">'+esc(m.ref)+'</span><br>'+esc(m.text)+'</p>'
+      +'<p><span class="who">'+esc(o.ref)+'</span><br>'+esc(o.text)+'</p></div>';
+    li.querySelector('.head').addEventListener('click',()=>li.classList.toggle('open'));
+    rows.appendChild(li);
+  });
+}
+DATA.typologies.forEach((t,i)=>{
+  const li=document.createElement('li'),b=document.createElement('button');
+  b.type='button'; b.textContent=t.name; b.addEventListener('click',()=>show(i));
+  li.appendChild(b); el('list').appendChild(li);
+});
+el('foot-count').textContent=DATA.typologies.length+' correspondences, each one asserted by the verse quoted with it. '
+  +DATA.verses+' verses of Scripture are embedded in this file, which needs nothing else to open. Built '+DATA.built+'.';
+show(0);
+</script>
+</body>
+</html>

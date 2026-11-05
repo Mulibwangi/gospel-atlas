@@ -3,7 +3,7 @@ import {readFile,writeFile,mkdir} from 'node:fs/promises';
 import {gzipSync} from 'node:zlib';
 import {createHash} from 'node:crypto';
 import {makeZip} from './zipwriter.mjs';
-const APP_FILE='Gospel_Atlas_David_Lee.html',LAUNCHER_FILE='1 START HERE - Open Gospel Atlas.html',HOWTO_FILE='2 HOW TO OPEN.txt',ZIP_FILE='Gospel_Atlas_David_Lee.zip',LAB_FILE='Cross_Reference_Lab.html';
+const APP_FILE='Gospel_Atlas_David_Lee.html',LAUNCHER_FILE='1 START HERE - Open Gospel Atlas.html',HOWTO_FILE='2 HOW TO OPEN.txt',ZIP_FILE='Gospel_Atlas_David_Lee.zip',LAB_FILE='Cross_Reference_Lab.html',TYPE_FILE='Shadow_and_Substance.html';
 const readJSON=async p=>JSON.parse(await readFile(p,'utf8'));
 await mkdir('dist',{recursive:true});
 const bundled=await build({entryPoints:['src/app.jsx'],bundle:true,minify:true,write:false,jsx:'automatic',define:{'process.env.NODE_ENV':'"production"'},legalComments:'inline',target:['es2020'],format:'iife'});
@@ -24,15 +24,18 @@ const html=`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta nam
 await writeFile('dist/index.html',html);await writeFile('dist/'+APP_FILE,html);
 // Opening instructions travel with the app: a launcher page carrying one Open button,
 // the same steps in plain text, and the README. Numbered so a file listing reads in order.
-const launcher=(await readFile('src/launcher.html','utf8')).replace(/Gospel_Atlas_David_Lee\.html/g,APP_FILE).replace(/2 HOW TO OPEN\.txt/g,HOWTO_FILE);
+const launcher=(await readFile('src/launcher.html','utf8')).replace(/Gospel_Atlas_David_Lee\.html/g,APP_FILE).replace(/2 HOW TO OPEN\.txt/g,HOWTO_FILE).replace(/Shadow_and_Substance\.html/g,TYPE_FILE);
 const howto=(await readFile('src/how-to-open.txt','utf8')).replace(/Gospel_Atlas_David_Lee\.html/g,APP_FILE).replace(/1 START HERE - Open Gospel Atlas\.html/g,LAUNCHER_FILE).replace(/2 HOW TO OPEN\.txt/g,HOWTO_FILE);
 const readme=await readFile('GUIDE.md','utf8');// shipped to recipients as README.md; the repository README.md is the project page
 await writeFile('dist/'+LAUNCHER_FILE,launcher);await writeFile('dist/'+HOWTO_FILE,howto);await writeFile('dist/README.md',readme);
 // docs/cross-references.html is built by tools/pack-crossrefs.mjs; ship it when it is there.
 let lab=null;try{lab=await readFile('docs/cross-references.html','utf8')}catch{}
+// docs/typology.html is built by tools/pack-typology.mjs; ship it when it is there.
+let typo=null;try{typo=await readFile('docs/typology.html','utf8')}catch{}
 const entries=[{name:LAUNCHER_FILE,data:launcher},{name:HOWTO_FILE,data:howto},{name:APP_FILE,data:html}];
 if(lab){entries.push({name:LAB_FILE,data:lab});await writeFile('dist/'+LAB_FILE,lab)}
+if(typo){entries.push({name:TYPE_FILE,data:typo});await writeFile('dist/'+TYPE_FILE,typo)}
 entries.push({name:'README.md',data:readme});
 const zip=makeZip(entries);
 await writeFile('dist/'+ZIP_FILE,zip);
-console.log(JSON.stringify({bytes:Buffer.byteLength(html),languages:AUDIT.languages,editions:EDITIONS.length,offlineLanguages:new Set(EDITIONS.filter(e=>e.offline).map(e=>e.lang)).size,zip:ZIP_FILE,zipBytes:zip.length,lab:!!lab}));
+console.log(JSON.stringify({bytes:Buffer.byteLength(html),languages:AUDIT.languages,editions:EDITIONS.length,offlineLanguages:new Set(EDITIONS.filter(e=>e.offline).map(e=>e.lang)).size,zip:ZIP_FILE,zipBytes:zip.length,lab:!!lab,typology:!!typo}));

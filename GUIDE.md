@@ -22,6 +22,16 @@ and the panel lists the other books it links to. Choose one of those links and
 the passages open underneath, verse by verse, with the ASV text on both sides.
 That file is Cross_Reference_Lab.html and it is self-contained in the same way.
 
+A third button, "Open Shadow and Substance", holds the places where Scripture reads
+itself: twelve correspondences in which a verse states that one passage answers
+another, with that verse quoted in full. The two passages are set side by side in the
+order the text gives them, with a line joining each answering pair, and every line
+opens to the ASV on both sides. Readings the typological tradition adds to these are
+deliberately not included. A line is drawn solid where the cross-reference dataset
+records a direct reference between those two chapters and dashed where it does not,
+which is a fact about that dataset and not a judgement about the correspondence. That
+file is Shadow_and_Substance.html.
+
 Double-clicking Gospel_Atlas_David_Lee.html does the same thing directly; that
 file is the app. If it opens in a text editor instead of a browser, right-click
 it, choose "Open with", and pick Chrome, Firefox, Edge or Safari.
