@@ -139,6 +139,40 @@ for (const [label, set] of [['all', rows], ['4 or more shared motifs', big]]) {
   console.log(`${' '.repeat(label.length + 1)} scripture attested ${(mean(s.map(r => r.attFrac)) * 100).toFixed(0)}%` +
     `   tradition attested ${(mean(t.map(r => r.attFrac)) * 100).toFixed(0)}%`);
 }
+// ---- discovery -------------------------------------------------------------
+// Testing scores a pair someone already proposed. Discovery scores every pair and
+// lets the ranking propose. It is the stronger of the two, because a correspondence
+// nobody chose cannot have been arranged — though it can only find what the
+// vocabulary is able to say, and only among the figures that have been annotated.
+const seqs = [];
+for (const t of DB.typologies) for (const side of ['type', 'antitype'])
+  seqs.push({key: t.id + '.' + side, label: t[side].label, of: t.id,
+             motifs: t[side].motifs.map(m => m.motif)});
+const claimed = new Set();
+for (const t of DB.typologies) claimed.add(t.id + '.type|' + t.id + '.antitype');
+const found = [];
+for (let i = 0; i < seqs.length; i++) for (let j = i + 1; j < seqs.length; j++) {
+  const A = seqs[i], B = seqs[j];
+  const common = new Set(A.motifs.filter(m => B.motifs.includes(m)));
+  if (common.size < 4) continue;                 // below this, order is meaningless
+  const a = A.motifs.filter(m => common.has(m)), b = B.motifs.filter(m => common.has(m));
+  const run = lcs(a, b), order = run / common.size;
+  const rnd = mulberry(7777);
+  let ge = 0;
+  for (let k = 0; k < 5000; k++) if (lcs(a, shuffle(b, rnd)) >= run) ge++;
+  found.push({pair: A.label + '  /  ' + B.label, shared: common.size, order,
+              p: (ge + 1) / 5001, isClaimed: claimed.has(A.key + '|' + B.key)});
+}
+found.sort((x, y) => y.shared - x.shared || y.order - x.order);
+console.log('\ndiscovery — every annotated sequence against every other, ' + seqs.length +
+            ' sequences, ' + found.length + ' pairs with 4 or more shared motifs:');
+for (const f of found.slice(0, 14))
+  console.log('   ' + (f.isClaimed ? 'claimed  ' : 'UNCLAIMED') + '  ' + String(f.shared).padStart(2) +
+    ' shared  order ' + f.order.toFixed(2) + '  p=' + (f.p < 0.001 ? '<.001' : f.p.toFixed(3)) + '  ' + f.pair);
+const novel = found.filter(f => !f.isClaimed && f.p < 0.05);
+console.log('   ' + found.filter(f => !f.isClaimed).length + ' unclaimed pairs reach 4 shared motifs; ' +
+            novel.length + ' of those reach p<0.05');
+
 // How much structure do unclaimed pairings have to work with at all?
 const usable = control.filter(c => c.shared >= 4);
 console.log('\ncontrol — the type of one claim against the antitype of another, ' + control.length + ' pairings:');
