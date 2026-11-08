@@ -16,6 +16,15 @@
 // A Hebrew row can carry several morphemes joined by "/" — "בְּ/רֵאשִׁית" is a preposition
 // and a noun, tagged "H9003/{H7225G}". For a word search those are two separate words
 // and both are indexed; the braces mark which one STEPBible considers the head.
+//
+// A backslash is a different join: it attaches a punctuation mark to the word before it.
+// "הָ/אָרֶץ\׃" is "the" plus "earth" plus the verse-end mark, tagged
+// "H9009/{H0776G}\H9016", and "עַל\־" is "upon" plus a maqqef. The mark has a code of
+// its own but no transliteration, gloss or morphology slot, so splitting on "/" alone
+// leaves "{H0776G}\H9016" as one token that matches no Strong number and is dropped —
+// taking the word with it. That lost 63,712 Hebrew words, one in seven, from the index.
+// Punctuation is therefore separated for indexing and kept attached for display, which
+// is how a Hebrew Bible prints it.
 import {readFileSync, readdirSync, writeFileSync, mkdirSync} from 'node:fs';
 import {join} from 'node:path';
 
@@ -42,6 +51,7 @@ const bare = s => s.replace(/[{}()[\]]/g, '').trim();
 const tidy = s => (s || '').replace(/[\t\r]+/g, ' ').trim();
 
 const gospelRows = [];   // every Greek word of Matthew–John, in order
+const hebrewRows = [];   // every Hebrew morpheme of the Old Testament, in order
 const occurrences = [];  // every Strong number occurrence in the whole Bible
 const lex = new Map();   // Strong number -> lemma, transliteration, gloss
 
@@ -62,9 +72,23 @@ for (const file of readdirSync(dir).filter(f => /^TA(GNT|HOT) /.test(f)).sort())
       const forms = tidy(c[1]).split('/'), trans = tidy(c[2]).split('/'), glosses = tidy(c[3]).split('/');
       const codes = tidy(c[4]).split('/'), morphs = tidy(c[5]).replace(/^H/, '').split('/');
       const expansion = tidy(c[11]);
+      // Every morpheme is a word of the interlinear, affixes included: the Hebrew
+      // writes "and", "the", "in" and "his" as part of the word they attach to, and a
+      // word-by-word view that silently dropped them would not be the verse.
+      const n = Math.max(forms.length, codes.length);
+      for (let i = 0; i < n; i++) {
+        // The mark stays on the word; the backslash that joined them does not.
+        const form = tidy(forms[i] || '').replace(/\\/g, '');
+        // The word's own code is the first Strong number in the group; anything after
+        // the backslash is the punctuation that follows it.
+        const word = (codes[i] || '').split('\\').map(bare).find(x => STRONG.test(x)) || '';
+        hebrewRows.push([ref, form, tidy(trans[i] || '').replace(/^\.|\.$/g, ''),
+                         tidy(glosses[i] || ''), word, tidy(morphs[i] || '')]);
+      }
       codes.forEach((raw, i) => {
-        const st = bare(raw);
-        if (!STRONG.test(st)) return;
+        for (const piece of String(raw).split('\\')) {
+        const st = bare(piece);
+        if (!STRONG.test(st)) continue;
         occurrences.push([ref, st]);
         if (!lex.has(st)) {
           // The expansion lists one entry per morpheme, separated by "/", with the head
@@ -78,6 +102,7 @@ for (const file of readdirSync(dir).filter(f => /^TA(GNT|HOT) /.test(f)).sort())
             gloss: m ? m[2].split('»')[0].replace(/^[:\s]+/, '').split(':')[0].trim() : tidy(glosses[i] || ''),
             morph: tidy(morphs[i] || ''), lang: 'he'
           });
+        }
         }
       });
     } else {
@@ -160,8 +185,41 @@ for (const L of morphText.split('\n')) {
   if (!used.has(code) || !/Function=/.test(c[1] || '')) continue;
   morphOut.push([code, tidy(c[1]).replace(/;\s*/g, '; ')]);
 }
+const usedHe = new Set(hebrewRows.map(r => r[5]).filter(Boolean));
+const morphHeText = readFileSync(join(root, 'Morphology codes',
+  'TEHMC - Translators Expansion of Hebrew Morphology Codes - STEPBible.org CC BY.txt'), 'utf8');
+// The table lists each code under its language prefix, H for Hebrew and A for Aramaic.
+// The Hebrew rows of the text carry the code with that prefix stripped; the Aramaic rows
+// keep theirs. So a code is registered under its full form always, and under its bare
+// form only from the Hebrew side — otherwise an Aramaic entry could lend its wording to
+// a Hebrew verb and call a Qal a Peal.
+//
+// Case is never folded here. "Vqp3ms" is Peal, simple active; "VQrfsa" is Peil, simple
+// passive. Matching a code against a differently-cased entry would silently turn an
+// active verb passive, so a code that matches nothing exactly is left unexplained and
+// shown as the bare code instead.
+const heTable = new Map();
+for (const L of morphHeText.split('\n')) {
+  const c = L.split('\t');
+  if (!/Function=/.test(c[1] || '')) continue;
+  const full = tidy(c[0]);
+  const text = tidy(c[1]).replace(/;\s*/g, '; ');
+  if (!heTable.has(full)) heTable.set(full, text);
+  if (full[0] === 'H' && !heTable.has(full.slice(1))) heTable.set(full.slice(1), text);
+}
+for (const code of usedHe)
+  if (code && heTable.has(code)) morphOut.push([code, heTable.get(code)]);
+// The table lists a code once per language prefix, so the same plain code can be added
+// twice; the first wins and the record should say what it actually holds.
+{
+  const seen = new Set(), unique = [];
+  for (const row of morphOut) if (!seen.has(row[0])) { seen.add(row[0]); unique.push(row); }
+  morphOut.length = 0; morphOut.push(...unique);
+}
+
 const haveMorph = new Set(morphOut.map(m => m[0]));
 const missingMorph = [...used].filter(c => c && !haveMorph.has(c));
+const missingMorphHe = [...usedHe].filter(c => c && !haveMorph.has(c));
 
 mkdirSync('source-data/originals', {recursive: true});
 writeFileSync('source-data/originals/morphology.tsv',
@@ -169,6 +227,9 @@ writeFileSync('source-data/originals/morphology.tsv',
 writeFileSync('source-data/originals/gospels-greek.tsv',
   'ref\tgreek\ttranslit\tgloss\tstrong\tmorph\tlemma\tlemma_gloss\tmanuscripts\n' +
   gospelRows.map(r => r.join('\t')).join('\n') + '\n');
+writeFileSync('source-data/originals/hebrew-ot.tsv',
+  'ref\tword\ttranslit\tgloss\tstrong\tmorph\n' +
+  hebrewRows.map(r => r.join('\t')).join('\n') + '\n');
 writeFileSync('source-data/originals/strongs-occurrences.tsv',
   'ref\tstrong\n' + occurrences.map(r => r.join('\t')).join('\n') + '\n');
 writeFileSync('source-data/originals/lexicon.tsv',
@@ -184,7 +245,10 @@ console.log(JSON.stringify({
   strongNumbers: lex.size, hebrew: he, greek: lex.size - he,
   citationFormsFromLexicon: citationForms,
   withoutALexiconEntry: [...lex.values()].filter(v => !v.sense && !v.gloss).length,
-  morphCodesUsed: used.size, morphCodesExplained: morphOut.length,
-  morphCodesWithoutAnExplanation: missingMorph.length,
-  examplesMissing: missingMorph.slice(0, 8)
+  hebrewMorphemes: hebrewRows.length,
+  morphCodesUsed: used.size + usedHe.size, morphCodesExplained: morphOut.length,
+  greekCodesWithoutAnExplanation: missingMorph.length,
+  hebrewCodesWithoutAnExplanation: missingMorphHe.length,
+  examplesMissingGreek: missingMorph.slice(0, 4),
+  examplesMissingHebrew: missingMorphHe.slice(0, 6)
 }, null, 1));

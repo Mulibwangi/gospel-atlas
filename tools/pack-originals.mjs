@@ -62,12 +62,58 @@ for (const r of rows(read('gospels-greek.tsv'))) {
   n++;
 }
 
+// ---- the Hebrew, for the verses the Atlas can actually show ---------------
+// The Atlas is a map of the Gospels, and the only Old Testament text it ever puts on
+// screen is in a cross-reference preview. So the Hebrew it carries is the Hebrew of
+// exactly those verses: complete coverage of what the page can display, without the
+// four fifths of the Old Testament it has no way to show. The whole Old Testament is
+// 5.1 MB packed and would put the emailed archive past what many mail systems accept.
+//
+// The reachable set is computed from the cross-reference data rather than guessed, so it
+// cannot drift: if a future snapshot reaches further, this follows it.
+const crossrefs = JSON.parse(await readFile('data/crossrefs.json', 'utf8'));
+const NT = new Set(['Matt', 'Mark', 'Luke', 'John', 'Acts', 'Rom', '1Cor', '2Cor', 'Gal', 'Eph',
+  'Phil', 'Col', '1Thess', '2Thess', '1Tim', '2Tim', 'Titus', 'Phlm', 'Heb', 'Jas', '1Pet',
+  '2Pet', '1John', '2John', '3John', 'Jude', 'Rev']);
+const canonical = Object.keys(bible);
+const vindex = new Map(canonical.map((k, i) => [k, i]));
+const reachable = new Set();
+for (const list of Object.values(crossrefs)) for (const [target] of list) {
+  const [from, to] = String(target).split('-');
+  const a = vindex.get(from);
+  if (a === undefined) continue;
+  const b = to === undefined ? a : (vindex.get(to) ?? a);
+  for (let i = a; i <= b; i++) {
+    const v = canonical[i];
+    if (!NT.has(v.split('.')[0])) reachable.add(v);
+  }
+}
+
+const H = {word: pool(), translit: pool(), gloss: pool(), strong: pool(), morph: pool()};
+const hVerses = [], hOffsets = [], hCols = {word: [], translit: [], gloss: [], strong: [], morph: []};
+let hLast = null, hn = 0, hSkipped = 0;
+for (const r of rows(read('hebrew-ot.tsv'))) {
+  const [ref, word, translit, gloss, strong, morph] = r;
+  if (bible[ref] === undefined) {
+    // Psalm superscriptions have no verse of their own in this text; the concordance
+    // keeps them, but the Atlas has nowhere to show one.
+    if (!/^Ps\.\d+\.0$/.test(ref)) problems.push(`hebrew: ${ref} is not a verse in this project's text`);
+    continue;
+  }
+  if (!reachable.has(ref)) { hSkipped++; continue; }
+  if (ref !== hLast) { hVerses.push(ref); hOffsets.push(hn); hLast = ref; }
+  const v = {word, translit, gloss, strong, morph};
+  for (const k of Object.keys(hCols)) hCols[k].push(H[k].id(v[k] || ''));
+  hn++;
+}
+const missedReachable = [...reachable].filter(v => !hVerses.includes(v));
+
 // ---- the whole Bible, by Strong number ------------------------------------
 // One sorted, delta-coded verse list per Strong number. Delta coding is what makes this
 // small: consecutive occurrences are usually a few verses apart, so most deltas are one
 // or two digits and gzip does the rest.
 const allVerses = [], vi = new Map();
-for (const key of Object.keys(bible)) { vi.set(key, allVerses.length); allVerses.push(key); }
+for (const key of canonical) { vi.set(key, allVerses.length); allVerses.push(key); }
 // Psalm superscriptions carry real Hebrew that the ASV prints unnumbered above the psalm.
 // They are kept, with an id of their own, rather than dropped or folded into verse 1.
 const titles = new Set();
@@ -150,6 +196,19 @@ const concordance = {
 };
 concordance.built = stamp(concordance);
 
+const hebrew = {
+  note: 'Hebrew of the Old Testament verses the Gospel cross-references reach. ' + meta.snapshot,
+  attribution: 'STEPBible.org / Tyndale House, Cambridge — CC BY 4.0; Westminster Leningrad Codex',
+  verses: hVerses, offsets: hOffsets, words: hn,
+  pools: Object.fromEntries(Object.keys(H).map(k => [k, H[k].list()])),
+  cols: hCols,
+  // Verses in the Old Testament that no Gospel cross-reference reaches, and so are not
+  // carried. The page says so rather than showing an empty panel.
+  notCarried: 23145 - hVerses.length
+};
+hebrew.built = stamp(hebrew);
+
+await writeFile('data/hebrew.json', JSON.stringify(hebrew));
 await writeFile('data/interlinear.json', JSON.stringify(interlinear));
 await writeFile('data/concordance.json', JSON.stringify(concordance));
 
@@ -164,6 +223,10 @@ console.log(JSON.stringify({
   strongNumbers: keys.length,
   hebrew: keys.filter(k => k[0] === 'H').length,
   greek: keys.filter(k => k[0] === 'G').length,
+  hebrewMorphemesCarried: hn, hebrewVersesCarried: hVerses.length,
+  hebrewMorphemesOutsideReach: hSkipped,
+  reachableOldTestamentVerses: reachable.size,
+  reachableVersesWithNoHebrew: missedReachable.length,
   psalmTitles: titles.size, psalmTitleWords: titleWords, affixCodes: affixes.length,
   versificationJoins: gaps.length,
   interlinearKB: Math.round(JSON.stringify(interlinear).length / 1024),

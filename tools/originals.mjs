@@ -12,7 +12,6 @@ import {readFile} from 'node:fs/promises';
 
 const bible = JSON.parse(await readFile('data/bible.json', 'utf8'));
 const I = JSON.parse(await readFile('data/interlinear.json', 'utf8'));
-const C = JSON.parse(await readFile('data/concordance.json', 'utf8'));
 const fail = [];
 const ok = [];
 const check = (cond, what, detail = '') => (cond ? ok : fail).push(what + (detail ? ' — ' + detail : ''));
@@ -61,6 +60,68 @@ const explained = [...morphUsed].filter(c => I.morph[c]).length;
 check(explained / morphUsed.size > 0.95, 'nearly every morphology code in use is explained',
   `${explained} of ${morphUsed.size}`);
 
+const C = JSON.parse(await readFile('data/concordance.json', 'utf8'));
+// ---- the Hebrew -------------------------------------------------------------
+const H = JSON.parse(await readFile('data/hebrew.json', 'utf8'));
+check(H.verses.length === H.offsets.length, 'every Hebrew verse has a starting offset');
+check(H.offsets.every((o, i) => i === 0 || o > H.offsets[i - 1]), 'the Hebrew offsets run forward');
+check(H.verses.every(v => bible[v] !== undefined), 'every Hebrew verse exists in the text',
+  H.verses.filter(v => bible[v] === undefined).slice(0, 3).join(', '));
+check(H.verses.every(v => !/^(Matt|Mark|Luke|John|Acts|Rom|[123]?(Cor|Thess|Tim|Pet|John)|Gal|Eph|Phil|Col|Titus|Phlm|Heb|Jas|Jude|Rev)\./.test(v)),
+  'the Hebrew is Old Testament only');
+for (const k of Object.keys(H.cols))
+  check(H.cols[k].length === H.words, `the Hebrew ${k} column has one entry per morpheme`);
+for (const k of Object.keys(H.cols))
+  check(H.cols[k].every(i => i >= 0 && i < H.pools[k].length), `every Hebrew ${k} index points into its pool`);
+
+// The Atlas shows Old Testament text in exactly one place: a cross-reference preview.
+// So what it carries must cover every Old Testament verse its cross-references reach —
+// not most of them, all of them, or a reader meets an empty panel.
+const crossrefs = JSON.parse(await readFile('data/crossrefs.json', 'utf8'));
+const NT = new Set(['Matt', 'Mark', 'Luke', 'John', 'Acts', 'Rom', '1Cor', '2Cor', 'Gal', 'Eph',
+  'Phil', 'Col', '1Thess', '2Thess', '1Tim', '2Tim', 'Titus', 'Phlm', 'Heb', 'Jas', '1Pet',
+  '2Pet', '1John', '2John', '3John', 'Jude', 'Rev']);
+const order = Object.keys(bible), at = new Map(order.map((k, i) => [k, i]));
+const reach = new Set();
+for (const list of Object.values(crossrefs)) for (const [target] of list) {
+  const [from, to] = String(target).split('-');
+  const a = at.get(from);
+  if (a === undefined) continue;
+  const b = to === undefined ? a : (at.get(to) ?? a);
+  for (let i = a; i <= b; i++) if (!NT.has(order[i].split('.')[0])) reach.add(order[i]);
+}
+const have = new Set(H.verses);
+const short = [...reach].filter(v => !have.has(v));
+check(short.length === 0, 'every Old Testament verse the Atlas can show has its Hebrew',
+  short.length + ' missing, e.g. ' + short.slice(0, 4).join(', '));
+check(H.verses.every(v => reach.has(v)), 'and nothing is carried that the Atlas cannot show');
+
+// Spot checks anyone can read against a Hebrew Bible.
+const heAt = ref => {
+  const vi = H.verses.indexOf(ref);
+  if (vi < 0) return null;
+  const a = H.offsets[vi], b = vi + 1 < H.offsets.length ? H.offsets[vi + 1] : H.words;
+  return Array.from({length: b - a}, (_, j) => ({
+    word: H.pools.word[H.cols.word[a + j]],
+    translit: H.pools.translit[H.cols.translit[a + j]],
+    strong: H.pools.strong[H.cols.strong[a + j]]
+  }));
+};
+const gen = heAt('Gen.1.1');
+check(!!gen, 'Genesis 1:1 is carried');
+if (gen) {
+  check(gen.length >= 10, 'Genesis 1:1 has its morphemes, prefixes included', gen.length + ' of them');
+  check(gen.map(w => w.word).join('').normalize('NFC').includes('בְּ'.normalize('NFC')),
+    'it opens with the preposition written as part of the word');
+  check(gen.some(w => w.strong === 'H7225G'), 'rēʾšît is tagged in Genesis 1:1');
+  check(gen.some(w => w.strong === 'H1254A' || /^H1254/.test(w.strong || '')), 'bārāʾ is tagged in Genesis 1:1');
+  check(gen.every(w => /[֐-׿]/.test(w.word) || !w.word), 'every Hebrew box holds Hebrew script');
+}
+// Every morpheme that has a Strong number should be one the concordance knows.
+const CC = JSON.parse(await readFile('data/concordance.json', 'utf8'));
+const unknown = [...new Set(H.pools.strong)].filter(k => k && !CC.lex[k]);
+check(unknown.length === 0, 'every Hebrew Strong number is in the shared lexicon', unknown.slice(0, 4).join(', '));
+
 // ---- the concordance -------------------------------------------------------
 check(C.keys.length === C.occ.length, 'every Strong number has an occurrence list');
 // Four digits for Strong's own range, five for STEPBible's extensions past it.
@@ -85,10 +146,14 @@ for (const list of C.occ) {
 check(bad === 0, 'every occurrence lands on a real verse, in order', bad + ' bad deltas');
 check(total === C.versePairs, 'the index holds the word-in-verse entries it says it does',
   total.toLocaleString() + ' vs ' + C.versePairs.toLocaleString());
-check(C.occurrences === 542487, 'and the source carries the occurrence count it did when this was written',
+// A canary. It was 542,487 until a backslash join was found to be swallowing one Hebrew
+// word in seven; the punctuation marks behind those backslashes are now indexed too, as
+// the lexicon documents them. If this moves again, something changed in the reading of
+// the source and should be understood before the number is edited.
+check(C.occurrences === 681423, 'the source carries the occurrence count it did when this was written',
   C.occurrences.toLocaleString());
 
-const canonical = Object.keys(bible);
+const canonical = order;
 check(C.verses.slice(0, canonical.length).every((v, i) => v === canonical[i]),
   'the concordance numbers verses exactly as the rest of the project does');
 const extra = C.verses.slice(canonical.length);
@@ -126,7 +191,11 @@ check(versesOf('H4210').some(v => v === 'Ps.3.0'), 'a Psalm superscription is se
 
 // Hebrew affixes are marked, so a search for a word is not buried under the article.
 check(C.affixes.length > 0 && C.affixes.every(k => /^H9\d{3}/.test(k)),
-  'the Hebrew prefixes and endings are marked as such', C.affixes.length + ' codes');
+  'the Hebrew prefixes, endings and marks are set apart', C.affixes.length + ' codes');
+// The punctuation that the backslash joins carries real lexicon entries, and losing it
+// again would mean the word it attaches to had gone missing too.
+for (const mark of ['H9014', 'H9016'])
+  check(!!C.lex[mark] && C.lex[mark][3], `${mark} is indexed with its description`, (C.lex[mark] || [])[3]);
 check(!C.affixes.includes('H2617A'), 'a real word is not marked as an affix');
 
 console.log(`${ok.length} checks passed`);

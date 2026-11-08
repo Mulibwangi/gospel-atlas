@@ -239,7 +239,7 @@ The source panel provides downloadable index, cross-reference and audit data.
 Both apps now carry the original-language text behind the English, from
 STEPBible's Translators Amalgamated Greek New Testament and Hebrew Old
 Testament — the work of Tyndale House, Cambridge, under CC BY 4.0. The Hebrew
-is the Westminster Leningrad Codex. 16,328 distinct words across 542,487
+is the Westminster Leningrad Codex. 17,036 distinct words and marks across 681,423
 occurrences.
 
 **In the Gospel Atlas**, tick *Greek, word by word* under a selected verse. Each
@@ -254,6 +254,15 @@ does not say one writer copied another, or which came first — only that the
 same word is there in both. You can also mark the words the Greek editions
 differ over; the note then says which editions carry the word, and takes no view
 on which is right.
+
+With the Greek on, any cross-reference to the Old Testament opens in **Hebrew**
+too, read right to left, the same way: 191,905 morphemes covering the 9,218 Old
+Testament verses the Gospel cross-references reach, which is every Old Testament
+verse the Atlas can put on screen. Hebrew writes as part of a word what English
+writes separately — the *and*, the *the*, the *in*, the possessive *his* — and
+each of those gets a box of its own, because that is what the word is made of.
+The maqqef and the verse-ending sof pasuq stay attached to their word, as a
+printed Hebrew Bible has them.
 
 **In the Cross-Reference Lab**, *Word search* covers the whole canon. Type an
 English gloss (*love*), a transliteration (*chesed*, *agape*), the word itself

@@ -7,7 +7,13 @@ assert len(set(e['lang'] for e in v))==21
 assert len(v)==25
 assert all(e.get('verses') is None for e in v if not e['offline'])
 assert len(set(e['lang'] for e in v if e['offline']))==12
-assert not re.search(r'(chatgpt|openai|codex)',h,re.I)
+# No AI-assistant branding in the shipped file. "Codex" is also what manuscripts are
+# called, and the Hebrew here is the Westminster Leningrad Codex, so the manuscript
+# senses are removed before the check rather than the check being loosened: anything
+# else carrying the word still fails.
+MANUSCRIPTS=r'(?:Leningrad|Sinaiticus|Vaticanus|Alexandrinus|Bezae|Ephraemi|Washingtonianus|Amiatinus)\s+Codex|Codex\s+(?:Leningradensis|Sinaiticus|Vaticanus|Alexandrinus|Bezae|Ephraemi|Washingtonianus|Amiatinus)'
+hh=re.sub(MANUSCRIPTS,' ',h,flags=re.I)
+assert not re.search(r'(chatgpt|openai|codex)',hh,re.I)
 assert not re.search(r'<(?:script|link)\b[^>]*(?:src|href)=["\'](?!data:)',h,re.I)
 assert "connect-src 'none'" in h
 allvs=[vv for vs in a['verses'].values() for vv in vs];assert len(allvs)==3779

@@ -131,3 +131,8 @@
 .ws-count button:hover,.ws-refs button:hover{color:var(--ink)}
 @media(max-width:700px){.il-agree-key{margin-left:0;flex:1 1 100%}.ws-n{margin-left:0}}
 @media print{.il-bar,.wordsearch{display:none!important}}
+.il.rtl{direction:rtl}
+.il.rtl button{text-align:right;direction:rtl}
+.il.rtl .il-translit,.il.rtl .il-gloss,.il.rtl .il-morph{direction:ltr;text-align:right}
+.il-ref{margin:12px 0 14px;font-family:Inter,ui-sans-serif,system-ui,sans-serif}
+.il-ref-head{font-size:9px;letter-spacing:1.1px;text-transform:uppercase;color:#a0a795;font-weight:700;margin:0 0 8px}
