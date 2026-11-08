@@ -114,6 +114,19 @@ footer p{margin:0 0 7px}
 .loading{min-height:52vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;color:var(--muted)}
 .loading h2{font-family:var(--serif);font-weight:400;font-size:26px;margin:0;color:var(--ink)}
 @media(max-width:900px){.stage{grid-template-columns:minmax(0,1fr)}.links{max-height:260px}.counts{gap:18px}.counts strong{font-size:20px}.search{max-width:none}}
+@media(max-width:560px){
+  /* On a phone the picture is the point, so it comes before the controls that change it.
+     The view buttons and the search stay above; the rest of the dials follow the drawing. */
+  /* The dials are stacked one per row on a phone, which pushed the drawing far below
+     the fold. Two to a row, tighter, brings it back up. */
+  .bar{gap:9px;padding:10px;margin-top:12px}
+  .bar .opt{flex:1 1 46%;justify-content:space-between;gap:6px;font-size:13px}
+  .bar .opt select{flex:0 1 auto;min-width:0}
+  .bar .search{flex:1 1 100%}
+  .opt{flex-wrap:wrap}
+}
+select,input[type=search]{max-inline-size:100%}
+canvas{max-width:100%}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -644,9 +657,10 @@ function layout(){
     const focused=state.focus?state.focus.to-state.focus.from+1:0;
     // With a focus, the dial is the book: one full revolution for it, with the rest
     // of the canon kept as a context ring outside. Without one, the ring is the canon.
-    const R=Math.min(W,H)*(focused?0.32:0.275);  // room outside for two tiers of radial names
+    const tight=Math.min(W,H)<520;                 // a phone, where the names will not fit twice over
+    const R=Math.min(W,H)*(focused?(tight?0.26:0.32):(tight?0.2:0.275));
     const Rin=focused?R*0.54:0;
-    geom.circle={cx,cy,R,Rin,focused,barMax:R*(focused?0.085:0.14)};
+    geom.circle={cx,cy,R,Rin,focused,tight,barMax:R*(focused?0.085:0.14)};
     geom.angleAt=u=>-Math.PI/2+(Math.max(0,Math.min(N-1,u))/N)*Math.PI*2;
     geom.angle=i=>geom.angleAt(SLOT[Math.max(0,Math.min(N-1,Math.round(i)))]);
     geom.pointAt=(u,r)=>{const t=geom.angleAt(u);return[cx+Math.cos(t)*r,cy+Math.sin(t)*r]};
@@ -842,7 +856,8 @@ function drawFrame(c){
     // angular room it needs is the same whether it reads "Job" or "Deuteronomy" — and
     // two tiers have to stand further apart than the longest name, or an inner label
     // runs straight through an outer one.
-    const tiers=[R*1.01+barMax+11,R*1.01+barMax+68];
+    const tight=geom.circle.tight;
+    const tiers=tight?[R*1.01+barMax+9]:[R*1.01+barMax+11,R*1.01+barMax+68];
     const filled=tiers.map(()=>-Infinity);
     c.textBaseline='middle';c.font='9px '+css('--sans');
     const halfAt=(s,t)=>5.5/(Math.PI*2*tiers[t]);
@@ -858,7 +873,7 @@ function drawFrame(c){
       for(let t=0;t<tiers.length&&tier<0;t++){
         // The outer tier takes abbreviations only: a long name there reaches past the
         // edge of the frame and loses its last letter.
-        for(const candidate of (t===0?[shortName(b.name),b.code]:[b.code])){
+        for(const candidate of (t===0&&!tight?[shortName(b.name),b.code]:[b.code])){
           const half=halfAt(candidate,t),want=Math.max(u,filled[t]+half);
           if(want<=LIM&&want-u<=DODGE){filled[t]=want+half;tier=t;name=candidate;at=want;break}
         }
@@ -1791,6 +1806,19 @@ document.getElementById('clear').addEventListener('click',()=>{
 let t;addEventListener('resize',()=>{clearTimeout(t);t=setTimeout(render,160)});
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{renderBase();legend()});
 
+// On a phone the whole canon is a third of a pixel per chapter, which can be looked at
+// but not pointed at. Start such a screen on the Gospels, where a chapter is wide enough
+// to tap; the counts above still say the file holds the whole Bible, and the Focus
+// control clears back to it in one go.
+if(COMPLETE&&window.matchMedia&&window.matchMedia('(max-width:560px)').matches){
+  const g=SECTIONS.find(x=>x.name==='The Gospels')||SECTIONS.find(x=>x.name==='New Testament');
+  if(g){
+    state.focus={from:g.from,to:g.to,label:g.name};
+    const pick=document.getElementById('section');
+    if(pick)pick.value=g.name;
+    try{chip()}catch(e){}
+  }
+}
 render();legend();describe();
 })();
 </script>
