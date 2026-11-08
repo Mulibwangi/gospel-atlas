@@ -131,7 +131,12 @@ const root=document.getElementById('root');
 let DATA;
 try{
   if(!window.DecompressionStream)throw new Error('Please open this page in an up-to-date version of Chrome, Firefox, Edge or Safari.');
-  const bytes=Uint8Array.from(atob(document.getElementById('payload').textContent.trim()),c=>c.charCodeAt(0));
+  // A plain loop over a preallocated buffer, not Uint8Array.from with a mapping
+  // function: this runs over three million characters, and the callback form spends
+  // most of the page's startup inside it.
+  const raw=atob(document.getElementById('payload').textContent.trim());
+  const bytes=new Uint8Array(raw.length);
+  for(let i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);
   DATA=await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).json();
 }catch(e){
   root.innerHTML='<div class="loading"><h2>Cross-Reference Lab</h2><p>This page could not open. '+e.message+'</p></div>';
