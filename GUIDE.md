@@ -230,6 +230,42 @@ passage. Use your browser's Save as PDF option to create a PDF if available.
 “Copy references” copies the selected story's title, references and edition.
 The source panel provides downloadable index, cross-reference and audit data.
 
+## Notebook, bookmarks and slide decks
+
+Both the Gospel Atlas and the Cross-Reference Lab keep a notebook, and they
+keep two different things.
+
+A **bookmark** keeps where you were — in the Atlas: the story, the verse, the
+filter, the pixel density, the translation; in the Lab: the view, the ordering,
+the focus and the chapter being held. “Open” brings the whole arrangement back
+in one click, however far you have wandered since.
+
+A **note** keeps what you found, so it can be carried into a lesson:
+
+- In the Atlas, “+ Note” beside a story keeps the unit, its references in each
+  Gospel, and a picture of the four maps as they stand. “+ Note” in the
+  connections section keeps a verse, its text in the edition you are reading,
+  and how many connections it has.
+- In the Lab, “+ Note” keeps the chapter or the link the panel is showing, the
+  numbers behind it, and the diagram as drawn.
+
+Under each note is a box for your own words. **Slide deck** turns the notes and
+those words into a single HTML file: arrow keys or clicks move through it, and
+printing it gives a PDF. It needs nothing installed and no network, so it opens
+from a memory stick on a classroom machine.
+
+**Save maps as image** / **Save image** writes the picture on its own as a PNG.
+
+Notes are held in the browser you made them in. That storage is per-machine, and
+some browsers refuse it outright for a file opened from disk, so **Save file**
+is the real copy: it writes the whole notebook as JSON, and **Open file** reads
+one back, on this machine or another. A notebook saved in one app can be opened
+in the other, and a deck built from both; a note from the other app shows where
+it came from, and offers no “Open”, since only the app that kept a view can put
+it back.
+
+Nothing in the notebook leaves your computer.
+
 ## Sources and permissions
 
 - Sean Boisen / SemanticBible, Composite Gospel Index 1.2: CC BY-NC-SA 2.0.

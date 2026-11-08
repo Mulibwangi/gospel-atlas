@@ -117,7 +117,8 @@ const payload = {
   // because the clock moved, so a rebuild can be compared with the published copy byte
   // for byte instead of being assumed to match.
   built: snapshot + ' \u00b7 ' + createHash('sha256')
-    .update(await readFile('src/crossrefs-page.html')).update(JSON.stringify(rows)).digest('hex').slice(0, 7),
+    .update(await readFile('src/crossrefs-page.html')).update(await readFile('src/notebook-kit.js'))
+    .update(JSON.stringify(rows)).digest('hex').slice(0, 7),
   unmapped, dropped,
   testamentSplit: books.findIndex(b => b.code === 'Matt'),
   books: books.map(b => [b.code, b.name, b.first, b.chapters]),
@@ -129,7 +130,17 @@ const payload = {
 const encoded = gzipSync(Buffer.from(JSON.stringify(payload)), {level: 9}).toString('base64');
 const template = await readFile('src/crossrefs-page.html', 'utf8');
 await mkdir('docs', {recursive: true});
-const html = template.replace('__PAYLOAD__', encoded);
+
+// The notebook's deck builder is shared with the Gospel Atlas, which bundles it as a
+// module. This file has no bundler, so the same source is inlined with its export
+// keywords removed. That only works while the module exports declarations and nothing
+// else, so check rather than hope: a stray `export {x}` or `export default` would be
+// inlined as a syntax error and the page would not run at all.
+const kit = await readFile('src/notebook-kit.js', 'utf8');
+for (const bad of [/^export\s*\{/m, /^export\s+default\b/m, /^\s*import\b/m])
+  if (bad.test(kit)) { console.error('src/notebook-kit.js must use declaration exports only, so it can be inlined here.'); process.exit(1); }
+const html = template.replace('__PAYLOAD__', encoded)
+                     .replace('__DECK__', kit.replace(/^export /gm, '').trimEnd());
 await writeFile('docs/cross-references.html', html);
 
 const chapterOfVerse = [];

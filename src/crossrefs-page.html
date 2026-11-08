@@ -1868,13 +1868,17 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{render
 // Everything lives in this browser and nowhere else. Browser storage is per-machine
 // and unreliable under file:// on some browsers, so it is a convenience and the saved
 // file is the real copy: the notebook works with storage refused.
+// The slide deck, the file reader and the download are shared with the Gospel Atlas,
+// inlined here from src/notebook-kit.js so that one slide design serves both and a
+// lesson can be built from notes kept in either.
+__DECK__
+const APP='cross-reference-lab';
 const NB_KEY='gospel-atlas-lab-notebook';
 let NB=[];
 const nbSave=()=>{try{localStorage.setItem(NB_KEY,JSON.stringify(NB))}catch(e){}};
 try{const raw=localStorage.getItem(NB_KEY);if(raw)NB=JSON.parse(raw)||[]}catch(e){NB=[]}
 const nbEl=id=>document.getElementById(id);
-const nbNow=()=>new Date().toISOString().slice(0,16).replace('T',' ');
-const safe=t=>String(t||'').replace(/[^\w .,'-]+/g,' ').replace(/\s+/g,' ').trim().slice(0,70);
+const safe=safeName;
 
 // A small picture of the drawing as it stands. Full size is close to half a megabyte,
 // which a deck of twenty would not survive, so it is scaled down on the way out.
@@ -1906,16 +1910,18 @@ function describeState(v){
 function addNote(withImage){
   const title=(nbEl('p-title').textContent||'').trim();
   if(!title||title==='Start anywhere'){nbFlash('Choose a chapter or a link first — a note keeps what the panel shows.');return}
-  NB.push({kind:'note',id:Date.now()+''+NB.length,title,
+  const v=viewState();
+  NB.push({kind:'note',id:Date.now()+''+NB.length,title,app:APP,
     eyebrow:(nbEl('p-eyebrow').textContent||'').trim(),
     sub:(nbEl('p-sub').textContent||'').trim(),
-    at:viewState(),when:nbNow(),body:'',
+    at:v,atText:describeState(v),when:nbNow(),body:'',
     img:withImage===false?null:snapshot(1000)});
   nbSave();nbRender(true);
 }
 function addMark(){
   const v=viewState();
-  NB.push({kind:'bookmark',id:Date.now()+''+NB.length,title:describeState(v),at:v,when:nbNow(),body:''});
+  NB.push({kind:'bookmark',id:Date.now()+''+NB.length,title:describeState(v),app:APP,
+    at:v,atText:describeState(v),when:nbNow(),body:''});
   nbSave();nbRender(true);
 }
 function restore(v){
@@ -1945,14 +1951,18 @@ function nbRender(open){
   const list=nbEl('nb-list');list.innerHTML='';
   NB.forEach((it,i)=>{
     const li=document.createElement('li');li.className='nb-item';
+    const mine=!it.app||it.app===APP;
     const thumb=it.img?'<img alt="" src="'+it.img+'">':'<div class="nb-kind '+(it.kind==='bookmark'?'mark':'')+'">'+(it.kind==='bookmark'?'VIEW':'NOTE')+'</div>';
     li.innerHTML='<div>'+thumb+'</div><div><p class="nb-kind '+(it.kind==='bookmark'?'mark':'')+'">'
+      +(mine?'':(APP_NAMES[it.app]||it.app)+' · ')
       +(it.kind==='bookmark'?'BOOKMARK':(it.eyebrow||'NOTE'))+' · '+it.when+'</p>'
       +'<h3></h3><p class="meta"></p><textarea placeholder="Your own words — this is what the slide will say."></textarea></div>'
-      +'<div class="nb-ops"><button data-op="go">Open</button><button data-op="up">Up</button>'
+      +'<div class="nb-ops">'+(mine?'<button data-op="go">Open</button>':'')+'<button data-op="up">Up</button>'
       +'<button data-op="down">Down</button><button data-op="del">Remove</button></div>';
     li.querySelector('h3').textContent=it.title;
-    li.querySelector('.meta').textContent=(it.kind==='note'&&it.sub?it.sub+' — ':'')+describeState(it.at);
+    const meta=(it.kind==='note'&&it.sub?it.sub+' — ':'')+(it.atText||describeState(it.at));
+    // A bookmark's title already is its description; printing it twice says nothing.
+    li.querySelector('.meta').textContent=meta===it.title?'':meta;
     const ta=li.querySelector('textarea');ta.value=it.body||'';
     ta.addEventListener('input',()=>{it.body=ta.value;nbSave()});
     li.querySelectorAll('.nb-ops button').forEach(btn=>btn.addEventListener('click',()=>{
@@ -1969,57 +1979,27 @@ function nbRender(open){
     ? 'Kept in this browser only. Save the file to move them to another machine, or to keep them at all.'
     : 'Nothing kept yet.';
 }
-function download(name,blob){
-  const u=URL.createObjectURL(blob),a=document.createElement('a');
-  a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();
-  setTimeout(()=>URL.revokeObjectURL(u),1000);
-}
 function deck(){
   const items=NB.filter(x=>x.kind==='note'||x.body);
   if(!items.length){nbFlash('Add a note or two first — the deck is made of them.');return}
-  const esc=t=>String(t==null?'':t).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
-  const slides=items.map((it,n)=>'<section>'+
-    '<p class="k">'+esc(it.kind==='bookmark'?'VIEW':(it.eyebrow||'NOTE'))+'</p>'+
-    '<h2>'+esc(it.title)+'</h2>'+
-    (it.sub?'<p class="s">'+esc(it.sub)+'</p>':'')+
-    (it.img?'<img alt="" src="'+it.img+'">':'')+
-    (it.body?'<p class="b">'+esc(it.body).replace(/\n+/g,'</p><p class="b">')+'</p>':'')+
-    '<p class="f">'+esc(describeState(it.at))+' · '+(n+1)+' of '+items.length+'</p></section>').join('\n');
-  const html='<!doctype html><html lang="en"><head><meta charset="utf-8">'+
-  '<meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(deckTitle())+'</title><style>'+
-  ':root{--p:#f7f6f1;--i:#26362f;--m:#747b73;--l:#dedfd5;--g:#b49a4b;color-scheme:light}'+
-  '*{box-sizing:border-box}html,body{margin:0;height:100%;background:#1d231f;color:var(--i);'+
-  "font-family:Inter,ui-sans-serif,-apple-system,'Segoe UI',sans-serif}"+
-  'section{display:none;background:var(--p);width:min(100%,1120px);aspect-ratio:16/9;margin:auto;'+
-  'padding:5vmin 6vmin;flex-direction:column;border-radius:4px}section.on{display:flex}'+
-  'body{display:flex;align-items:center;justify-content:center;padding:3vmin}'+
-  '.k{font-size:.72rem;letter-spacing:.15em;color:var(--m);margin:0 0 .4rem;font-weight:700}'+
-  "h2{font-family:Georgia,'Times New Roman',serif;font-weight:400;font-size:clamp(1.3rem,3.4vmin,2.5rem);margin:0 0 .4rem}"+
-  '.s{color:var(--m);font-size:clamp(.78rem,1.7vmin,1rem);margin:0 0 .8rem}'+
-  'img{max-height:52%;object-fit:contain;align-self:center;border:1px solid var(--l);border-radius:3px;background:#fff}'+
-  ".b{font-family:Georgia,'Times New Roman',serif;font-size:clamp(.9rem,2.1vmin,1.3rem);line-height:1.45;margin:.7rem 0 0}"+
-  '.f{margin-top:auto;font-size:.68rem;color:var(--m);border-top:1px solid var(--l);padding-top:.5rem}'+
-  '#n{position:fixed;bottom:12px;right:16px;color:#8d978f;font-size:.72rem}'+
-  '@media print{body{display:block;padding:0;background:#fff}section{display:flex!important;'+
-  'page-break-after:always;width:100%;border-radius:0;aspect-ratio:auto;height:100vh}#n{display:none}}'+
-  '</style></head><body>'+slides+'<div id="n"></div><script>'+
-  'var s=[].slice.call(document.querySelectorAll("section")),i=0;'+
-  'function go(n){i=Math.max(0,Math.min(s.length-1,n));s.forEach(function(e,k){e.classList.toggle("on",k===i)});'+
-  'document.getElementById("n").textContent=(i+1)+" / "+s.length+"  —  arrow keys, or print for PDF"}'+
-  'addEventListener("keydown",function(e){if(e.key==="ArrowRight"||e.key===" ")go(i+1);'+
-  'if(e.key==="ArrowLeft")go(i-1);if(e.key==="Home")go(0);if(e.key==="End")go(s.length-1)});'+
-  'addEventListener("click",function(e){go(i+(e.clientX<innerWidth/3?-1:1))});go(0);'+
-  '<\/script></body></html>';
-  download(safe(deckTitle()).replace(/ /g,'_')+'.html',new Blob([html],{type:'text/html'}));
+  download(safe(deckTitle()).replace(/ /g,'_')+'.html',
+    new Blob([deckHtml(items,deckTitle())],{type:'text/html'}));
   nbFlash('Deck saved — '+items.length+' slide'+(items.length===1?'':'s')+'. Open it in any browser; print it for a PDF.');
 }
 const deckTitle=()=>'Cross-Reference Lab notes '+new Date().toISOString().slice(0,10);
 nbEl('addNote').addEventListener('click',()=>addNote(true));
 nbEl('addMark').addEventListener('click',addMark);
 nbEl('snapPng').addEventListener('click',()=>{
-  const c=document.getElementById('plot');
+  // Encoding the whole canvas takes a second or two on a large screen, and a button
+  // that does nothing visible for two seconds reads as a button that does not work.
+  const c=document.getElementById('plot'),btn=nbEl('snapPng');
   if(!c)return;
-  c.toBlob(bl=>{if(bl)download(safe(describeState(viewState())).replace(/ /g,'_')+'.png',bl)},'image/png');
+  const was=btn.textContent;btn.textContent='Saving\u2026';btn.disabled=true;
+  const done=t=>{btn.textContent=t;setTimeout(()=>{btn.textContent=was;btn.disabled=false},1800)};
+  try{c.toBlob(bl=>{
+    if(!bl)return done('Not saved');
+    download(safe(describeState(viewState())).replace(/ /g,'_')+'.png',bl);done('Saved');
+  },'image/png')}catch(e){done('Not saved')}
 });
 nbEl('nbOpen').addEventListener('click',()=>{
   const n=nbEl('notebook');n.hidden=!n.hidden;
@@ -2029,15 +2009,13 @@ nbEl('nbOpen').addEventListener('click',()=>{
 nbEl('nbClose').addEventListener('click',()=>{nbEl('notebook').hidden=true;nbEl('nbOpen').setAttribute('aria-expanded','false')});
 nbEl('nbDeck').addEventListener('click',deck);
 nbEl('nbSave').addEventListener('click',()=>download('lab-notebook-'+new Date().toISOString().slice(0,10)+'.json',
-  new Blob([JSON.stringify({app:'cross-reference-lab',version:1,saved:nbNow(),items:NB},null,1)],{type:'application/json'})));
+  new Blob([JSON.stringify({app:APP,version:1,saved:nbNow(),items:NB},null,1)],{type:'application/json'})));
 nbEl('nbLoad').addEventListener('change',e=>{
   const f=e.target.files&&e.target.files[0];if(!f)return;
   const r=new FileReader();
   r.onload=()=>{try{
-    const d=JSON.parse(r.result);
-    const got=Array.isArray(d)?d:(d.items||[]);
-    if(!Array.isArray(got))throw new Error('no items');
-    NB=NB.concat(got.filter(x=>x&&(x.kind==='note'||x.kind==='bookmark')&&x.at));
+    const got=readNotebook(r.result,APP);
+    NB=NB.concat(got);
     nbSave();nbRender(true);nbFlash('Added '+got.length+' from the file.');
   }catch(err){nbFlash('That file could not be read as a notebook.')}};
   r.readAsText(f);e.target.value='';

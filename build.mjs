@@ -42,7 +42,7 @@ const newer=async(made,...from)=>{
   return false;
 };
 for(const [made,...from] of [
-  ['docs/cross-references.html','src/crossrefs-page.html','tools/pack-crossrefs.mjs'],
+  ['docs/cross-references.html','src/crossrefs-page.html','src/notebook-kit.js','tools/pack-crossrefs.mjs'],
   ['docs/typology.html','src/typology-page.html','tools/pack-typology.mjs','data/typology.json']]){
   const stale=await newer(made,...from);
   if(stale){
