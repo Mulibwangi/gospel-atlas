@@ -405,5 +405,5 @@ rather than claimed.
 
 ---
 
-Coder: **David Lee**. Issues and corrections are welcome through the
+Developer: **DAVID LEE**. Issues and corrections are welcome through the
 [issue tracker](https://github.com/Mulibwangi/gospel-atlas/issues).

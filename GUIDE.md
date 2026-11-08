@@ -1,6 +1,6 @@
 # Gospel Atlas
 
-Coder: David Lee
+Developer: DAVID LEE
 Standalone edition — 2 November 2026
 
 ## Open the app

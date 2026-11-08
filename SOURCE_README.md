@@ -1,6 +1,6 @@
 # Source package
 
-Coder: David Lee
+Developer: DAVID LEE
 
 The ready-to-use app is supplied separately. This source package is for editing
 or rebuilding it; ordinary readers do not need Node or Python.
