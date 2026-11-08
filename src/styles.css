@@ -146,3 +146,13 @@
 .il-sub:last-of-type{margin-bottom:0}
 .il-more{margin-top:4px;font-size:11px;padding:6px 11px;border:1px solid #d5dbcb;border-radius:5px;background:#fcfcf5;color:#64745c}
 .il-more:hover{background:#eef1e6;color:#2d4033}
+.il li.touch button{background:#e8f0f3;border-color:#c3d8e0}
+.il li.touch button:hover{border-color:#8fb4c2}
+.il-count{font-weight:400;letter-spacing:0;text-transform:none;font-size:10px;color:#7d9aa6;margin-left:10px}
+.il-count.none{color:#aab19d}
+.il-pairs{list-style:none;display:flex;flex-wrap:wrap;gap:6px 14px;margin:0 0 9px;padding:8px 11px;background:#eef4f6;border:1px solid #d7e4e9;border-radius:6px}
+.il-pairs li{display:flex;align-items:baseline;gap:7px;font-family:var(--serif);font-size:15px}
+.il-pairs i{font-family:Inter,ui-sans-serif,system-ui,sans-serif;font-style:normal;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:#7d9aa6}
+.ws-group{margin-top:12px}
+.ws-lang{font-size:9px;letter-spacing:1.1px;text-transform:uppercase;color:#a0a795;font-weight:700;margin:0 0 5px}
+.ws-sense{flex:1 1 100%;font-size:10.5px;line-height:1.6;color:#9aa290}

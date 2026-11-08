@@ -6,8 +6,8 @@
   "gospelVerses": 3779,
   "storyUnits": 355,
   "gospelCrossReferences": 44469,
-  "standaloneBytes": 11137907,
-  "sha256": "c906adc0af4e699b0d99f6196373dba950db3ffb5ca27157641a777318407dac",
+  "standaloneBytes": 11681071,
+  "sha256": "23879fd60f567f30cd87dd5169a25f63b48cd78c8f999019b610590cee6d162d",
   "excludedOfflineMirrors": {
     "bn_irvben": "Chapter lengths differed; source has no explicit per-verse IDs to resolve alignment",
     "mr_irvmar": "Chapter lengths differed; source has no explicit per-verse IDs to resolve alignment",

@@ -208,6 +208,15 @@ const hebrew = {
 };
 hebrew.built = stamp(hebrew);
 
+// The lexicon on its own, for the Atlas, so a word can be looked up in both languages
+// whether or not it happens to stand in a verse this file carries. 526 KB packed, and
+// without it a search for "yoke" finds the Greek and misses the Hebrew, which is the
+// one thing such a search exists to do.
+await writeFile('data/lexicon.json', JSON.stringify({
+  note: 'Every Hebrew and Greek word, by Strong number. ' + meta.snapshot,
+  attribution: concordance.attribution,
+  lex: lexOut, affixes, built: stamp(lexOut)
+}));
 await writeFile('data/hebrew.json', JSON.stringify(hebrew));
 await writeFile('data/interlinear.json', JSON.stringify(interlinear));
 await writeFile('data/concordance.json', JSON.stringify(concordance));

@@ -268,6 +268,23 @@ each of those gets a box of its own, because that is what the word is made of.
 The maqqef and the verse-ending sof pasuq stay attached to their word, as a
 printed Hebrew Bible has them.
 
+**Finding a word in both languages.** The search box under the Greek takes an
+English gloss, a transliteration, the word itself, or a Strong number, and
+answers in both languages at once. Type *yoke* and you get the Greek ζυγός
+(Matthew 11:29–30) and the Hebrew עֹל (Deuteronomy 28:48, Jeremiah 2:20,
+Lamentations 3:27 and the rest) side by side. Every Hebrew and Greek word is
+listed whether or not it stands in a verse this file carries; where it does not,
+the entry says so and the Cross-Reference Lab has it across the whole Bible.
+
+**Where the two verses touch.** A Gospel verse and the Old Testament verse it
+points to are, with few exceptions, not translations of one another, so nothing
+is lined up column against column — that would put "was" under "he created" and
+invent a correspondence nobody claims. What is marked is only where the two
+lexicons reach for the same English word, which is a fact about the lexicon
+entries. On John 1:1 and Genesis 1:1 that is *beginning* and *God*. On a verse
+that actually quotes the Old Testament, such as Matthew 1:23 on Isaiah 7:14, it
+lights up almost completely: bear, son, call, name.
+
 **In the Cross-Reference Lab**, *Word search* covers the whole canon. Type an
 English gloss (*love*), a transliteration (*chesed*, *agape*), the word itself
 in Hebrew or Greek, or a Strong number (*H2617*, *G26*). Accents, macrons and

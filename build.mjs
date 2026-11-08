@@ -10,6 +10,7 @@ const bundled=await build({entryPoints:['src/app.jsx'],bundle:true,minify:true,w
 const ATLAS=await readJSON('data/atlas.json'),CROSSREFS=await readJSON('data/crossrefs.json'),BASELINE=await readJSON('data/bible.json');
 const INTERLINEAR=await readJSON('data/interlinear.json');
 const HEBREW=await readJSON('data/hebrew.json');
+const LEXICON=await readJSON('data/lexicon.json');
 const EDITIONS=await readJSON('data/translations.json');
 for(const ed of EDITIONS){
  if(ed.id==='TR'){ed.id='TCL02';ed.short='TCL02';ed.name='Kutsal Kitap Yeni Çeviri 2001, 2008';delete ed.gateway;ed.source='https://www.bible.com/versions/170';ed.license='Online reading at YouVersion; text is not bundled'}
@@ -18,7 +19,7 @@ for(const ed of EDITIONS){
 const AUDIT={...(await readJSON('data/metadata.json')),standalonePrepared:'2026-11-02',developer:'DAVID LEE',languages:EDITIONS.filter((x,i,a)=>a.findIndex(y=>y.lang===x.lang)===i).length,editions:EDITIONS.map(({verses,...x})=>({...x,verseCount:verses?Object.keys(verses).length:0,textSha256:verses?createHash('sha256').update(JSON.stringify(verses)).digest('hex'):null})),headingSymbols:{Matthew:'Lion · King',Mark:'Ox · Servant',Luke:'Human figure · Son of Man',John:'Eagle · Son of God'}};
 await writeFile('data/release-audit.json',JSON.stringify(AUDIT,null,2));
 const SYMBOL_IMAGE='data:image/jpeg;base64,'+(await readFile('src/symbols.jpg')).toString('base64');
-const encoded=gzipSync(JSON.stringify({ATLAS,CROSSREFS,BASELINE,EDITIONS,AUDIT,SYMBOL_IMAGE,INTERLINEAR,HEBREW}),{level:9}).toString('base64');
+const encoded=gzipSync(JSON.stringify({ATLAS,CROSSREFS,BASELINE,EDITIONS,AUDIT,SYMBOL_IMAGE,INTERLINEAR,HEBREW,LEXICON}),{level:9}).toString('base64');
 const css=await readFile('src/styles.css','utf8');
 const mit=await readFile('node_modules/react/LICENSE','utf8');
 const js=('/* React / React DOM — '+mit+' */\n'+bundled.outputFiles[0].text).replace(/<\/script/gi,'<\\/script');
