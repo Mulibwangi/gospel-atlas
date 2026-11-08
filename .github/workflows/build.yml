@@ -23,22 +23,63 @@ jobs:
 
       - run: npm ci
 
-      - name: Build the standalone app and the ZIP
+      # Generates the Cross-Reference Lab and Shadow and Substance from source, then
+      # the Atlas and the ZIP. The packing has to come first: build.mjs packages the
+      # generated pages rather than making them, and refuses to package a stale one.
+      - name: Build everything from source
         run: npm run build
+
+      - name: Check the Lab — reference bounds, shipped chains, indexed search
+        run: node test_lab.mjs
 
       - name: Check the interface functions
         run: node test_functions.mjs
 
+      - name: Check every typological reference and quotation
+        run: node tools/typology.mjs
+
+      - name: Check the sourced typological claims
+        run: node tools/typology-sources.mjs
+
       - name: Check verse counts, numbering and licences
         run: python3 verify_release.py
 
-      - name: Confirm the published copy matches the build
+      # The builds are reproducible: the stamps are digests of the sources rather than
+      # the clock, and the archive is timestamped from the data snapshot. So the copies
+      # tracked in the repository can be compared byte for byte with this build, which
+      # is the only way to know that what a reader downloads is what the source says.
+      - name: Confirm the published copies match this build
         run: |
-          if ! cmp -s dist/index.html docs/index.html; then
-            echo "docs/index.html differs from this build."
-            echo "Run: cp dist/index.html docs/index.html"
-            exit 1
+          fail=0
+          check() {
+            if ! cmp -s "$1" "$2"; then
+              echo "::error::$2 differs from this build. Run: npm run build && npm run publish:docs"
+              fail=1
+            else
+              echo "ok  $2"
+            fi
+          }
+          check dist/index.html docs/index.html
+          check dist/Gospel_Atlas_David_Lee.zip download/Gospel_Atlas_David_Lee.zip
+          # The Lab and Shadow and Substance are generated straight into docs/, so a
+          # rebuild that leaves them unchanged is the check; git decides.
+          if ! git diff --quiet -- docs/cross-references.html docs/typology.html; then
+            echo "::error::docs/cross-references.html or docs/typology.html is not what the source builds."
+            git diff --stat -- docs/cross-references.html docs/typology.html
+            fail=1
+          else
+            echo "ok  docs/cross-references.html, docs/typology.html"
           fi
+          exit $fail
+
+      - name: Confirm the ZIP carries all four files a reader needs
+        run: |
+          list=$(unzip -Z1 dist/Gospel_Atlas_David_Lee.zip)
+          echo "$list"
+          for want in "1 START HERE - Open Gospel Atlas.html" "Gospel_Atlas_David_Lee.html" \
+                      "Cross_Reference_Lab.html" "Shadow_and_Substance.html"; do
+            echo "$list" | grep -qxF "$want" || { echo "::error::$want is missing from the ZIP"; exit 1; }
+          done
 
       - uses: actions/upload-artifact@v4
         with:

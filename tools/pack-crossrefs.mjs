@@ -112,7 +112,12 @@ for (const r of rows) { flat.push(r[0] - previous, r[1], r[2], r[3]); previous =
 
 const payload = {
   scope, sourceNote, snapshot, sourceSha256: sourceHash,
-  built: new Date().toISOString().replace('T',' ').slice(0, 16) + ' UTC',
+  // Deterministic: the snapshot it was built from, plus a short digest of the template
+  // and the payload. It changes whenever anything that matters changes and never merely
+  // because the clock moved, so a rebuild can be compared with the published copy byte
+  // for byte instead of being assumed to match.
+  built: snapshot + ' \u00b7 ' + createHash('sha256')
+    .update(await readFile('src/crossrefs-page.html')).update(JSON.stringify(rows)).digest('hex').slice(0, 7),
   unmapped, dropped,
   testamentSplit: books.findIndex(b => b.code === 'Matt'),
   books: books.map(b => [b.code, b.name, b.first, b.chapters]),

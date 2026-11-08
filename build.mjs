@@ -29,6 +29,29 @@ const howto=(await readFile('src/how-to-open.txt','utf8')).replace(/Gospel_Atlas
 const readme=await readFile('GUIDE.md','utf8');// shipped to recipients as README.md; the repository README.md is the project page
 await writeFile('dist/'+LAUNCHER_FILE,launcher);await writeFile('dist/'+HOWTO_FILE,howto);await writeFile('dist/README.md',readme);
 // docs/cross-references.html is built by tools/pack-crossrefs.mjs; ship it when it is there.
+// build.mjs packages the generated pages; it does not generate them. If one is older
+// than the source it came from, the ZIP would ship a version nobody is looking at, so
+// say so and stop rather than hand out something stale. `npm run build` packs first.
+const {stat}=await import('node:fs/promises');
+const newer=async(made,...from)=>{
+  let m;try{m=(await stat(made)).mtimeMs}catch{return null}          // absent is handled elsewhere
+  for(const f of from){
+    let t;try{t=(await stat(f)).mtimeMs}catch{continue}
+    if(t>m+1000)return f;
+  }
+  return false;
+};
+for(const [made,...from] of [
+  ['docs/cross-references.html','src/crossrefs-page.html','tools/pack-crossrefs.mjs'],
+  ['docs/typology.html','src/typology-page.html','tools/pack-typology.mjs','data/typology.json']]){
+  const stale=await newer(made,...from);
+  if(stale){
+    console.error('\n'+made+' is older than '+stale+'.\n'+
+      'It would be packaged as it stands, which is not what you just changed.\n'+
+      'Run:  npm run build      (which packs first)\n');
+    process.exit(1);
+  }
+}
 let lab=null;try{lab=await readFile('docs/cross-references.html','utf8')}catch{}
 // docs/typology.html is built by tools/pack-typology.mjs; ship it when it is there.
 let typo=null;try{typo=await readFile('docs/typology.html','utf8')}catch{}
@@ -36,6 +59,10 @@ const entries=[{name:LAUNCHER_FILE,data:launcher},{name:HOWTO_FILE,data:howto},{
 if(lab){entries.push({name:LAB_FILE,data:lab});await writeFile('dist/'+LAB_FILE,lab)}
 if(typo){entries.push({name:TYPE_FILE,data:typo});await writeFile('dist/'+TYPE_FILE,typo)}
 entries.push({name:'README.md',data:readme});
-const zip=makeZip(entries);
+// A fixed timestamp inside the archive, taken from the cross-reference snapshot the
+// release is built from. Two builds of the same sources then produce the same bytes,
+// which is what lets a check confirm the published download really is this build.
+const stamp=new Date(((await readFile('data/metadata.json','utf8').then(JSON.parse).catch(()=>({}))).snapshot)||'2026-11-02');
+const zip=makeZip(entries,isNaN(stamp)?new Date('2026-11-02'):stamp);
 await writeFile('dist/'+ZIP_FILE,zip);
 console.log(JSON.stringify({bytes:Buffer.byteLength(html),languages:AUDIT.languages,editions:EDITIONS.length,offlineLanguages:new Set(EDITIONS.filter(e=>e.offline).map(e=>e.lang)).size,zip:ZIP_FILE,zipBytes:zip.length,lab:!!lab,typology:!!typo}));

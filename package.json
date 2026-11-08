@@ -4,8 +4,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node build.mjs",
-    "build:crossrefs": "node tools/pack-crossrefs.mjs"
+    "pack:lab": "node tools/pack-crossrefs.mjs --full source-data/cross-references-2026-11-02.zip",
+    "pack:typology": "node tools/pack-typology.mjs",
+    "pack": "npm run pack:lab && npm run pack:typology",
+    "build": "npm run pack && node build.mjs",
+    "build:only": "node build.mjs",
+    "build:crossrefs": "node tools/pack-crossrefs.mjs",
+    "test": "node test_lab.mjs && node test_functions.mjs && node tools/typology.mjs && python3 verify_release.py",
+    "publish:docs": "cp dist/index.html docs/index.html && cp dist/Gospel_Atlas_David_Lee.zip download/Gospel_Atlas_David_Lee.zip"
   },
   "dependencies": {
     "react": "19.2.0",

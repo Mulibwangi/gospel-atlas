@@ -10,6 +10,7 @@
 //
 //   node tools/pack-typology.mjs
 import {readFile, writeFile, mkdir} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
 
 const bible = JSON.parse(await readFile('data/bible.json', 'utf8'));
@@ -91,12 +92,12 @@ if (problems.length) {
   process.exit(1);
 }
 
+const template = await readFile('src/typology-page.html', 'utf8');
 const payload = {
   typologies: out,
   verses: need.size,
-  built: new Date().toISOString().slice(0, 10)
+  built: createHash('sha256').update(template).update(JSON.stringify(out)).digest('hex').slice(0, 7)
 };
-const template = await readFile('src/typology-page.html', 'utf8');
 await mkdir('docs', {recursive: true});
 const html = template.replace('__DATA__', JSON.stringify(payload));
 await writeFile('docs/typology.html', html);
