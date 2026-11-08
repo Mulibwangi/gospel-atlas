@@ -62,6 +62,34 @@ h1 em{color:var(--gold);font-style:italic}
 .chip{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:var(--paper);border-radius:20px;padding:5px 7px 5px 13px;font-size:11px}
 .chip button{background:none;border:0;color:inherit;cursor:pointer;font-size:15px;line-height:1;padding:0 4px;opacity:.8}
 .spacer{margin-left:auto}
+.pill{display:inline-block;min-width:17px;padding:0 5px;border-radius:9px;background:var(--ink);color:var(--paper);
+  font-size:11px;font-weight:700;text-align:center;margin-left:4px}
+.keepbar{display:flex;gap:6px;margin:-4px 0 12px;flex-wrap:wrap}
+.keep{font:inherit;font-size:11.5px;padding:4px 9px;border-radius:6px;border:1px solid var(--line);
+  background:var(--field);color:var(--muted);cursor:pointer}
+.keep:hover{color:var(--ink);border-color:var(--faint)}
+.keep[disabled]{opacity:.45;cursor:default}
+.notebook{margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:16px 18px}
+.nb-top{display:flex;gap:16px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap}
+.nb-actions{display:flex;gap:7px;flex-wrap:wrap}
+.ghost.file{position:relative;display:inline-flex;align-items:center;cursor:pointer}
+.nb-list{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:10px}
+.nb-item{display:grid;grid-template-columns:70px 1fr auto;gap:12px;align-items:start;
+  background:var(--field);border:1px solid var(--line);border-radius:7px;padding:10px 12px}
+.nb-item img{width:70px;height:48px;object-fit:cover;border-radius:4px;border:1px solid var(--line);background:var(--paper)}
+.nb-kind{font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--faint);font-weight:700}
+.nb-kind.mark{color:var(--gold)}
+.nb-item h3{font-family:var(--serif);font-weight:400;font-size:16px;margin:2px 0 3px}
+.nb-item .meta{font-size:11.5px;color:var(--muted);margin:0 0 6px}
+.nb-item textarea{width:100%;min-height:42px;font:inherit;font-size:13px;line-height:1.45;resize:vertical;
+  border:1px solid var(--line);border-radius:5px;padding:6px 8px;background:var(--paper);color:var(--ink)}
+.nb-ops{display:flex;flex-direction:column;gap:4px}
+.nb-ops button{font:inherit;font-size:11px;padding:3px 7px;border-radius:5px;border:1px solid var(--line);
+  background:var(--paper);color:var(--muted);cursor:pointer;white-space:nowrap}
+.nb-ops button:hover{color:var(--ink)}
+.nb-foot{font-size:11.5px;color:var(--muted);margin:12px 0 0}
+@media(max-width:560px){.nb-item{grid-template-columns:1fr}.nb-item img{width:100%;height:120px}}
+@media print{.bar,.notebook,.keepbar{display:none}}
 .ghost{font-size:11px;background:none;border:0;color:var(--muted);text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:0}
 .stage{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:18px;margin-top:18px}
 .plot{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:9px;overflow:hidden;min-width:0;padding-bottom:30px}
@@ -564,6 +592,7 @@ root.innerHTML=`
       </select>
     </div>
     <div class="spacer"></div>
+    <button class="ghost" id="nbOpen" aria-expanded="false">Notebook <span class="pill" id="nbCount">0</span></button>
     <button class="ghost" id="clear">Clear</button>
   </div>
   <div class="stage">
@@ -572,6 +601,11 @@ root.innerHTML=`
       <p class="caption" id="caption"></p>
     </div>
     <aside class="panel">
+      <div class="keepbar">
+        <button class="keep" id="addNote" title="Keep what this panel shows, with the numbers behind it">+ Note</button>
+        <button class="keep" id="addMark" title="Keep this view so you can come straight back to it">+ Bookmark</button>
+        <button class="keep" id="snapPng" title="Save the drawing as it stands">Save image</button>
+      </div>
       <p class="eyebrow" id="p-eyebrow"></p>
       <h2 id="p-title"></h2>
       <p class="sub" id="p-sub"></p>
@@ -579,6 +613,23 @@ root.innerHTML=`
       <div class="legend" id="legend"></div>
     </aside>
   </div>
+  <section class="notebook" id="notebook" hidden>
+    <div class="nb-top">
+      <div>
+        <p class="eyebrow">NOTEBOOK</p>
+        <h2 id="nb-title">Nothing kept yet</h2>
+        <p class="sub" id="nb-sub">Use <b>+ Note</b> to keep what a panel shows, or <b>+ Bookmark</b> to keep the view itself. Everything stays on this computer.</p>
+      </div>
+      <div class="nb-actions">
+        <button class="ghost" id="nbDeck">Slide deck</button>
+        <button class="ghost" id="nbSave">Save file</button>
+        <label class="ghost file">Open file<input type="file" id="nbLoad" accept="application/json,.json" hidden></label>
+        <button class="ghost" id="nbClose">Close</button>
+      </div>
+    </div>
+    <ol class="nb-list" id="nb-list"></ol>
+    <p class="nb-foot" id="nb-foot"></p>
+  </section>
   <section class="passages" id="passages" hidden>
     <div class="passages-top">
       <div><p class="eyebrow" id="pass-eyebrow"></p><h2 id="pass-title"></h2></div>
@@ -1805,6 +1856,193 @@ document.getElementById('clear').addEventListener('click',()=>{
 });
 let t;addEventListener('resize',()=>{clearTimeout(t);t=setTimeout(render,160)});
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{renderBase();legend()});
+
+
+// ---- notebook -----------------------------------------------------------
+// Two kinds of thing are worth keeping, and they are not the same. A bookmark keeps
+// *where you were* - the view, the order, the focus, what was held - so one click
+// brings the whole arrangement back. A note keeps *what you found* - the passage, the
+// numbers behind it and, if you want, the drawing as it stood - so it can be carried
+// out of here into a lesson. Notes are the only thing the slide deck is made of.
+//
+// Everything lives in this browser and nowhere else. Browser storage is per-machine
+// and unreliable under file:// on some browsers, so it is a convenience and the saved
+// file is the real copy: the notebook works with storage refused.
+const NB_KEY='gospel-atlas-lab-notebook';
+let NB=[];
+const nbSave=()=>{try{localStorage.setItem(NB_KEY,JSON.stringify(NB))}catch(e){}};
+try{const raw=localStorage.getItem(NB_KEY);if(raw)NB=JSON.parse(raw)||[]}catch(e){NB=[]}
+const nbEl=id=>document.getElementById(id);
+const nbNow=()=>new Date().toISOString().slice(0,16).replace('T',' ');
+const safe=t=>String(t||'').replace(/[^\w .,'-]+/g,' ').replace(/\s+/g,' ').trim().slice(0,70);
+
+// A small picture of the drawing as it stands. Full size is close to half a megabyte,
+// which a deck of twenty would not survive, so it is scaled down on the way out.
+function snapshot(maxW){
+  const c=document.getElementById('plot');
+  if(!c||!c.width)return null;
+  const w=Math.min(maxW||1000,c.width),h=Math.round(c.height*(w/c.width));
+  const o=document.createElement('canvas');o.width=w;o.height=h;
+  const x=o.getContext('2d');
+  x.fillStyle=css('--paper')||'#fff';x.fillRect(0,0,w,h);
+  x.drawImage(c,0,0,w,h);
+  try{return o.toDataURL('image/jpeg',0.82)}catch(e){return null}
+}
+const viewState=()=>({view:state.view,order:state.order,colour:state.colour,cbsafe:state.cbsafe,
+  flow:state.flow,min:state.min,dir:state.dir,locked:state.locked,
+  focus:state.focus?{from:state.focus.from,to:state.focus.to,label:state.focus.label}:null,
+  thread:state.thread?{label:state.thread.label||null}:null,
+  chainLabel:state.chain?state.chain.label:null});
+function describeState(v){
+  const bits=[({arc:'Arc',circle:'Circle',matrix:'Matrix'})[v.view]||v.view];
+  if(v.order==='chronological')bits.push('chronological');
+  bits.push(v.focus?v.focus.label:'whole Bible');
+  if(v.chainLabel)bits.push(v.chainLabel);
+  if(v.locked!=null)bits.push('holding '+label(v.locked));
+  if(v.min>1)bits.push('at least '+v.min+' links');
+  if(v.dir!=='both')bits.push(v.dir==='out'?'outgoing only':'incoming only');
+  return bits.join(' · ');
+}
+function addNote(withImage){
+  const title=(nbEl('p-title').textContent||'').trim();
+  if(!title||title==='Start anywhere'){nbFlash('Choose a chapter or a link first — a note keeps what the panel shows.');return}
+  NB.push({kind:'note',id:Date.now()+''+NB.length,title,
+    eyebrow:(nbEl('p-eyebrow').textContent||'').trim(),
+    sub:(nbEl('p-sub').textContent||'').trim(),
+    at:viewState(),when:nbNow(),body:'',
+    img:withImage===false?null:snapshot(1000)});
+  nbSave();nbRender(true);
+}
+function addMark(){
+  const v=viewState();
+  NB.push({kind:'bookmark',id:Date.now()+''+NB.length,title:describeState(v),at:v,when:nbNow(),body:''});
+  nbSave();nbRender(true);
+}
+function restore(v){
+  state.view=v.view;state.order=v.order||'canonical';state.colour=v.colour||'distance';
+  state.cbsafe=!!v.cbsafe;state.flow=v.flow!==false;state.min=v.min||1;state.dir=v.dir||'both';
+  state.focus=v.focus?{...v.focus}:null;state.locked=v.locked==null?null:v.locked;
+  state.thread=null;state.chain=null;
+  const set=(id,val)=>{const e=document.getElementById(id);if(e)e.value=val};
+  set('order',state.order);set('colour',state.colour);set('direction',state.dir);
+  set('section',state.focus?state.focus.label:'');set('threadPick','');
+  const cb=document.getElementById('cbsafe');if(cb)cb.checked=state.cbsafe;
+  const mn=document.getElementById('minlinks');if(mn)mn.value=state.min;
+  document.querySelectorAll('.views button').forEach(b=>{
+    const on=b.dataset.view===state.view;b.setAttribute('aria-pressed',on?'true':'false')});
+  try{chip()}catch(e){}
+  buildOrder();render();legend();describe();
+  document.getElementById('plot').scrollIntoView({block:'center',behavior:'smooth'});
+}
+function nbFlash(msg){const f=nbEl('nb-foot');if(!f)return;f.textContent=msg;
+  nbEl('notebook').hidden=false;nbEl('nbOpen').setAttribute('aria-expanded','true');
+  setTimeout(()=>{if(f.textContent===msg)nbRender()},4000)}
+function nbRender(open){
+  nbEl('nbCount').textContent=NB.length;
+  if(open){nbEl('notebook').hidden=false;nbEl('nbOpen').setAttribute('aria-expanded','true')}
+  const notes=NB.filter(x=>x.kind==='note').length,marks=NB.length-notes;
+  nbEl('nb-title').textContent=NB.length?(notes+' note'+(notes===1?'':'s')+', '+marks+' bookmark'+(marks===1?'':'s')):'Nothing kept yet';
+  const list=nbEl('nb-list');list.innerHTML='';
+  NB.forEach((it,i)=>{
+    const li=document.createElement('li');li.className='nb-item';
+    const thumb=it.img?'<img alt="" src="'+it.img+'">':'<div class="nb-kind '+(it.kind==='bookmark'?'mark':'')+'">'+(it.kind==='bookmark'?'VIEW':'NOTE')+'</div>';
+    li.innerHTML='<div>'+thumb+'</div><div><p class="nb-kind '+(it.kind==='bookmark'?'mark':'')+'">'
+      +(it.kind==='bookmark'?'BOOKMARK':(it.eyebrow||'NOTE'))+' · '+it.when+'</p>'
+      +'<h3></h3><p class="meta"></p><textarea placeholder="Your own words — this is what the slide will say."></textarea></div>'
+      +'<div class="nb-ops"><button data-op="go">Open</button><button data-op="up">Up</button>'
+      +'<button data-op="down">Down</button><button data-op="del">Remove</button></div>';
+    li.querySelector('h3').textContent=it.title;
+    li.querySelector('.meta').textContent=(it.kind==='note'&&it.sub?it.sub+' — ':'')+describeState(it.at);
+    const ta=li.querySelector('textarea');ta.value=it.body||'';
+    ta.addEventListener('input',()=>{it.body=ta.value;nbSave()});
+    li.querySelectorAll('.nb-ops button').forEach(btn=>btn.addEventListener('click',()=>{
+      const op=btn.dataset.op;
+      if(op==='go')return restore(it.at);
+      if(op==='del')NB.splice(i,1);
+      if(op==='up'&&i>0)NB.splice(i-1,0,NB.splice(i,1)[0]);
+      if(op==='down'&&i<NB.length-1)NB.splice(i+1,0,NB.splice(i,1)[0]);
+      nbSave();nbRender();
+    }));
+    list.appendChild(li);
+  });
+  nbEl('nb-foot').textContent=NB.length
+    ? 'Kept in this browser only. Save the file to move them to another machine, or to keep them at all.'
+    : 'Nothing kept yet.';
+}
+function download(name,blob){
+  const u=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(u),1000);
+}
+function deck(){
+  const items=NB.filter(x=>x.kind==='note'||x.body);
+  if(!items.length){nbFlash('Add a note or two first — the deck is made of them.');return}
+  const esc=t=>String(t==null?'':t).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  const slides=items.map((it,n)=>'<section>'+
+    '<p class="k">'+esc(it.kind==='bookmark'?'VIEW':(it.eyebrow||'NOTE'))+'</p>'+
+    '<h2>'+esc(it.title)+'</h2>'+
+    (it.sub?'<p class="s">'+esc(it.sub)+'</p>':'')+
+    (it.img?'<img alt="" src="'+it.img+'">':'')+
+    (it.body?'<p class="b">'+esc(it.body).replace(/\n+/g,'</p><p class="b">')+'</p>':'')+
+    '<p class="f">'+esc(describeState(it.at))+' · '+(n+1)+' of '+items.length+'</p></section>').join('\n');
+  const html='<!doctype html><html lang="en"><head><meta charset="utf-8">'+
+  '<meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(deckTitle())+'</title><style>'+
+  ':root{--p:#f7f6f1;--i:#26362f;--m:#747b73;--l:#dedfd5;--g:#b49a4b;color-scheme:light}'+
+  '*{box-sizing:border-box}html,body{margin:0;height:100%;background:#1d231f;color:var(--i);'+
+  "font-family:Inter,ui-sans-serif,-apple-system,'Segoe UI',sans-serif}"+
+  'section{display:none;background:var(--p);width:min(100%,1120px);aspect-ratio:16/9;margin:auto;'+
+  'padding:5vmin 6vmin;flex-direction:column;border-radius:4px}section.on{display:flex}'+
+  'body{display:flex;align-items:center;justify-content:center;padding:3vmin}'+
+  '.k{font-size:.72rem;letter-spacing:.15em;color:var(--m);margin:0 0 .4rem;font-weight:700}'+
+  "h2{font-family:Georgia,'Times New Roman',serif;font-weight:400;font-size:clamp(1.3rem,3.4vmin,2.5rem);margin:0 0 .4rem}"+
+  '.s{color:var(--m);font-size:clamp(.78rem,1.7vmin,1rem);margin:0 0 .8rem}'+
+  'img{max-height:52%;object-fit:contain;align-self:center;border:1px solid var(--l);border-radius:3px;background:#fff}'+
+  ".b{font-family:Georgia,'Times New Roman',serif;font-size:clamp(.9rem,2.1vmin,1.3rem);line-height:1.45;margin:.7rem 0 0}"+
+  '.f{margin-top:auto;font-size:.68rem;color:var(--m);border-top:1px solid var(--l);padding-top:.5rem}'+
+  '#n{position:fixed;bottom:12px;right:16px;color:#8d978f;font-size:.72rem}'+
+  '@media print{body{display:block;padding:0;background:#fff}section{display:flex!important;'+
+  'page-break-after:always;width:100%;border-radius:0;aspect-ratio:auto;height:100vh}#n{display:none}}'+
+  '</style></head><body>'+slides+'<div id="n"></div><script>'+
+  'var s=[].slice.call(document.querySelectorAll("section")),i=0;'+
+  'function go(n){i=Math.max(0,Math.min(s.length-1,n));s.forEach(function(e,k){e.classList.toggle("on",k===i)});'+
+  'document.getElementById("n").textContent=(i+1)+" / "+s.length+"  —  arrow keys, or print for PDF"}'+
+  'addEventListener("keydown",function(e){if(e.key==="ArrowRight"||e.key===" ")go(i+1);'+
+  'if(e.key==="ArrowLeft")go(i-1);if(e.key==="Home")go(0);if(e.key==="End")go(s.length-1)});'+
+  'addEventListener("click",function(e){go(i+(e.clientX<innerWidth/3?-1:1))});go(0);'+
+  '<\/script></body></html>';
+  download(safe(deckTitle()).replace(/ /g,'_')+'.html',new Blob([html],{type:'text/html'}));
+  nbFlash('Deck saved — '+items.length+' slide'+(items.length===1?'':'s')+'. Open it in any browser; print it for a PDF.');
+}
+const deckTitle=()=>'Cross-Reference Lab notes '+new Date().toISOString().slice(0,10);
+nbEl('addNote').addEventListener('click',()=>addNote(true));
+nbEl('addMark').addEventListener('click',addMark);
+nbEl('snapPng').addEventListener('click',()=>{
+  const c=document.getElementById('plot');
+  if(!c)return;
+  c.toBlob(bl=>{if(bl)download(safe(describeState(viewState())).replace(/ /g,'_')+'.png',bl)},'image/png');
+});
+nbEl('nbOpen').addEventListener('click',()=>{
+  const n=nbEl('notebook');n.hidden=!n.hidden;
+  nbEl('nbOpen').setAttribute('aria-expanded',n.hidden?'false':'true');
+  if(!n.hidden)n.scrollIntoView({block:'nearest',behavior:'smooth'});
+});
+nbEl('nbClose').addEventListener('click',()=>{nbEl('notebook').hidden=true;nbEl('nbOpen').setAttribute('aria-expanded','false')});
+nbEl('nbDeck').addEventListener('click',deck);
+nbEl('nbSave').addEventListener('click',()=>download('lab-notebook-'+new Date().toISOString().slice(0,10)+'.json',
+  new Blob([JSON.stringify({app:'cross-reference-lab',version:1,saved:nbNow(),items:NB},null,1)],{type:'application/json'})));
+nbEl('nbLoad').addEventListener('change',e=>{
+  const f=e.target.files&&e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{try{
+    const d=JSON.parse(r.result);
+    const got=Array.isArray(d)?d:(d.items||[]);
+    if(!Array.isArray(got))throw new Error('no items');
+    NB=NB.concat(got.filter(x=>x&&(x.kind==='note'||x.kind==='bookmark')&&x.at));
+    nbSave();nbRender(true);nbFlash('Added '+got.length+' from the file.');
+  }catch(err){nbFlash('That file could not be read as a notebook.')}};
+  r.readAsText(f);e.target.value='';
+});
+nbRender();
 
 // On a phone the whole canon is a third of a pixel per chapter, which can be looked at
 // but not pointed at. Start such a screen on the Gospels, where a chapter is wide enough
