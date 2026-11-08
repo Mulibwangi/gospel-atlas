@@ -306,6 +306,7 @@ function App({data}){
   const [pngMsg,setPngMsg]=useState('');
   const [greek,setGreek]=useState(false),[variants,setVariants]=useState(false);
   const [wordQuery,setWordQuery]=useState(''),[word,setWord]=useState(null);
+  const [otShown,setOtShown]=useState(3);
   const dialog=useRef(null),reader=useRef(null),connectionSection=useRef(null),storyList=useRef(null),notebook=useRef(null);
   const s=stories[selected];
   const storyVerses=BOOKS.flatMap(b=>(s.sources[b]||[]).flatMap(r=>r.verses));
@@ -400,6 +401,9 @@ function App({data}){
   const matching=useMemo(()=>new Set(visibleStories.map(s=>s.id)),[visibleStories]);
   const uniqueCount=data.stories.filter(s=>s.count===1).length;
   const refs=(crossrefs?.[currentVerse]||[]).filter(r=>crossScope==='all'||(crossScope==='gospels'?BOOKS.includes(bookOf(r[0])):!BOOKS.includes(bookOf(r[0]))));
+  // The Old Testament this verse reaches for, in the order the cross-reference data
+  // already puts them in. Ranges are shown from their first verse.
+  const otRefs=useMemo(()=>greek?(refs||[]).filter(([r])=>isOT(r)):[],[greek,refs]);
   const selectedIndex=data.stories.findIndex(x=>x.id===selected);
   const loadCrossrefs=()=>{setCrossrefs(window.CROSSREFS)};
   useEffect(loadCrossrefs,[]);
@@ -411,6 +415,9 @@ function App({data}){
   useEffect(()=>{if(!shareMessage)return;const t=setTimeout(()=>setShareMessage(''),2500);return()=>clearTimeout(t)},[shareMessage]);
   useEffect(()=>{if(!nbNote)return;const t=setTimeout(()=>setNbNote(''),5000);return()=>clearTimeout(t)},[nbNote]);
   useEffect(()=>{if(!pngMsg)return;const t=setTimeout(()=>setPngMsg(''),1800);return()=>clearTimeout(t)},[pngMsg]);
+  // A new verse starts the Old Testament list over, rather than keeping however far
+  // the reader had expanded the last one.
+  useEffect(()=>{setOtShown(3)},[currentVerse]);
   // Bands joining the same story unit across the four maps. Drawn behind the cards,
   // so only the gutters show them: a horizontal band means both Gospels put the unit
   // in the same place, a steep one means they do not.
@@ -638,9 +645,27 @@ function App({data}){
           {greek&&sharedLemmas&&sharedLemmas.size>0&&<span className="il-agree-key">{sharedLemmas.size} word{sharedLemmas.size===1?'':'s'} also in another Gospel&rsquo;s telling of this story</span>}
         </div>
         {greek&&<div className="il-panel">
+          <p className="il-ref-head">Greek &mdash; {refLabel(currentVerse)}</p>
           <Interlinear refId={currentVerse} words={ilHere} scale={editionState.scale}
             shared={sharedLemmas} variants={variants} onWord={w=>{setWord(w);setWordQuery('')}}/>
-          <p className="il-note">Greek: STEPBible / Tyndale House, Cambridge (CC BY 4.0). The small English word under each Greek word is a lexicon&rsquo;s gloss, not a translation — one English word stood in for one Greek one, outside the sentence it belongs to.</p>
+          {/* The Hebrew underneath the Greek, in the same panel. A verse of the Gospels
+              is Greek; the Old Testament it reaches for is Hebrew, and that belongs in
+              front of the reader rather than three clicks away inside a reference card. */}
+          {otRefs.length>0&&<div className="il-under">
+            <p className="il-under-head">Hebrew &mdash; the Old Testament this verse points to</p>
+            {otRefs.slice(0,otShown).map(([r])=>{
+              const id=r.split('-')[0];
+              return <div className="il-sub" key={r}>
+                <p className="il-ref-head">{refLabel(id)}</p>
+                <Interlinear refId={id} words={heWords(id)} lang="he" scale={editionState.scale}
+                  variants={false} shared={null} onWord={w=>{setWord(w);setWordQuery('')}}/>
+              </div>;
+            })}
+            {otRefs.length>otShown&&<button className="il-more" onClick={()=>setOtShown(otShown+3)}>
+              {otRefs.length-otShown} more Old Testament reference{otRefs.length-otShown===1?'':'s'} in Hebrew ↓</button>}
+          </div>}
+          {!otRefs.length&&<p className="il-under-none">This verse has no Old Testament cross-reference in the index, so there is no Hebrew to put under it.</p>}
+          <p className="il-note">Greek and Hebrew: STEPBible / Tyndale House, Cambridge (CC BY 4.0); the Hebrew text is the Westminster Leningrad Codex. The small English word under each word is a lexicon&rsquo;s gloss, not a translation — one English word stood in for one Greek or Hebrew one, outside the sentence it belongs to. Hebrew reads right to left, and writes as part of a word the &ldquo;and&rdquo;, &ldquo;the&rdquo;, &ldquo;in&rdquo; and &ldquo;his&rdquo; that English writes separately, so each of those has a box of its own.</p>
         </div>}
         <div className="wordsearch">
           <label className="ws-label">Find a Greek word
