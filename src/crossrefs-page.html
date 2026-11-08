@@ -1373,7 +1373,7 @@ function describe(){
         turn.addEventListener('click',e=>{
           e.stopPropagation();
           state.focus={from:b.first,to:b.first+b.chapters-1,label:shortName(b.name)};
-          state.locked=null;input.value=shortName(b.name);chip();renderBase();describe();
+          state.locked=null;input.value=shortName(b.name);chip();renderBase();describe();caption();
         });
         list.appendChild(linkRow({
           colour:testamentColour(b.first),text:shortName(b.name),count:fmt(n)+' links',
@@ -1659,8 +1659,8 @@ function showResults(){
 function choose(it){
   results.hidden=true;
   input.value=it.kind==='chapter'?it.text:it.label;
-  if(it.kind==='chapter'){state.focus=null;chip();renderBase();select(it.ci)}
-  else{state.focus={from:it.from,to:it.to,label:it.label};state.locked=null;chip();renderBase();describe()}
+  if(it.kind==='chapter'){state.focus=null;chip();renderBase();select(it.ci);caption()}
+  else{state.focus={from:it.from,to:it.to,label:it.label};state.locked=null;chip();renderBase();describe();caption()}
 }
 input.addEventListener('input',showResults);
 input.addEventListener('focus',showResults);
@@ -1682,7 +1682,7 @@ function chip(){
   x.addEventListener('click',clearFocus);
   c.appendChild(x);slot.appendChild(c);
 }
-function clearFocus(){state.focus=null;input.value='';chip();renderBase();describe()}
+function clearFocus(){state.focus=null;input.value='';chip();renderBase();describe();caption()}
 
 // ---- controls -----------------------------------------------------------
 document.querySelectorAll('.views button').forEach(b=>b.addEventListener('click',()=>{
@@ -1775,7 +1775,7 @@ document.getElementById('minlinks').addEventListener('input',e=>{
     const sec=SECTIONS.find(x=>x.name===e.target.value);
     if(!sec){clearFocus();return}
     state.focus={from:sec.from,to:sec.to,label:sec.name};state.locked=null;input.value='';
-    chip();renderBase();describe();
+    chip();renderBase();describe();caption();
   });
 })();
 document.getElementById('direction').addEventListener('change',e=>{state.dir=e.target.value;renderBase();describe()});
