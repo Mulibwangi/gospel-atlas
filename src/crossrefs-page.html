@@ -134,6 +134,31 @@ canvas:focus-visible{outline:2px solid var(--gold);outline-offset:-3px}
 .verse-card p{font-family:var(--serif);font-size:var(--vtext,15px);line-height:1.7;margin:0}
 .verse-card.target h3 b{color:var(--gold)}
 .pair-votes{grid-column:1/-1;font-size:10px;color:var(--faint)}
+.words{margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:18px 20px 22px}
+.w-field{display:flex;flex-direction:column;gap:6px;margin:14px 0 0;max-width:460px;
+  font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+.w-field input{font:inherit;font-size:14px;text-transform:none;letter-spacing:0;padding:8px 11px;
+  border:1px solid var(--line);border-radius:6px;background:var(--field);color:var(--ink)}
+.w-list{margin-top:14px;display:grid;gap:6px}
+.w-row{border:1px solid var(--line);border-radius:7px;background:var(--field);overflow:hidden}
+.w-head{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;width:100%;padding:9px 12px;
+  border:0;background:none;text-align:left;cursor:pointer;font:inherit}
+.w-head:hover{background:var(--panel)}
+.w-head b{font-family:var(--serif);font-weight:400;font-size:19px;line-height:1.3}
+.w-tr{font-size:10.5px;color:var(--muted)}
+.w-gl{font-size:12px;color:var(--ink)}
+.w-code{font-size:9.5px;color:var(--faint);letter-spacing:.06em;font-variant-numeric:tabular-nums}
+.w-n{margin-left:auto;font-size:10px;color:var(--faint);white-space:nowrap}
+.w-verses{display:flex;flex-wrap:wrap;gap:3px 9px;padding:2px 12px 11px;line-height:1.9}
+.w-verses button{font-size:10.5px;padding:0;border:0;background:none;color:var(--muted);
+  text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+.w-verses button:hover:not([disabled]){color:var(--ink)}
+.w-verses button[disabled]{text-decoration:none;cursor:default;opacity:.7}
+.w-verses em{font-size:10px;color:var(--faint)}
+.w-sense{margin:0;padding:0 12px 10px;font-size:11px;line-height:1.65;color:var(--muted);max-width:90ch}
+.w-affix{margin:14px 0 2px;font-size:10.5px;line-height:1.7;color:var(--faint)}
+.w-note{margin:14px 0 0;font-size:10.5px;line-height:1.8;color:var(--muted);max-width:92ch}
+@media(max-width:700px){.w-n{margin-left:0}}
 .textsize{display:flex;align-items:center;gap:4px;margin-left:auto}
 .textsize button{font:inherit;font-size:12px;padding:3px 8px;border-radius:5px;border:1px solid var(--line);
   background:var(--field);color:var(--muted);cursor:pointer}
@@ -599,6 +624,7 @@ root.innerHTML=`
       </select>
     </div>
     <div class="spacer"></div>
+    <button class="ghost" id="wOpen" aria-expanded="false">Word search</button>
     <button class="ghost" id="nbOpen" aria-expanded="false">Notebook <span class="pill" id="nbCount">0</span></button>
     <button class="ghost" id="clear">Clear</button>
   </div>
@@ -637,6 +663,18 @@ root.innerHTML=`
     <ol class="nb-list" id="nb-list"></ol>
     <p class="nb-foot" id="nb-foot"></p>
   </section>
+  <section class="words" id="words" hidden>
+    <div class="passages-top">
+      <div><p class="eyebrow">WORD SEARCH</p><h2>The Hebrew and Greek behind the English</h2></div>
+      <p class="sub" id="w-sub"></p>
+      <button class="ghost" id="w-close">Close</button>
+    </div>
+    <label class="w-field">Hebrew, Greek, a transliteration, an English gloss, or a Strong number
+      <input type="search" id="w-q" placeholder="love, agape, ἀγάπη, chesed, H2617, G26" autocomplete="off" spellcheck="false">
+    </label>
+    <div id="w-out"></div>
+    <p class="w-note" id="w-note"></p>
+  </section>
   <section class="passages" id="passages" hidden>
     <div class="passages-top">
       <div><p class="eyebrow" id="pass-eyebrow"></p><h2 id="pass-title"></h2></div>
@@ -647,6 +685,7 @@ root.innerHTML=`
     <div id="pairs"></div>
   </section>
   <footer>
+    <p><strong>The Hebrew and Greek.</strong> Word search covers every Hebrew and Greek word of the Bible &mdash; ${fmt(DATA.words.keys.length)} words across ${fmt(DATA.words.occurrences)} occurrences &mdash; from <a href="https://github.com/STEPBible/STEPBible-Data" target="_blank" rel="noreferrer">STEPBible&rsquo;s Translators Amalgamated texts</a>, the work of Tyndale House, Cambridge, under <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer">CC BY 4.0</a>; the Hebrew is the Westminster Leningrad Codex. An English word shown beside a Hebrew or Greek one is a lexicon&rsquo;s gloss, not a translation of the sentence it sits in. Psalm superscriptions carry Hebrew that this English text prints unnumbered above the psalm; they are searchable and named rather than numbered. Eight verses hold no tagged word because the English and the Greek divide verses differently there, not because text is missing.</p>
     <p><strong>What this is.</strong> ${DATA.sourceNote} Links are aggregated to directed chapter pairs${COMPLETE?'':', which is why the matrix is a band rather than a square and why the circle’s chords all leave from four sectors'}.</p>
     <p><strong>Data.</strong> Cross-references from <a href="https://www.openbible.info/labs/cross-references/" target="_blank" rel="noreferrer">OpenBible.info</a>, CC BY, snapshot ${DATA.snapshot||''}${DATA.sourceSha256?', sha256 '+DATA.sourceSha256.slice(0,12):''}, derived chiefly from the Treasury of Scripture Knowledge. The votes are a live tally, so they shift between downloads, and a negative total means a link the community voted down; those sort last and are never removed. Chapter and verse counts from the ASV 1901.${DATA.dropped?' '+DATA.dropped+' link'+(DATA.dropped===1?'':'s')+' could not be placed, because '+(DATA.unmapped||[]).slice(0,2).join(' and ')+' '+((DATA.unmapped||[]).length>1?'are verses':'is a verse')+' the ASV does not have; ranges reaching past the ASV\u2019s last verse in a chapter stop there rather than collapsing.':''} The votes order the links; they are not similarity scores, and a missing link does not establish that a passage stands alone.</p>
     <p><strong>Form.</strong> The arc diagram follows the one Chris Harrison and Christoph Römhild made in 2007. This is drawn independently, from different data, and uses none of their artwork. Coder: David Lee. <span class="build">Build ${DATA.built||''}</span> \u2014 if that looks older than you expect, reload the page with Shift held down.</p>
@@ -1641,6 +1680,150 @@ function openPassages(aFrom,aTo,bFrom,bTo,title){
 }
 function openChapterPair(a,b){openPassages(a,a,b,b,label(a)+' \u2194 '+label(b))}
 document.getElementById('pass-close').addEventListener('click',()=>{document.getElementById('passages').hidden=true});
+
+// ---- word search ---------------------------------------------------------
+// Every Hebrew and Greek word of the Bible, by Strong number: 542,487 occurrences of
+// 16,328 words, from STEPBible's tagging of the Westminster Leningrad Codex and the
+// Greek editions. Occurrence lists are delta-coded over the same verse numbering the
+// links use, so a word's verses drop straight onto the diagram.
+//
+// What this answers is a question, not an opinion: where does this word stand? The
+// glosses are a lexicon's choice of one English word, and are labelled as such.
+const WORDS=DATA.words;
+const W_DEC=new Map();           // Strong -> verse indices, decoded on first use
+function wVerses(key){
+  let got=W_DEC.get(key);
+  if(got)return got;
+  const i=WORDS.keys.indexOf(key);
+  if(i<0)return [];
+  let p=0;got=WORDS.occ[i].map(d=>p+=d);
+  W_DEC.set(key,got);
+  return got;
+}
+// A Psalm superscription has no verse number in this text, so it sits past the end of
+// the verse list and is named rather than numbered.
+const W_FIRST_EXTRA=CHAPTER_OF_VERSE.length;
+const wIsTitle=v=>v>=W_FIRST_EXTRA;
+const wLabel=v=>wIsTitle(v)?(WORDS.extra[v-W_FIRST_EXTRA]||'').replace(/^Ps\.(\d+)\.0$/,'Psalm $1, title'):verseLabel(v);
+const W_AFFIX=new Set(WORDS.affixes||[]);
+
+// Strong numbers are written zero-padded here, and STEPBible splits some of them by
+// sense - H0430G, H0430H and so on are all Strong's 430. A search for 430 should find
+// every one of them rather than nothing.
+function wByNumber(q){
+  const m=/^([hgHG])?0*(\d{1,4})([a-zA-Z])?$/.exec(q.trim());
+  if(!m)return null;
+  const lang=m[1]?m[1].toUpperCase():'', num=m[2].padStart(4,'0'), suffix=(m[3]||'').toUpperCase();
+  return WORDS.keys.filter(k=>{
+    if(lang&&k[0]!==lang)return false;
+    const body=k.slice(1).replace(/[A-Za-z]$/,'');
+    if(body!==num)return false;
+    return !suffix||k.endsWith(suffix);
+  });
+}
+// Nobody types polytonic Greek accents, and the transliterations here carry macrons
+// and syllable dots: "chesed" is written che.sed, "agape" is agapē. So both the query
+// and the text are folded to bare letters before they are compared — accents and
+// breathings stripped, macrons flattened, dots and apostrophes dropped. A search then
+// finds a word however the person happens to be able to type it.
+const wFold=t=>(t||'').normalize('NFD').replace(/[\u0300-\u036f\u0483-\u0489]/g,'')
+  .toLowerCase().replace(/[.'\u2019\u02bc\u02bb_\u05b0-\u05c7-]/g,'');
+let W_FOLDED=null;
+function wIndex(){
+  if(W_FOLDED)return W_FOLDED;
+  W_FOLDED=WORDS.keys.map(k=>{const e=WORDS.lex[k]||[];
+    return wFold(e[1])+'\u0001'+wFold(e[2])+'\u0001'+wFold(e[3])});
+  return W_FOLDED;
+}
+function wSearch(q){
+  q=q.trim();
+  if(q.length<2)return null;
+  const byNum=wByNumber(q);
+  if(byNum&&byNum.length)return byNum;
+  const needle=wFold(q);
+  if(!needle)return [];
+  const idx=wIndex(),hit=[];
+  for(let i=0;i<WORDS.keys.length;i++)if(idx[i].includes(needle))hit.push(WORDS.keys[i]);
+  // A word whose gloss or lemma *is* what was asked for comes before one that merely
+  // contains it; nothing else is ranked, and order within each group is canonical.
+  const exact=k=>{const e=WORDS.lex[k]||[];return wFold(e[1])===needle||wFold(e[2])===needle||wFold(e[3])===needle};
+  // Within each group the commoner word comes first. That is a count of where the word
+  // stands, not a judgement about which sense matters.
+  const often=(a,b)=>wVerses(b).length-wVerses(a).length;
+  return [...hit.filter(exact).sort(often),...hit.filter(k=>!exact(k)).sort(often)];
+}
+function wRender(){
+  const q=document.getElementById('w-q').value;
+  const out=document.getElementById('w-out'),note=document.getElementById('w-note');
+  out.innerHTML='';
+  const keys=wSearch(q);
+  if(keys===null){
+    document.getElementById('w-sub').textContent=fmt(WORDS.keys.length)+' Hebrew and Greek words, '+fmt(WORDS.occurrences)+' occurrences';
+    note.textContent='Type two letters or more. '+WORDS.attribution+'. The English under a word is a lexicon’s gloss — one English word standing in for one Hebrew or Greek one — not a translation of the sentence it sits in.';
+    return;
+  }
+  const real=keys.filter(k=>!W_AFFIX.has(k)), affix=keys.filter(k=>W_AFFIX.has(k));
+  document.getElementById('w-sub').textContent=keys.length?fmt(keys.length)+' matching word'+(keys.length===1?'':'s'):'nothing matches';
+  if(!keys.length){
+    note.textContent='Nothing matches that. Try the English gloss (love), a transliteration (agape, chesed), the word itself, or a Strong number (H2617, G26).';
+    return;
+  }
+  const list=document.createElement('div');list.className='w-list';
+  const show=(k)=>{
+    const e=WORDS.lex[k],verses=wVerses(k);
+    const row=document.createElement('div');row.className='w-row';
+    const head=document.createElement('button');head.type='button';head.className='w-head';
+    head.innerHTML='<b lang="'+(e[0]?'he':'el')+'" dir="'+(e[0]?'rtl':'ltr')+'"></b><span class="w-tr"></span><span class="w-gl"></span><span class="w-code"></span><span class="w-n"></span>';
+    head.querySelector('b').textContent=e[1]||k;
+    head.querySelector('.w-tr').textContent=e[2]||'';
+    head.querySelector('.w-gl').textContent=e[3]||'';
+    head.querySelector('.w-code').textContent=k+(W_AFFIX.has(k)?' · prefix or ending':'');
+    head.querySelector('.w-n').textContent=fmt(verses.length)+' verse'+(verses.length===1?'':'s');
+    const body=document.createElement('div');body.className='w-verses';body.hidden=true;
+    head.addEventListener('click',()=>{
+      if(!body.dataset.filled){
+        for(const v of verses.slice(0,400)){
+          const b=document.createElement('button');b.type='button';b.textContent=wLabel(v);
+          if(!wIsTitle(v))b.addEventListener('click',()=>{
+            state.focus=null;chip();renderBase();select(CHAPTER_OF_VERSE[v]);caption();
+            document.getElementById('plot').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'center'});
+          });
+          else b.disabled=true;
+          body.appendChild(b);
+        }
+        if(verses.length>400){const m=document.createElement('em');m.textContent=' and '+fmt(verses.length-400)+' more';body.appendChild(m)}
+        body.dataset.filled='1';
+      }
+      body.hidden=!body.hidden;
+      head.setAttribute('aria-expanded',String(!body.hidden));
+    });
+    row.append(head,body);
+    // The fuller sense, where the lexicon gives one beyond the single-word gloss.
+    if(e[4]){const sn=document.createElement('p');sn.className='w-sense';sn.textContent=e[4];row.insertBefore(sn,body)}
+    list.appendChild(row);
+  };
+  real.slice(0,60).forEach(show);
+  if(affix.length){
+    const h=document.createElement('p');h.className='w-affix';
+    h.textContent='Hebrew prefixes and endings that match — the "and", "the", "in", "his" that English writes as separate words:';
+    list.appendChild(h);
+    affix.slice(0,12).forEach(show);
+  }
+  out.appendChild(list);
+  note.textContent=(real.length>60?'Showing the first 60 of '+fmt(real.length)+' words. ':'')
+    +WORDS.attribution+'. Click a word to see every verse it stands in; click a verse to bring that chapter up on the diagram.';
+}
+document.getElementById('w-q').addEventListener('input',wRender);
+document.getElementById('wOpen').addEventListener('click',()=>{
+  const box=document.getElementById('words');
+  box.hidden=!box.hidden;
+  document.getElementById('wOpen').setAttribute('aria-expanded',String(!box.hidden));
+  if(!box.hidden){wRender();box.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});document.getElementById('w-q').focus()}
+});
+document.getElementById('w-close').addEventListener('click',()=>{
+  document.getElementById('words').hidden=true;
+  document.getElementById('wOpen').setAttribute('aria-expanded','false');
+});
 
 // Scripture text size. Shared key and range with the Gospel Atlas, so the two agree
 // where the browser lets them see each other's storage, and remembered either way:

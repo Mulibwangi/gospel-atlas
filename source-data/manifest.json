@@ -433,5 +433,17 @@
       "source": "https://getbible.net",
       "scope": "full"
     }
-  ]
+  ],
+  "originalLanguages": {
+    "id": "stepbible-tagnt-tahot",
+    "name": "STEPBible Translators Amalgamated Greek NT and Hebrew OT (TAGNT / TAHOT)",
+    "shortName": "STEPBible TAGNT/TAHOT",
+    "licence": "CC BY 4.0",
+    "attribution": "Data created by www.STEPBible.org based on work at Tyndale House, Cambridge (CC BY 4.0)",
+    "source": "https://github.com/STEPBible/STEPBible-Data",
+    "underlyingTexts": "Greek: NA27/NA28, SBL, Tyndale House, Westcott-Hort, Tregelles, Scrivener TR, Byzantine. Hebrew: Westminster Leningrad Codex (public domain).",
+    "retrieved": "2026-11-08",
+    "vendored": "source-data/stepbible-originals-2026-11-08.zip",
+    "extractedBy": "tools/extract-originals.mjs"
+  }
 }

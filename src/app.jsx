@@ -29,6 +29,58 @@ const icon=(name)=> name==='search'?<svg viewBox="0 0 24 24" aria-hidden="true">
 function Mask({story}) {return <span className="mask" aria-label={BOOKS.filter(b=>story.sources[b]).map(b=>NAMES[b]).join(', ')}>{BOOKS.map(b=><span key={b} title={NAMES[b]} className={story.sources[b]?'present':''} style={{'--book':COLORS[b]}}>{SHORT[b]}</span>)}</span>}
 
 
+// ---- the Greek underneath -------------------------------------------------
+// One verse of the Greek, word by word: the word as it stands, how it sounds, what it
+// is doing grammatically, and the dictionary word behind it. The English under each
+// Greek word is a gloss, not a translation — a lexicon's choice of one English word for
+// a Greek one, which is why it is set apart and labelled rather than run together into
+// a sentence. The grammar is STEPBible's expansion of its own code; where they do not
+// expand a code, the bare code is shown rather than a guess.
+//
+// Data is packed as pools of distinct strings plus one index per word, because 66,935
+// words of the Gospels draw on only about 12,000 forms and under 3,000 lemmas.
+const IL_AT = new Map();
+function ilWords(ref){
+  const I=window.INTERLINEAR;
+  if(!I||!ref)return null;
+  if(!IL_AT.size)I.verses.forEach((v,i)=>IL_AT.set(v,i));
+  const vi=IL_AT.get(ref);
+  if(vi===undefined)return null;
+  const a=I.offsets[vi], b=vi+1<I.offsets.length?I.offsets[vi+1]:I.words;
+  const out=[];
+  for(let i=a;i<b;i++){
+    const g=k=>I.pools[k][I.cols[k][i]];
+    out.push({i,greek:g('greek'),translit:g('translit'),gloss:g('gloss'),strong:g('strong'),
+              morph:g('morph'),lemma:g('lemma'),lgloss:g('lgloss'),ms:g('ms')});
+  }
+  return out;
+}
+// "NA28+NA27+Tyn+SBL+WH+Treg+TR+Byz" means every edition carries it. Anything shorter
+// means the editions differ there, which is a fact about the manuscripts and not a
+// verdict on which reading is right.
+const IL_ALL='NA28+NA27+Tyn+SBL+WH+Treg+TR+Byz';
+const ilVaries=w=>!!w.ms&&w.ms!==IL_ALL;
+
+function Interlinear({refId,words,scale,onWord,shared,variants}){
+  if(!words)return <p className="il-none">The editions this comes from do not number a verse here, so there is no Greek to show. {refId==='John.7.53'?'John 7:53 begins the passage about the woman taken in adultery, which these editions start at 8:1.':'The English and the Greek divide the verses differently at this point.'}</p>;
+  return <>
+    <ol className="il" style={{'--il':scale+'px'}}>{words.map(w=>{
+      const same=shared&&shared.has(w.lemma);
+      return <li key={w.i} className={(same?'agree ':'')+(variants&&ilVaries(w)?'varies':'')}>
+        <button type="button" onClick={()=>onWord(w)}
+          title={(window.INTERLINEAR.morph[w.morph]||w.morph||'')+(w.strong?' · '+w.strong:'')}>
+          <span className="il-greek" lang="el">{w.greek}</span>
+          <span className="il-translit">{w.translit}</span>
+          <span className="il-gloss">{w.gloss}</span>
+          <span className="il-morph">{w.morph}</span>
+        </button>
+      </li>;
+    })}</ol>
+    {variants&&words.some(ilVaries)&&<p className="il-variants">{words.filter(ilVaries).map(w=>
+      <span key={w.i}><b lang="el">{w.greek}</b> in {w.ms.replace(/\+/g,', ')}</span>)}</p>}
+  </>;
+}
+
 // ---- notebook ------------------------------------------------------------
 // Two kinds of thing are worth keeping, and they are not the same. A bookmark keeps
 // *where you were* - the story, the verse, the filter, the edition - so one click brings
@@ -199,10 +251,67 @@ function App({data}){
   const [kept,setKept]=useState(()=>{try{const r=localStorage.getItem(NB_KEY);const a=r?JSON.parse(r):null;return Array.isArray(a)?a:[]}catch{return []}});
   const [nbOpen,setNbOpen]=useState(false),[nbNote,setNbNote]=useState('');
   const [pngMsg,setPngMsg]=useState('');
+  const [greek,setGreek]=useState(false),[variants,setVariants]=useState(false);
+  const [wordQuery,setWordQuery]=useState(''),[word,setWord]=useState(null);
   const dialog=useRef(null),reader=useRef(null),connectionSection=useRef(null),storyList=useRef(null),notebook=useRef(null);
   const s=stories[selected];
   const storyVerses=BOOKS.flatMap(b=>(s.sources[b]||[]).flatMap(r=>r.verses));
   const currentVerse=selectedVerse&&storyVerses.includes(selectedVerse)?selectedVerse:storyVerses[0];
+  // Which lemmas of the verse in hand also appear in the same story as another Gospel
+  // tells it. This is the synoptic question made countable: not whether two accounts
+  // "agree", but which words are literally the same word.
+  const ilHere=useMemo(()=>greek?ilWords(currentVerse):null,[greek,currentVerse]);
+  const sharedLemmas=useMemo(()=>{
+    if(!ilHere)return null;
+    const mine=new Set(ilHere.map(w=>w.lemma)), book=currentVerse.split('.')[0], out=new Set();
+    for(const b of BOOKS){
+      if(b===book||!s.sources[b])continue;
+      for(const r of s.sources[b])for(const vid of r.verses){
+        const w=ilWords(vid); if(!w)continue;
+        for(const x of w)if(mine.has(x.lemma))out.add(x.lemma);
+      }
+    }
+    return out;
+  },[ilHere,currentVerse,s]);
+  // lemma -> the Gospel verses it stands in. Built once, on the first search.
+  const gospelIndex=useMemo(()=>{
+    if(!wordQuery.trim()&&!word)return null;
+    const I=window.INTERLINEAR; if(!I)return null;
+    const byLemma=new Map(), firstAt=new Map();
+    let v=0;
+    for(let i=0;i<I.words;i++){
+      while(v+1<I.offsets.length&&i>=I.offsets[v+1])v++;
+      const key=I.cols.lemma[i];
+      let a=byLemma.get(key);
+      if(!a){byLemma.set(key,a=[]);firstAt.set(key,i)}
+      const ref=I.verses[v];
+      if(a[a.length-1]!==ref)a.push(ref);
+    }
+    return {byLemma,firstAt};
+  },[wordQuery,word]);
+  // A search matches the Greek itself, the way it sounds, or the dictionary gloss.
+  // Nothing is ranked by importance; results are in canonical order.
+  const wordMatches=useMemo(()=>{
+    const q=wordQuery.trim().toLowerCase();
+    if(q.length<2||!gospelIndex)return null;
+    const I=window.INTERLINEAR, hits=[];
+    const strongWanted=/^[gG]?0*(\d{1,4})$/.exec(q);
+    for(let li=0;li<I.pools.lemma.length;li++){
+      const lemma=I.pools.lemma[li]; if(!lemma)continue;
+      const refs=gospelIndex.byLemma.get(li); if(!refs||!refs.length)continue;
+      // the lemma's gloss and Strong number come from the first word that uses it
+      const sample=gospelIndex.firstAt.get(li);
+      const lgloss=I.pools.lgloss[I.cols.lgloss[sample]]||'';
+      const strong=I.pools.strong[I.cols.strong[sample]]||'';
+      const translit=I.pools.translit[I.cols.translit[sample]]||'';
+      const hay=(lemma+' '+lgloss+' '+translit).toLowerCase();
+      const ok=strongWanted?strong.replace(/^G0*/,'')===strongWanted[1].replace(/^0+/,'')
+                           :hay.includes(q);
+      if(ok)hits.push({lemma,lgloss,strong,translit,refs});
+    }
+    hits.sort((a,b)=>b.refs.length-a.refs.length);
+    return hits.slice(0,40);
+  },[wordQuery,gospelIndex]);
   const q=normalize(query).replace(/^matthew/,'matt').replace(/^mt(?=\d)/,'matt').replace(/^mk(?=\d)/,'mark').replace(/^lk(?=\d)/,'luke').replace(/^jn(?=\d)/,'john');
   // Scripture text of the reading edition, normalised once per edition so that typing
   // stays responsive. Online editions hold no text here, so their search falls back to the ASV.
@@ -400,6 +509,16 @@ function App({data}){
   }
   // Encoding four full-resolution maps takes a second or two, and a button that does
   // nothing visible for two seconds reads as a button that does not work.
+  // A verse found by searching is a verse in a story, so going to it means selecting
+  // that story as well, or the parallel columns would still be showing something else.
+  function jumpTo(ref){
+    const v=verseById[ref];
+    if(!v){setNbNote('That verse is not in this index.');return}
+    const story=(v.stories||[])[0];
+    if(story!==undefined&&stories[story])setSelected(story);
+    setSelectedVerse(ref);
+    connectionSection.current?.scrollIntoView({behavior:'smooth',block:'start'});
+  }
   function savePng(){
     const c=composeMaps(Infinity);
     if(!c){flash('The maps are not drawn yet — give the page a moment.');return}
@@ -460,15 +579,49 @@ function App({data}){
         <div className="reader-bar"><span>PARALLEL PASSAGES</span><span>{ed.short} · Tap a verse number for its connections</span></div><p className="swipe-hint">Swipe sideways to read the accounts alongside each other.</p><div className="passage-grid">{BOOKS.map(b=><article key={b} className={`passage-card ${s.sources[b]?'':'absent'}`} style={{'--book':COLORS[b]}}><header><h3>{NAMES[b]}</h3><span>{s.sources[b]?.map(r=>refLabel(r.ref).replace(NAMES[b]+' ','')).join(', ')||'—'}</span></header><div className="passage-text" lang={ed.lang} dir={ed.dir} style={{fontSize:editionState.scale}}>{s.sources[b]?(ed.offline?s.sources[b].flatMap(r=>r.verses).map(vid=>{const v=verseById[vid];return <p className={vid===currentVerse?'active-verse':''} key={vid}><button title={`Show connections for ${refLabel(vid)}`} aria-label={`Select ${refLabel(vid)} for cross-references`} onClick={()=>setSelectedVerse(vid)}>{v.chapter}:{v.verse}</button><VerseText ed={ed} id={vid}/></p>}):s.sources[b].map(r=><OnlinePassage key={r.ref} ed={ed} refId={r.ref}/>)):<div className="absent-message"><span>—</span><p>No passage assigned<br/>to this story unit.</p></div>}</div></article>)}</div><p className="reader-note">Shared episodes can differ in wording, detail and order. Gold indicates an indexed parallel, not identical information.</p>
       </div></section>
       <section className="connections-section" ref={connectionSection} id="connections"><div className="section-heading"><div><span className="section-number">02</span><h2>Follow the connections</h2></div><span className="source-tag">OPENBIBLE.INFO</span></div><div className="connection-intro"><p>Explore related themes, people and passages beyond the story itself.</p><div className="connection-controls"><label>From <select aria-label="Cross-reference source verse" value={currentVerse} onChange={e=>setSelectedVerse(e.target.value)}>{storyVerses.map(v=><option key={v} value={v}>{refLabel(v)}</option>)}</select></label><label>To <select value={crossScope} onChange={e=>setCrossScope(e.target.value)} aria-label="Cross-reference scope"><option value="all">All Scripture</option><option value="gospels">Four Gospels</option><option value="other">Rest of Scripture</option></select></label><button className="keep" onClick={addVerseNote} title="Keep this verse, its text and its connections">+ Note</button></div></div><div className="selected-verse-quote"><span>{refLabel(currentVerse)}</span><div className="selected-text" lang={ed.lang} dir={ed.dir}><span className="translation-label">{ed.short}</span>{ed.offline?<p style={{fontSize:editionState.scale}}><VerseText ed={ed} id={currentVerse}/></p>:<OnlinePassage ed={ed} refId={currentVerse}/>}</div><strong>{crossrefs?`${refs.length} connections`:'Loading connections…'}</strong></div>
+        <div className="il-bar">
+          <label><input type="checkbox" checked={greek} onChange={e=>setGreek(e.target.checked)}/> Greek, word by word</label>
+          {greek&&<label><input type="checkbox" checked={variants} onChange={e=>setVariants(e.target.checked)}/> Mark words the editions differ over</label>}
+          {greek&&sharedLemmas&&sharedLemmas.size>0&&<span className="il-agree-key">{sharedLemmas.size} word{sharedLemmas.size===1?'':'s'} also in another Gospel&rsquo;s telling of this story</span>}
+        </div>
+        {greek&&<div className="il-panel">
+          <Interlinear refId={currentVerse} words={ilHere} scale={editionState.scale}
+            shared={sharedLemmas} variants={variants} onWord={w=>{setWord(w);setWordQuery('')}}/>
+          <p className="il-note">Greek: STEPBible / Tyndale House, Cambridge (CC BY 4.0). The small English word under each Greek word is a lexicon&rsquo;s gloss, not a translation — one English word stood in for one Greek one, outside the sentence it belongs to.</p>
+        </div>}
+        <div className="wordsearch">
+          <label className="ws-label">Find a Greek word
+            <input type="search" value={wordQuery} placeholder="love, agapē, ἀγάπη, or G26"
+              onChange={e=>{setWordQuery(e.target.value);setWord(null)}}/>
+          </label>
+          {word&&<div className="ws-one">
+            <p className="ws-head"><b lang="el">{word.lemma}</b> <span>{word.translit}</span> <span className="ws-strong">{word.strong}</span></p>
+            <p className="ws-gloss">{word.lgloss}</p>
+            <p className="ws-morph">{(window.INTERLINEAR.morph[word.morph]||word.morph)||''}</p>
+            {(()=>{const refs=gospelIndex&&gospelIndex.byLemma.get(window.INTERLINEAR.pools.lemma.indexOf(word.lemma));
+              return refs?<p className="ws-count">{refs.length} verse{refs.length===1?'':'s'} in the four Gospels: {refs.slice(0,24).map((r,i)=>
+                <button key={r} onClick={()=>jumpTo(r)}>{refLabel(r)}</button>)}{refs.length>24?<span> and {refs.length-24} more</span>:null}</p>:null})()}
+            <button className="ws-clear" onClick={()=>setWord(null)}>Close</button>
+          </div>}
+          {wordMatches&&<ul className="ws-list">{wordMatches.length?wordMatches.map(h=>
+            <li key={h.strong+h.lemma}>
+              <b lang="el">{h.lemma}</b> <span className="ws-tr">{h.translit}</span>
+              <span className="ws-gl">{h.lgloss}</span>
+              <span className="ws-strong">{h.strong}</span>
+              <span className="ws-n">{h.refs.length} verse{h.refs.length===1?'':'s'}</span>
+              <span className="ws-refs">{h.refs.slice(0,12).map(r=>
+                <button key={r} onClick={()=>jumpTo(r)}>{refLabel(r)}</button>)}{h.refs.length>12?<em> +{h.refs.length-12}</em>:null}</span>
+            </li>):<li className="ws-none">Nothing in the Gospels matches that. Try the English gloss, the transliteration, the Greek itself, or a Strong number.</li>}</ul>}
+        </div>
       {crossError?<div className="empty-state">{crossError} <button onClick={loadCrossrefs}>Retry</button></div>:crossrefs?<><div className="reference-grid">{refs.slice(0,crossLimit).map(([r,votes])=><div key={r} className={'reference-card '+(expanded===r?'expanded':'')}><button className="reference-trigger" onClick={()=>expandRef(r)} aria-expanded={expanded===r}><span className="reference-dot" style={{background:COLORS[bookOf(r)]||'#a5aaa1'}}/><span>{refLabel(r)}</span><span className="ref-votes" title="OpenBible community votes, not a similarity percentage">{votes} votes</span><span>{expanded===r?'−':'+'}</span></button>{expanded===r&&<div className="reference-preview">{!ed.offline?<OnlinePassage ed={ed} refId={r}/>:BOOKS.includes(bookOf(r))||ed.id==='asv'||rangeIds(r).some(id=>ed.verses?.[id])?<div lang={ed.lang} dir={ed.dir}><span className="translation-label">{ed.short}</span>{rangeIds(r).map(id=><p key={id} style={{fontSize:editionState.scale}}><sup>{id.split('.').slice(1).join(':')}</sup> <VerseText ed={ed} id={id}/></p>)}</div>:<div><span className="translation-label">ASV 1901 · English · This book is not included in {ed.short}</span>{rangeIds(r).map(id=><p key={id} style={{fontSize:editionState.scale}}><sup>{id.split('.').slice(1).join(':')}</sup> {window.BASELINE[id]}</p>)}</div>}<div className="reference-actions">{verseById[r.split('-')[0]]&&<button onClick={()=>{jump(verseById[r.split('-')[0]].stories[0]);setSelectedVerse(r.split('-')[0]);reader.current.scrollIntoView({behavior:'smooth'})}}>Locate in Gospel map ↗</button>}{onlineUrl(ed,r)&&<a target="_blank" rel="noreferrer" href={onlineUrl(ed,r)}>Open {ed.short} online ↗</a>}</div></div>}</div>)}</div>{!refs.length&&<p className="empty-state">No outgoing references for this verse in the selected scope. This does not establish that it is unique.</p>}{refs.length>crossLimit&&<button className="load-more" onClick={()=>setCrossLimit(crossLimit+24)}>Show more connections ({refs.length-crossLimit} remaining) ↓</button>}</>:<div className="loading-inline">Loading cross-reference data…</div>}
       <p className="connection-note">{fmt(meta.gospelCrossReferenceCount)} outgoing Gospel links from {fmt(meta.crossReferenceCount)} source records. Ranked by source votes; these links do not determine the map colours.</p></section>
       {nbOpen&&<div ref={notebook}><Notebook items={kept} onChange={keep} onRestore={restore} onDeck={deck} onSave={saveNotebook} onLoad={loadNotebook} onClose={()=>setNbOpen(false)} note={nbNote} describe={describeState} scale={editionState.scale}/></div>}
-      <footer><div className="brand"><span className="brand-mark small-mark">{BOOKS.map(b=><i key={b} style={{background:COLORS[b]}}/>)}</span>Gospel Atlas</div><p><strong>Coder: David Lee</strong><br/>Story index: Sean Boisen / SemanticBible · Connections: OpenBible.info</p><button onClick={()=>dialog.current.showModal()}>Method, sources & data ↗</button></footer>
+      <footer><div className="brand"><span className="brand-mark small-mark">{BOOKS.map(b=><i key={b} style={{background:COLORS[b]}}/>)}</span>Gospel Atlas</div><p><strong>Coder: David Lee</strong><br/>Story index: Sean Boisen / SemanticBible · Connections: OpenBible.info · Greek: STEPBible / Tyndale House</p><button onClick={()=>dialog.current.showModal()}>Method, sources & data ↗</button></footer>
     </main>
     <SymbolDialog book={symbolBook} onClose={()=>setSymbolBook(null)} ed={ed} scale={editionState.scale} onLocate={vid=>{setFilter("all");setQuery("");select(verseById[vid].stories[0],vid);reader.current.scrollIntoView({behavior:"smooth"})}}/>
     {hover&&<div className="map-tooltip" style={{left:Math.max(8,Math.min(hover.x+16,window.innerWidth-295)),top:Math.max(8,Math.min(hover.y+16,window.innerHeight-130))}}><strong>{refLabel(hover.verse)}</strong><p>{stories[hover.story]?.title}</p>{stories[hover.story]&&<Mask story={stories[hover.story]}/>}</div>}
     <dialog ref={dialog} className="method-dialog" onClick={e=>{if(e.target===dialog.current)dialog.current.close()}}><div className="dialog-top"><span className="eyebrow">READING THE ATLAS</span><button aria-label="Close sources" onClick={()=>dialog.current.close()}>×</button></div><h2>A map of stories,<br/><em>not a claim of sameness.</em></h2><p>Each square is one verse, in its Gospel’s own order. Chapter numbers appear down the left of each frame. Select a square to highlight its story unit across the four accounts.</p><h3>Five colours, fifteen possible combinations</h3><p>Gold means the index assigns an episode or teaching to more than one Gospel. Blue, red, green and purple identify units assigned to Matthew, Mark, Luke or John alone. The Mt / Mk / Lk / Jn badges show the exact combination. Hovering temporarily highlights a unit; Focus selected story dims everything else. Colour-blind palette switches to the Okabe-Ito colours, so no distinction depends on telling red from green; the Mt / Mk / Lk / Jn badges carry the same information in text either way.</p>
-    <h3>Searching and comparing</h3><p>The search box matches story titles, references such as John 4:7, and — from three letters upwards — the Scripture text itself in the edition you are reading. Online editions hold no text in this file, so their searches fall back to the ASV 1901. Matched units show the first verse that contains your words.</p><p>Told in / but not in filters the index to the units one Gospel records and another does not, which is the comparison the maps show but cannot answer precisely. It reports the chosen index's assignments: a unit absent from one Gospel may still share details with something that Gospel records elsewhere.</p><h3>What “distinctive” means</h3><p>It means “assigned only to this Gospel in the chosen story index.” It does not prove that every idea or detail is unique. Shared units can contain unique details, and different synopses can group accounts differently. No literary dependence, chronology or factual agreement is inferred from the colours.</p><h3>The two data layers</h3><p><a href="https://semanticbible.com/cgi/cgi-view.html" target="_blank" rel="noreferrer">Sean Boisen’s Composite Gospel Index 1.2</a> supplies {meta.storyCount} units covering all {fmt(meta.verseCount)} Gospel verses. Its episode groupings determine the colours. The story browser follows the index sequence, while each map retains its Gospel’s sequence.</p><p><a href="https://www.openbible.info/labs/cross-references/" target="_blank" rel="noreferrer">OpenBible.info</a> supplies {fmt(meta.crossReferenceCount)} directed links in the 26 October 2026 snapshot, chiefly derived from the Treasury of Scripture Knowledge. {fmt(meta.gospelCrossReferenceCount)} originate in the four Gospels and are available here. They may connect words, themes, people or events. Missing links do not establish uniqueness; votes are not confidence or similarity scores.</p><h3>Text and verification</h3><p>The reference map uses the public-domain American Standard Version (1901), supplied through <a href="https://github.com/scrollmapper/bible_databases" target="_blank" rel="noreferrer">Scrollmapper</a>. All {fmt(meta.verseCount)} Gospel verses have exactly one index assignment, with no gaps or overlaps. Source hashes are recorded in the downloadable metadata.</p><p>One documented source typo was corrected: unit 102 labels its source as Mark but starts the range “Matt.4.33”. The atlas uses Mark 4:33–34. No other source groupings were altered. Traditional passages with disputed manuscript support remain present in this ASV-based map.</p><EditionSources/><h3>Attribution and downloads</h3><p>The story index and its adapted metadata are attributed to Sean Boisen / SemanticBible under <a href="https://creativecommons.org/licenses/by-nc-sa/2.0/" target="_blank" rel="noreferrer">CC BY-NC-SA 2.0</a>. Cross-reference data is attributed to OpenBible.info under its <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer">CC BY licence</a>. Adaptations: verse expansion, colour categories, interface and the correction above. This is a non-commercial study tool.</p><div className="download-row"><button onClick={()=>downloadJson(window.ATLAS,"gospel-atlas-data.json")}>Story & verse data ↓</button><button onClick={()=>downloadJson(window.AUDIT,"gospel-atlas-audit.json")}>Audit & sources ↓</button><button onClick={()=>downloadJson(window.CROSSREFS,"gospel-cross-references.json")}>Gospel cross-references ↓</button></div><p className="small">Keyboard: tab to a map; use arrow keys to select verses. The searchable story list and passage reader provide a text alternative to the canvas. Standalone edition · 2 November 2026. Free to share for non-commercial use with source notices retained.</p></dialog>
+    <h3>Searching and comparing</h3><p>The search box matches story titles, references such as John 4:7, and — from three letters upwards — the Scripture text itself in the edition you are reading. Online editions hold no text in this file, so their searches fall back to the ASV 1901. Matched units show the first verse that contains your words.</p><p>Told in / but not in filters the index to the units one Gospel records and another does not, which is the comparison the maps show but cannot answer precisely. It reports the chosen index's assignments: a unit absent from one Gospel may still share details with something that Gospel records elsewhere.</p><h3>What “distinctive” means</h3><p>It means “assigned only to this Gospel in the chosen story index.” It does not prove that every idea or detail is unique. Shared units can contain unique details, and different synopses can group accounts differently. No literary dependence, chronology or factual agreement is inferred from the colours.</p><h3>The two data layers</h3><p><a href="https://semanticbible.com/cgi/cgi-view.html" target="_blank" rel="noreferrer">Sean Boisen’s Composite Gospel Index 1.2</a> supplies {meta.storyCount} units covering all {fmt(meta.verseCount)} Gospel verses. Its episode groupings determine the colours. The story browser follows the index sequence, while each map retains its Gospel’s sequence.</p><p><a href="https://www.openbible.info/labs/cross-references/" target="_blank" rel="noreferrer">OpenBible.info</a> supplies {fmt(meta.crossReferenceCount)} directed links in the 26 October 2026 snapshot, chiefly derived from the Treasury of Scripture Knowledge. {fmt(meta.gospelCrossReferenceCount)} originate in the four Gospels and are available here. They may connect words, themes, people or events. Missing links do not establish uniqueness; votes are not confidence or similarity scores.</p><h3>Text and verification</h3><p>The reference map uses the public-domain American Standard Version (1901), supplied through <a href="https://github.com/scrollmapper/bible_databases" target="_blank" rel="noreferrer">Scrollmapper</a>. All {fmt(meta.verseCount)} Gospel verses have exactly one index assignment, with no gaps or overlaps. Source hashes are recorded in the downloadable metadata.</p><p>One documented source typo was corrected: unit 102 labels its source as Mark but starts the range “Matt.4.33”. The atlas uses Mark 4:33–34. No other source groupings were altered. Traditional passages with disputed manuscript support remain present in this ASV-based map.</p><EditionSources/><h3>The Greek underneath</h3><p>Turning on <em>Greek, word by word</em> under a selected verse shows the Greek of that verse: the word as it stands, a transliteration, the dictionary word behind it, and the grammar. {fmt(window.INTERLINEAR.words)} words of Matthew to John, from <a href="https://github.com/STEPBible/STEPBible-Data" target="_blank" rel="noreferrer">STEPBible&rsquo;s Translators Amalgamated Greek New Testament</a>, the work of Tyndale House, Cambridge, under <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer">CC BY 4.0</a>. The grammar is expanded in STEPBible&rsquo;s own words; the sixteen codes they do not expand, where two words have merged into one, are shown as the bare code rather than guessed at.</p><p>The small English word under each Greek word is a <em>gloss</em>: one English word standing in for one Greek one, outside the sentence it belongs to. It is a lexicon&rsquo;s choice and not a translation, which is why it is set in a different type and labelled rather than run together into a readable line. Where it disagrees with the translation above, the translation is the considered reading and the gloss is the raw material.</p><p>Gold marks a word whose dictionary form also stands in another Gospel&rsquo;s telling of the same story unit. That is a count of shared words and nothing more: it does not say that one writer copied another, or which came first, only that the same word is there in both. Words the Greek editions differ over can be marked separately; the note then says which editions carry the word. Neither mark judges which reading is right.</p><h3>Attribution and downloads</h3><p>The story index and its adapted metadata are attributed to Sean Boisen / SemanticBible under <a href="https://creativecommons.org/licenses/by-nc-sa/2.0/" target="_blank" rel="noreferrer">CC BY-NC-SA 2.0</a>. Cross-reference data is attributed to OpenBible.info under its <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer">CC BY licence</a>. Adaptations: verse expansion, colour categories, interface and the correction above. This is a non-commercial study tool.</p><div className="download-row"><button onClick={()=>downloadJson(window.ATLAS,"gospel-atlas-data.json")}>Story & verse data ↓</button><button onClick={()=>downloadJson(window.AUDIT,"gospel-atlas-audit.json")}>Audit & sources ↓</button><button onClick={()=>downloadJson(window.CROSSREFS,"gospel-cross-references.json")}>Gospel cross-references ↓</button></div><p className="small">Keyboard: tab to a map; use arrow keys to select verses. The searchable story list and passage reader provide a text alternative to the canvas. Standalone edition · 2 November 2026. Free to share for non-commercial use with source notices retained.</p></dialog>
   </>
 }
 

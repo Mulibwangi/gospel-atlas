@@ -234,6 +234,51 @@ passage. Use your browser's Save as PDF option to create a PDF if available.
 “Copy references” copies the selected story's title, references and edition.
 The source panel provides downloadable index, cross-reference and audit data.
 
+## The Hebrew and Greek
+
+Both apps now carry the original-language text behind the English, from
+STEPBible's Translators Amalgamated Greek New Testament and Hebrew Old
+Testament — the work of Tyndale House, Cambridge, under CC BY 4.0. The Hebrew
+is the Westminster Leningrad Codex. 16,328 distinct words across 542,487
+occurrences.
+
+**In the Gospel Atlas**, tick *Greek, word by word* under a selected verse. Each
+Greek word appears with a transliteration, the dictionary word behind it, and
+its grammar, expanded in STEPBible's own words. Click any word to see every
+place it stands in the four Gospels. The search box beneath takes the English
+gloss, a transliteration, the Greek itself, or a Strong number.
+
+Gold marks a word whose dictionary form also stands in another Gospel's telling
+of the same story unit. **This is a count of shared words and nothing else.** It
+does not say one writer copied another, or which came first — only that the
+same word is there in both. You can also mark the words the Greek editions
+differ over; the note then says which editions carry the word, and takes no view
+on which is right.
+
+**In the Cross-Reference Lab**, *Word search* covers the whole canon. Type an
+English gloss (*love*), a transliteration (*chesed*, *agape*), the word itself
+in Hebrew or Greek, or a Strong number (*H2617*, *G26*). Accents, macrons and
+syllable dots are ignored, so you need not type what you cannot type. Each
+result lists every verse the word stands in, and clicking a verse brings that
+chapter up on the diagram.
+
+Three honest notes:
+
+- **A gloss is not a translation.** The English beside a Hebrew or Greek word is
+  one English word standing in for one original word, outside the sentence it
+  belongs to. It is a lexicon's choice. Where it disagrees with the translation
+  above it, the translation is the considered reading.
+- **Psalm superscriptions** carry real Hebrew that English Bibles print
+  unnumbered above the psalm. They are searchable, and named rather than
+  numbered.
+- **Eight verses hold no tagged word** — John 7:53, Romans 16:25-27,
+  2 Corinthians 13:13-14 and Philippians 1:16-17. The English and the Greek
+  editions divide verses differently at those points; no text is missing.
+
+Hebrew prefixes and endings — the *and*, *the*, *in*, *his* that English writes
+as separate words — are indexed too, but listed apart, so a search for a word is
+not buried under fifteen thousand verses containing one letter.
+
 ## Notebook, bookmarks and slide decks
 
 Both the Gospel Atlas and the Cross-Reference Lab keep a notebook, and they

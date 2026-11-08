@@ -38,6 +38,12 @@ jobs:
       - name: Check every typological reference and quotation
         run: node tools/typology.mjs
 
+      # Two independently numbered texts are joined to make these. An off-by-one would
+      # attach Hebrew or Greek to the wrong verse everywhere after it, so the join is
+      # re-tested from the written files rather than trusted because the build passed.
+      - name: Check the Hebrew and Greek against the text they describe
+        run: node tools/originals.mjs
+
       - name: Check the sourced typological claims
         run: node tools/typology-sources.mjs
 

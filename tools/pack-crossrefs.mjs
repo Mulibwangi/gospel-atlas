@@ -110,15 +110,40 @@ const flat = [];
 let previous = 0;
 for (const r of rows) { flat.push(r[0] - previous, r[1], r[2], r[3]); previous = r[0]; }
 
+// The Hebrew and Greek behind every verse, by Strong number, for the word search.
+// data/concordance.json numbers its verses with Object.keys(bible), exactly as this
+// file does, so the occurrence lists drop straight onto the indices already here and
+// the 31,102 verse ids are not carried twice. That is checked rather than assumed,
+// because a silent mismatch would point every word at the wrong verse.
+const conc = JSON.parse(await readFile('data/concordance.json', 'utf8'));
+for (let i = 0; i < verseKeys.length; i++)
+  if (conc.verses[i] !== verseKeys[i]) {
+    console.error(`concordance verse ${i} is ${conc.verses[i]}, this build has ${verseKeys[i]} — the two verse lists have diverged.`);
+    process.exit(1);
+  }
+// What remains past the end are the Psalm superscriptions, which the ASV prints
+// unnumbered above the psalm and so have no verse of their own here.
+const extraVerses = conc.verses.slice(verseKeys.length);
+if (extraVerses.some(v => !/^Ps\.\d+\.0$/.test(v))) {
+  console.error('the concordance carries verses past the end of the text that are not Psalm titles: ' +
+    extraVerses.filter(v => !/^Ps\.\d+\.0$/.test(v)).slice(0, 5).join(', '));
+  process.exit(1);
+}
+
 const payload = {
   scope, sourceNote, snapshot, sourceSha256: sourceHash,
+  words: {
+    keys: conc.keys, occ: conc.occ, lex: conc.lex, affixes: conc.affixes,
+    extra: extraVerses, attribution: conc.attribution,
+    occurrences: conc.occurrences, versePairs: conc.versePairs
+  },
   // Deterministic: the snapshot it was built from, plus a short digest of the template
   // and the payload. It changes whenever anything that matters changes and never merely
   // because the clock moved, so a rebuild can be compared with the published copy byte
   // for byte instead of being assumed to match.
   built: snapshot + ' \u00b7 ' + createHash('sha256')
     .update(await readFile('src/crossrefs-page.html')).update(await readFile('src/notebook-kit.js'))
-    .update(JSON.stringify(rows)).digest('hex').slice(0, 7),
+    .update(JSON.stringify(rows)).update(conc.built).digest('hex').slice(0, 7),
   unmapped, dropped,
   testamentSplit: books.findIndex(b => b.code === 'Matt'),
   books: books.map(b => [b.code, b.name, b.first, b.chapters]),

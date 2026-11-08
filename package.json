@@ -6,13 +6,16 @@
   "scripts": {
     "pack:lab": "node tools/pack-crossrefs.mjs --full source-data/cross-references-2026-11-02.zip",
     "pack:typology": "node tools/pack-typology.mjs",
-    "pack": "npm run pack:lab && npm run pack:typology",
+    "pack": "npm run pack:originals && npm run pack:lab && npm run pack:typology",
     "build": "npm run pack && node build.mjs",
     "build:only": "node build.mjs",
     "build:crossrefs": "node tools/pack-crossrefs.mjs",
-    "test": "node test_lab.mjs && node test_functions.mjs && node tools/typology.mjs && python3 verify_release.py",
+    "test": "node test_lab.mjs && node test_functions.mjs && node tools/typology.mjs && node tools/originals.mjs && python3 verify_release.py",
     "publish:docs": "cp dist/index.html docs/index.html && cp dist/Gospel_Atlas_David_Lee.zip download/Gospel_Atlas_David_Lee.zip",
-    "audit:browsers": "node tools/browser-audit.mjs"
+    "audit:browsers": "node tools/browser-audit.mjs",
+    "pack:originals": "node --max-old-space-size=6000 tools/pack-originals.mjs",
+    "extract:originals": "node --max-old-space-size=6000 tools/extract-originals.mjs",
+    "check:originals": "node tools/originals.mjs"
   },
   "dependencies": {
     "react": "19.2.0",
