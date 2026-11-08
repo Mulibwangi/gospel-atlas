@@ -224,7 +224,11 @@ Use “Find another language” for the YouVersion language catalogue.
 
 ## Reading and printing
 
-A− and A+ adjust Scripture text size. “Print passages” prints the selected
+A− and A+ adjust Scripture text size, from 11px to 35px, with the current size
+shown between them. The size is remembered, so a file reopened tomorrow keeps it.
+The Cross-Reference Lab has the same control in the header of its passages
+panel, and where the browser lets the two files see each other's storage they
+share the setting. “Print passages” prints the selected
 parallel passages. Inside a symbol panel, “Print passage” prints the selected
 passage. Use your browser's Save as PDF option to create a PDF if available.
 “Copy references” copies the selected story's title, references and edition.

@@ -84,3 +84,5 @@
 .nb-foot{font-size:10.5px;line-height:1.7;color:#848c7c;margin:14px 0 0}
 @media(max-width:700px){.nb-item{grid-template-columns:1fr}.nb-item img{width:100%;height:120px}.nb-thumb{display:none}.nb-ops{flex-direction:row;flex-wrap:wrap}.keep-note{display:none}.detail-summary .keep,.connection-controls .keep{margin-left:0}}
 @media print{.notebook,.keepbar,.nb-pill{display:none!important}}
+
+.text-size{align-self:center;font-size:10px;color:#79836f;min-width:34px;text-align:center;font-variant-numeric:tabular-nums}

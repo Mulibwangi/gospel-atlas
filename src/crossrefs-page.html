@@ -131,9 +131,16 @@ canvas:focus-visible{outline:2px solid var(--gold);outline-offset:-3px}
 .verse-card{min-width:0}
 .verse-card h3{font-size:11px;font-weight:650;letter-spacing:.04em;margin:0 0 7px;color:var(--muted)}
 .verse-card h3 b{color:var(--ink);font-weight:650}
-.verse-card p{font-family:var(--serif);font-size:15px;line-height:1.7;margin:0}
+.verse-card p{font-family:var(--serif);font-size:var(--vtext,15px);line-height:1.7;margin:0}
 .verse-card.target h3 b{color:var(--gold)}
 .pair-votes{grid-column:1/-1;font-size:10px;color:var(--faint)}
+.textsize{display:flex;align-items:center;gap:4px;margin-left:auto}
+.textsize button{font:inherit;font-size:12px;padding:3px 8px;border-radius:5px;border:1px solid var(--line);
+  background:var(--field);color:var(--muted);cursor:pointer}
+.textsize button:hover:not([disabled]){color:var(--ink);border-color:var(--faint)}
+.textsize button[disabled]{opacity:.35;cursor:default}
+.textsize span{font-size:10px;color:var(--faint);min-width:32px;text-align:center;font-variant-numeric:tabular-nums}
+.passages-top .ghost{margin-left:0}
 @media(max-width:700px){.pair{grid-template-columns:1fr;gap:10px}}
 footer{margin-top:26px;border-top:1px solid var(--line);padding-top:18px;font-size:11px;color:var(--faint);line-height:1.8;max-width:80ch}
 footer a{color:inherit}
@@ -634,6 +641,7 @@ root.innerHTML=`
     <div class="passages-top">
       <div><p class="eyebrow" id="pass-eyebrow"></p><h2 id="pass-title"></h2></div>
       <p class="sub" id="pass-sub"></p>
+      <div class="textsize"><button id="txtDown" aria-label="Decrease Scripture text size">A−</button><span id="txtNow" aria-live="polite"></span><button id="txtUp" aria-label="Increase Scripture text size">A+</button></div>
       <button class="ghost" id="pass-close">Close passages</button>
     </div>
     <div id="pairs"></div>
@@ -1633,6 +1641,24 @@ function openPassages(aFrom,aTo,bFrom,bTo,title){
 }
 function openChapterPair(a,b){openPassages(a,a,b,b,label(a)+' \u2194 '+label(b))}
 document.getElementById('pass-close').addEventListener('click',()=>{document.getElementById('passages').hidden=true});
+
+// Scripture text size. Shared key and range with the Gospel Atlas, so the two agree
+// where the browser lets them see each other's storage, and remembered either way:
+// someone who needs larger type needs it every time the file is opened, not once.
+const TEXT_MIN=11,TEXT_MAX=35,TEXT_KEY='gospel-atlas-text-size';
+let textSize=15;
+try{const n=+localStorage.getItem(TEXT_KEY);if(n>=TEXT_MIN&&n<=TEXT_MAX)textSize=n}catch(e){}
+function setTextSize(n){
+  textSize=Math.max(TEXT_MIN,Math.min(TEXT_MAX,n));
+  document.getElementById('pairs').style.setProperty('--vtext',textSize+'px');
+  document.getElementById('txtNow').textContent=textSize+'px';
+  document.getElementById('txtDown').disabled=textSize<=TEXT_MIN;
+  document.getElementById('txtUp').disabled=textSize>=TEXT_MAX;
+  try{localStorage.setItem(TEXT_KEY,textSize)}catch(e){}
+}
+document.getElementById('txtDown').addEventListener('click',()=>setTextSize(textSize-2));
+document.getElementById('txtUp').addEventListener('click',()=>setTextSize(textSize+2));
+setTextSize(textSize);
 
 function legend(){
   const el=document.getElementById('legend');el.innerHTML='';

@@ -31,9 +31,18 @@ export function rangeIds(ref){
  return Object.keys(window.BASELINE).filter(k=>{const[b,c,v]=k.split('.');return b===book&&(+c>+c1||+c===+c1&&+v>=+v1)&&(+c<+c2||+c===+c2&&+v<=+v2)});
 }
 export function downloadJson(obj,name){const u=URL.createObjectURL(new Blob([JSON.stringify(obj,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)}
+// The old range gave A− a single step before it greyed out, which reads as a broken
+// button rather than a limit. It now runs from small enough to fit a long passage on
+// one screen to large enough to read from the back of a room.
+export const TEXT_MIN=11,TEXT_MAX=35,TEXT_KEY='gospel-atlas-text-size';
 export function useEdition(){
  const versions=window.EDITIONS;
- const [id,setId]=useState('asv'),[custom,setCustom]=useState(null),[scale,setScale]=useState(17),[message,setMessage]=useState('');
+ const [id,setId]=useState('asv'),[custom,setCustom]=useState(null),[message,setMessage]=useState('');
+ // Text size is remembered, like the palette. Someone who needs larger type needs it
+ // every time they open the file, not once per session, and this file is opened from
+ // disk again and again rather than left running.
+ const [scale,setRawScale]=useState(()=>{try{const n=+localStorage.getItem(TEXT_KEY);return n>=TEXT_MIN&&n<=TEXT_MAX?n:17}catch{return 17}});
+ const setScale=n=>{setRawScale(n);try{localStorage.setItem(TEXT_KEY,n)}catch{}};
  const ed=custom&&id==='custom'?custom:versions.find(e=>e.id===id)||versions[0];
  const all=custom?[...versions,custom]:versions;
  return {ed,all,id,setId,scale,setScale,message,setMessage,setCustom};
@@ -55,7 +64,7 @@ export function EditionBar({state}){
  return <section className="edition-panel" aria-label="Reading settings"><div className="edition-controls">
  <label>Bible language<select aria-label="Bible language" value={ed.lang} onChange={e=>setId(all.find(x=>x.lang===e.target.value).id)}>{langs.map(([code,name])=><option value={code} key={code}>{name}{all.some(e=>e.lang===code&&e.offline)?' · offline available':' · online'}</option>)}</select></label>
  <label>Bible translation<select aria-label="Bible translation" value={ed.id} onChange={e=>setId(e.target.value)}>{all.filter(x=>x.lang===ed.lang).map(x=><option key={x.id} value={x.id}>{x.name} · {x.offline?'offline':'online'}</option>)}</select></label>
- <div className="reading-tools"><button aria-label="Decrease text size" disabled={scale<=15} onClick={()=>setScale(Math.max(15,scale-2))}>A−</button><button aria-label="Increase text size" disabled={scale>=27} onClick={()=>setScale(Math.min(27,scale+2))}>A+</button><button onClick={()=>window.print()}>Print passages</button><button onClick={()=>help.current.showModal()}>Use my translation</button></div></div>
+ <div className="reading-tools"><button aria-label="Decrease text size" disabled={scale<=TEXT_MIN} onClick={()=>setScale(Math.max(TEXT_MIN,scale-2))}>A−</button><span className="text-size" aria-live="polite" aria-label={`Scripture text size ${scale} pixels`}>{scale}px</span><button aria-label="Increase text size" disabled={scale>=TEXT_MAX} onClick={()=>setScale(Math.min(TEXT_MAX,scale+2))}>A+</button><button onClick={()=>window.print()}>Print passages</button><button onClick={()=>help.current.showModal()}>Use my translation</button></div></div>
  <div className="edition-status"><span className={ed.offline?'offline-badge':'online-badge'}>{ed.offline?'● INCLUDED OFFLINE':'↗ ONLINE READER'}</span><span>{ed.offline?ed.id==='asv'?'Full ASV Bible included for cross-references.':ed.id==='custom'?'Imported text stays in this browser session.':'Four Gospels included. Other books are available in ASV.':'Passage buttons open '+(ed.id==='TCL02'?'YouVersion':'Bible Gateway')+'. Internet required.'}</span></div>
  <p className="edition-footnote">English + 20 widely used languages. Published Bible translations; interface and story titles are in English. <a href="https://www.bible.com/languages" target="_blank" rel="noreferrer">Find another language ↗</a></p>
  {message&&<p className="import-message" role="status">{message}</p>}
