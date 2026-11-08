@@ -242,7 +242,8 @@ Testament — the work of Tyndale House, Cambridge, under CC BY 4.0. The Hebrew
 is the Westminster Leningrad Codex. 17,036 distinct words and marks across 681,423
 occurrences.
 
-**In the Gospel Atlas**, tick *Greek, word by word* under a selected verse. Each
+**In the Gospel Atlas**, tick *Greek and Hebrew, word by word* under a selected
+verse. Each
 Greek word appears with a transliteration, the dictionary word behind it, and
 its grammar, expanded in STEPBible's own words. Click any word to see every
 place it stands in the four Gospels. The search box beneath takes the English
@@ -255,8 +256,11 @@ same word is there in both. You can also mark the words the Greek editions
 differ over; the note then says which editions carry the word, and takes no view
 on which is right.
 
-With the Greek on, any cross-reference to the Old Testament opens in **Hebrew**
-too, read right to left, the same way: 191,905 morphemes covering the 9,218 Old
+Expand any cross-reference to the Old Testament and it offers to open in
+**Hebrew**, read right to left, the same way — you need not turn anything on
+first. The *Greek and Hebrew, word by word* switch above the references does the
+same for all of them at once. A reference into the four Gospels opens in Greek;
+for Acts to Revelation this file carries neither, and says so. 191,905 morphemes covering the 9,218 Old
 Testament verses the Gospel cross-references reach, which is every Old Testament
 verse the Atlas can put on screen. Hebrew writes as part of a word what English
 writes separately — the *and*, the *the*, the *in*, the possessive *his* — and
