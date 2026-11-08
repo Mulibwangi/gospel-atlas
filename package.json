@@ -11,7 +11,8 @@
     "build:only": "node build.mjs",
     "build:crossrefs": "node tools/pack-crossrefs.mjs",
     "test": "node test_lab.mjs && node test_functions.mjs && node tools/typology.mjs && python3 verify_release.py",
-    "publish:docs": "cp dist/index.html docs/index.html && cp dist/Gospel_Atlas_David_Lee.zip download/Gospel_Atlas_David_Lee.zip"
+    "publish:docs": "cp dist/index.html docs/index.html && cp dist/Gospel_Atlas_David_Lee.zip download/Gospel_Atlas_David_Lee.zip",
+    "audit:browsers": "node tools/browser-audit.mjs"
   },
   "dependencies": {
     "react": "19.2.0",

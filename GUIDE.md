@@ -45,6 +45,13 @@ Double-clicking Gospel_Atlas_David_Lee.html does the same thing directly; that
 file is the app. If it opens in a text editor instead of a browser, right-click
 it, choose "Open with", and pick Chrome, Firefox, Edge or Safari.
 
+Which browsers can open it: Chrome or Edge 80 and later, Safari 16.4 and later,
+Firefox 113 and later — that is, anything from spring 2023 onwards. The files
+decompress themselves when opened, and the browser feature that does it arrived in
+those versions. An older browser shows a short message saying so rather than a
+broken page. These requirements were read from the built files; they have been
+exercised in Chromium only, and verifying them on Safari and Firefox is still to do.
+
 Nothing opens from inside a ZIP preview window or an email attachment preview:
 save the ZIP and unzip it first. Use a recent Chrome, Firefox, Edge or Safari.
 It is designed for Linux, Windows and macOS. No installation, account, terminal
