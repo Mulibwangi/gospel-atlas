@@ -57,16 +57,9 @@ jobs:
       - name: Confirm the published copies match this build
         run: |
           fail=0
-          check() {
-            if ! cmp -s "$1" "$2"; then
-              echo "::error::$2 differs from this build. Run: npm run build && npm run publish:docs"
-              fail=1
-            else
-              echo "ok  $2"
-            fi
-          }
-          check dist/index.html docs/index.html
-          check dist/Gospel_Atlas_David_Lee.zip download/Gospel_Atlas_David_Lee.zip
+          # The landing page, the Atlas, the sharing card, the site's pictures and the
+          # ZIP: one list, kept next to the script that copies them.
+          node tools/publish-docs.mjs --check || fail=1
           # The Lab and Shadow and Substance are generated straight into docs/, so a
           # rebuild that leaves them unchanged is the check; git decides.
           if ! git diff --quiet -- docs/cross-references.html docs/typology.html; then

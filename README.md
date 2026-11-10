@@ -7,7 +7,8 @@ it, side by side, in any of 21 languages.
 
 No installation, no account, no server, no internet connection, no tracking.
 
-**[Open it in your browser](https://mulibwangi.github.io/gospel-atlas/)** &nbsp;·&nbsp;
+**[Website — open or download](https://mulibwangi.github.io/gospel-atlas/)** &nbsp;·&nbsp;
+**[Open the Atlas straight away](https://mulibwangi.github.io/gospel-atlas/gospel-atlas.html)** &nbsp;·&nbsp;
 **[Download the offline edition](https://github.com/Mulibwangi/gospel-atlas/raw/main/download/Gospel_Atlas_David_Lee.zip)** &nbsp;·&nbsp;
 [Reader's guide](GUIDE.md)
 

@@ -55,15 +55,21 @@ you pass and says whether it matches the audit.
 
 ## Other files
 
-download/Gospel_Atlas_David_Lee.zip is the copy the README links to, so the
-download works straight from the repository. Refresh it with
-`cp dist/Gospel_Atlas_David_Lee.zip download/` whenever you publish a build.
+download/Gospel_Atlas_David_Lee.zip is the copy the README and the site link to,
+so the download works straight from the repository. It is the only copy: the ZIP
+is not duplicated into docs/, because a second ten-megabyte file would be added
+to the repository's history at every release.
 
 GUIDE.md is the reader's guide. The build copies it into the ZIP under the name
 README.md, because that is what a recipient expects to find in the folder. The
 README.md in this repository is the project page shown on GitHub; it is not
-shipped. docs/index.html is the copy published through GitHub Pages: refresh it
-with `cp dist/index.html docs/index.html` after a build you intend to publish.
+shipped.
+
+docs/ is what GitHub Pages serves. docs/index.html is the landing page, built
+from src/site.html, and the Atlas is docs/gospel-atlas.html — src/notebook-kit.js
+knows that name, so the two change together. Refresh the whole of docs/ and the
+download with `npm run publish:docs` after a build you intend to publish, and
+`npm run check:docs` says whether the published copies are this build.
 
 The complete data required by the build is in data/. No network is required by
 the resulting HTML app.

@@ -38,7 +38,7 @@ const FEATURES = [
   ['fetch to a network',    /fetch\s*\(\s*['"`]https?:/,      'should not appear: these files are offline', false],
 ];
 
-const PAGES = ['docs/index.html', 'docs/cross-references.html', 'docs/typology.html'];
+const PAGES = ['docs/gospel-atlas.html', 'docs/cross-references.html', 'docs/typology.html'];
 const rows = [];
 for (const page of PAGES) {
   let text;

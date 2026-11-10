@@ -29,7 +29,9 @@ export const APP_NAMES = {'cross-reference-lab': 'Cross-Reference Lab', 'gospel-
 
 // The three pages of the suite go by one set of names in the emailed archive and another
 // on the published site, and the same bytes serve both. So a page works out which set it
-// is living under from its own file name, and links to its neighbours accordingly. A
+// is living under from its own file name, and links to its neighbours accordingly. On
+// the site index.html is the landing page, not the Atlas, so the published Atlas is
+// gospel-atlas.html; change that here and in package.json's publish:docs together. A
 // link can carry a word across: every page that searches words reads "#word=H5923" when
 // it opens, so "the Lab has this across the whole Bible" is a link and not a suggestion.
 export function suiteLinks() {
@@ -37,7 +39,7 @@ export function suiteLinks() {
   try { here = decodeURIComponent(location.pathname.split('/').pop() || ''); } catch (e) {}
   return /^(Gospel_Atlas_David_Lee|Cross_Reference_Lab|Shadow_and_Substance)\.html$/i.test(here)
     ? {atlas: 'Gospel_Atlas_David_Lee.html', lab: 'Cross_Reference_Lab.html', types: 'Shadow_and_Substance.html'}
-    : {atlas: 'index.html', lab: 'cross-references.html', types: 'typology.html'};
+    : {atlas: 'gospel-atlas.html', lab: 'cross-references.html', types: 'typology.html'};
 }
 // The word a link carried, if any: "#word=G2218" gives "G2218".
 export function wordFromHash() {

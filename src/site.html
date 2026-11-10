@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="author" content="David Lee">
+<title>Gospel Atlas &middot; free offline Bible study tools</title>
+<meta name="description" content="Three free Bible study tools that run in your browser with no installation, no account and no internet connection: the four Gospels as pixel maps with parallel passages in 21 languages, 344,799 cross-references drawn as a circle you can search, and typological passages shown side by side. Greek and Hebrew interlinear throughout. Developer: DAVID LEE.">
+<link rel="canonical" href="https://mulibwangi.github.io/gospel-atlas/">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+
+<!-- Sharing card. The image is the whole canon drawn as a circle, which is what the
+     Cross-Reference Lab shows, so a pasted link previews the thing itself. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Gospel Atlas">
+<meta property="og:title" content="Gospel Atlas — free offline Bible study tools">
+<meta property="og:description" content="The four Gospels as pixel maps, 344,799 cross-references drawn and searchable, and typological passages side by side. Free, offline, no account.">
+<meta property="og:url" content="https://mulibwangi.github.io/gospel-atlas/">
+<meta property="og:image" content="https://mulibwangi.github.io/gospel-atlas/preview.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The whole Bible drawn as a circle, with every cross-reference as a coloured chord across it.">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='2' y='2' width='12' height='12' fill='%233e7598'/%3E%3Crect x='18' y='2' width='12' height='12' fill='%23b25c51'/%3E%3Crect x='2' y='18' width='12' height='12' fill='%234e8875'/%3E%3Crect x='18' y='18' width='12' height='12' fill='%23866a9f'/%3E%3C/svg%3E">
+<style>
+:root{color-scheme:light;--ink:#26362f;--muted:#6d756c;--faint:#8d9488;--paper:#f7f6f1;--line:#dedfd5;--gold:#a68a39;--serif:Georgia,'Times New Roman',serif;
+font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--ink);background:var(--paper)}
+*{box-sizing:border-box}
+body{margin:0;font-size:16px;line-height:1.65}
+img{max-width:100%;height:auto;display:block}
+a{color:#2e4338}
+a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid var(--gold);outline-offset:3px;border-radius:3px}
+.wrap{width:100%;max-width:960px;margin:0 auto;padding:0 20px}
+
+/* Top bar */
+.top{border-bottom:1px solid var(--line);background:#f7f6f1}
+.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-top:16px;padding-bottom:16px}
+.brand{display:inline-flex;gap:11px;align-items:center;font-size:18px;letter-spacing:-.5px;font-weight:650;color:var(--ink);text-decoration:none}
+.brand-mark{display:grid;grid-template-columns:repeat(2,8px);grid-template-rows:repeat(2,8px);gap:3px;transform:rotate(-6deg)}
+.brand-mark i{display:block}
+.top nav{display:flex;gap:20px;font-size:14px}
+.top nav a{color:#5d675b;text-decoration:none}
+.top nav a:hover{text-decoration:underline}
+
+/* Hero */
+.hero{padding:54px 0 18px}
+.hero .wrap{display:grid;grid-template-columns:1.08fr .92fr;gap:44px;align-items:center}
+.eyebrow{font-size:10px;font-weight:650;letter-spacing:1.7px;color:#7a8378;margin:0;text-transform:uppercase}
+h1{font-family:var(--serif);font-weight:400;font-size:clamp(34px,5.4vw,52px);letter-spacing:-1.8px;line-height:1.06;margin:14px 0 16px}
+h1 em{font-style:italic;color:var(--gold)}
+.lede{margin:0;color:var(--muted);font-size:17px}
+.buttons{margin:30px 0 12px;display:flex;flex-wrap:wrap;gap:12px}
+a.open{display:inline-flex;align-items:center;gap:11px;background:#2e4338;color:#fdfdf7;text-decoration:none;
+font-size:16px;font-weight:600;letter-spacing:-.2px;padding:17px 27px;border-radius:7px;box-shadow:0 2px 5px #27382d26}
+a.open:hover{background:#1d2e25}
+a.open span{font-size:19px;line-height:1}
+a.open.quiet{background:#eaece4;color:#2e4338;border:1px solid #d3dac9;box-shadow:none}
+a.open.quiet:hover{background:#dde3d6}
+.under{font-size:13px;color:var(--faint);margin:0}
+figure{margin:0}
+figcaption{font-size:12px;color:var(--faint);margin-top:10px;line-height:1.5}
+/* The artwork is already a circle, drawn on this page's own paper colour, and the book
+   names run out to the edge of the square, so a round mask would crop them. */
+
+/* Counts */
+.counts{border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-top:40px;background:#f2f1ea}
+.counts .wrap{display:flex;flex-wrap:wrap;gap:34px 54px;padding-top:22px;padding-bottom:22px}
+.counts b{display:block;font-family:var(--serif);font-weight:400;font-size:27px;letter-spacing:-.8px;color:#2e4338}
+.counts span{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--faint)}
+
+/* Sections */
+section{padding:52px 0}
+h2{font-family:var(--serif);font-weight:400;font-size:clamp(24px,3.6vw,33px);letter-spacing:-1px;margin:0 0 10px}
+.sub{margin:0 0 30px;color:var(--muted);max-width:62ch}
+h3{font-size:18px;font-weight:650;letter-spacing:-.3px;margin:0 0 6px}
+
+/* The three tools */
+.tools{display:grid;grid-template-columns:repeat(3,1fr);gap:26px}
+.tool{background:#fdfdf9;border:1px solid var(--line);border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
+.tool img{border-bottom:1px solid var(--line);aspect-ratio:760/485;object-fit:cover;object-position:top left;width:100%;height:auto;background:#eceade}
+.tool .body{padding:20px 20px 22px;display:flex;flex-direction:column;flex:1}
+.tool p{margin:0 0 16px;font-size:14.5px;color:var(--muted);flex:1}
+.tool a.go{font-size:14.5px;font-weight:650;text-decoration:none;color:#2e4338;align-self:start}
+.tool a.go:hover{text-decoration:underline}
+
+/* Plain lists */
+.what{display:grid;grid-template-columns:repeat(2,1fr);gap:26px 46px}
+.what div p{margin:0;font-size:15px;color:var(--muted)}
+
+/* Download block */
+.get{background:#eaece4;border:1px solid #d8ded0;border-radius:10px;padding:30px 32px}
+.get h2{margin-bottom:8px}
+.get ol{margin:18px 0 0;padding-left:20px;font-size:14.5px;color:var(--muted)}
+.get ol li{margin-bottom:7px}
+.inzip{margin:20px 0 0;font-size:13.5px;color:var(--muted);border-top:1px solid #d8ded0;padding-top:16px}
+.inzip code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;background:#f3f4ec;border:1px solid #dfe2d6;border-radius:3px;padding:2px 5px}
+
+/* Credits */
+.credits{border-top:1px solid var(--line);background:#f2f1ea}
+.credits dl{margin:0;display:grid;grid-template-columns:170px 1fr;gap:14px 26px;font-size:14.5px}
+.credits dt{color:#5d675b;font-weight:650}
+.credits dd{margin:0;color:var(--muted)}
+footer{border-top:1px solid var(--line);padding:28px 0 46px;font-size:12.5px;color:var(--faint)}
+footer p{margin:0 0 6px}
+
+@media(max-width:860px){
+  .hero{padding-top:36px}
+  .hero .wrap{grid-template-columns:1fr;gap:30px}
+  .hero figure{max-width:440px;margin:4px auto 0}
+  .tools,.what{grid-template-columns:1fr}
+  .credits dl{grid-template-columns:1fr;gap:4px 0}
+  .credits dd{margin-bottom:14px}
+  a.open{flex:1;justify-content:center}
+  .top nav{gap:14px;font-size:13px}
+}
+/* On a phone the three tools are a thumb-scroll away in their own cards, so the top
+   bar keeps only the link that is not repeated further down. */
+@media(max-width:640px){
+  .top nav a:not(:last-child){display:none}
+  .counts .wrap{gap:20px 34px}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="./">
+      <span class="brand-mark" aria-hidden="true"><i style="background:#3e7598"></i><i style="background:#b25c51"></i><i style="background:#4e8875"></i><i style="background:#866a9f"></i></span>
+      Gospel Atlas
+    </a>
+    <nav>
+      <a href="gospel-atlas.html">Gospel Atlas</a>
+      <a href="cross-references.html">Cross-Reference Lab</a>
+      <a href="typology.html">Shadow and Substance</a>
+      <a href="https://github.com/Mulibwangi/gospel-atlas">Source on GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="wrap">
+    <div>
+      <p class="eyebrow">Free &middot; offline &middot; no account</p>
+      <h1>Three Bible study tools<br>that run in <em>your browser</em>.</h1>
+      <p class="lede">The four Gospels as pixel maps with every parallel passage side by
+      side in 21 languages. All 344,799 cross-references in the Bible, drawn as a circle
+      and searchable. Typological passages set against the verses that answer them.
+      Greek and Hebrew word by word throughout.</p>
+      <div class="buttons">
+        <a class="open" href="gospel-atlas.html">Open it now <span aria-hidden="true">&rarr;</span></a>
+        <a class="open quiet" href="https://github.com/Mulibwangi/gospel-atlas/raw/main/download/Gospel_Atlas_David_Lee.zip">Download for offline use</a>
+      </div>
+      <p class="under">Nothing to install and nothing to sign up for. The download is a
+      10.6&nbsp;MB ZIP; once it is unzipped it never needs the internet again.</p>
+    </div>
+    <figure>
+      <img src="img/circle.jpg" width="1000" height="1000" alt="The whole Bible drawn as a circle, Genesis at the top running clockwise to Revelation, with every cross-reference as a coloured chord crossing the middle.">
+      <figcaption>Every cross-reference in the Bible at once. Click any book to pull out
+      its own links.</figcaption>
+    </figure>
+  </div>
+</div>
+
+<div class="counts">
+  <div class="wrap">
+    <div><b>344,799</b><span>Cross-references</span></div>
+    <div><b>3,779</b><span>Gospel verses mapped</span></div>
+    <div><b>355</b><span>Story units</span></div>
+    <div><b>21</b><span>Languages</span></div>
+    <div><b>&pound;0</b><span>Cost, forever</span></div>
+  </div>
+</div>
+
+<section>
+  <div class="wrap">
+    <h2>The three tools</h2>
+    <p class="sub">Each one is a single HTML file. Open it from this page, or download all
+    three and keep them on a memory stick.</p>
+    <div class="tools">
+
+      <div class="tool">
+        <img src="img/card-atlas.jpg" width="760" height="485" alt="The four Gospels drawn as four columns of coloured squares, one square per verse.">
+        <div class="body">
+          <h3>Gospel Atlas</h3>
+          <p>One square, one verse. Click a square and read that story as all four Gospels
+          tell it, in four columns, in any of 21 languages. Show the order, or line the
+          parallels up and let the blank space make the point.</p>
+          <a class="go" href="gospel-atlas.html">Open the Atlas &rarr;</a>
+        </div>
+      </div>
+
+      <div class="tool">
+        <img src="img/card-lab.jpg" width="760" height="486" alt="The cross-reference circle, chords braided toward the centre of each book.">
+        <div class="body">
+          <h3>Cross-Reference Lab</h3>
+          <p>The whole canon as a circle or an arc, with every link drawn. Focus one book,
+          follow a chain from verse to verse, or search for a Greek or Hebrew word and see
+          every place it stands.</p>
+          <a class="go" href="cross-references.html">Open the Lab &rarr;</a>
+        </div>
+      </div>
+
+      <div class="tool">
+        <img src="img/card-types.jpg" width="760" height="487" alt="A typological correspondence shown as paired lines: Jonah on the left, the Son of Man on the right.">
+        <div class="body">
+          <h3>Shadow and Substance</h3>
+          <p>Places where Scripture reads itself: a verse states that one passage answers
+          another, and the verse is given. The readings the typological tradition adds can
+          be shown beside them, marked as readings.</p>
+          <a class="go" href="typology.html">Open Shadow and Substance &rarr;</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section style="border-top:1px solid var(--line);background:#fdfdf9">
+  <div class="wrap">
+    <h2>What you get</h2>
+    <p class="sub">The same file works on a phone, on a school laptop with everything
+    locked down, and on a classroom machine with no network.</p>
+    <div class="what">
+      <div>
+        <h3>No internet needed</h3>
+        <p>Every verse, every reference and every diagram is inside the file. Once it is
+        on your machine it works on a plane, in a prison chapel, or anywhere the signal
+        does not reach.</p>
+      </div>
+      <div>
+        <h3>No account, no tracking</h3>
+        <p>Nothing is sent anywhere. There is no sign-up, no email address, no analytics
+        and no advertising. The page is not allowed to make a network request at all.</p>
+      </div>
+      <div>
+        <h3>Greek and Hebrew, word by word</h3>
+        <p>Any passage can be shown in the original, each word with its sound, its meaning
+        and its grammar, from the STEPBible tagged texts. Search a word and find it
+        everywhere it stands.</p>
+      </div>
+      <div>
+        <h3>Notes, bookmarks and slides</h3>
+        <p>Keep a note against any view, bookmark where you were, and turn what you kept
+        into a slide deck or a printable study. The deck is another plain HTML file.</p>
+      </div>
+      <div>
+        <h3>21 languages</h3>
+        <p>Twelve are carried inside the file, with the interface in English. Your own
+        translation can be imported if you have the text.</p>
+      </div>
+      <div>
+        <h3>Free to pass on</h3>
+        <p>Email it, copy it to a memory stick, put it on a church network. There is no
+        licence to buy and nothing to ask permission for.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="get">
+      <h2>Download the offline edition</h2>
+      <p class="sub" style="margin-bottom:0">One ZIP, 10.6&nbsp;MB, holding all three tools
+      and the instructions. Nothing in it needs installing.</p>
+      <div class="buttons">
+        <a class="open" href="https://github.com/Mulibwangi/gospel-atlas/raw/main/download/Gospel_Atlas_David_Lee.zip">Download the ZIP <span aria-hidden="true">&darr;</span></a>
+        <a class="open quiet" href="https://github.com/Mulibwangi/gospel-atlas">Source on GitHub</a>
+      </div>
+      <ol>
+        <li>Save the ZIP somewhere you can find it &mdash; Desktop or Documents.</li>
+        <li>Unzip it. On Windows, right-click and choose <em>Extract All</em>; on a Mac,
+        double-click it.</li>
+        <li>Open the unzipped folder and double-click
+        <strong>1 START HERE &ndash; Open Gospel Atlas.html</strong>.</li>
+      </ol>
+      <p class="inzip">Inside: <code>Gospel_Atlas_David_Lee.html</code>,
+      <code>Cross_Reference_Lab.html</code>, <code>Shadow_and_Substance.html</code>, the
+      start page, plain-text opening instructions and the reader's guide. Needs a current
+      Chrome, Edge, Firefox or Safari.</p>
+    </div>
+  </div>
+</section>
+
+<section class="credits">
+  <div class="wrap">
+    <h2>Where the material comes from</h2>
+    <p class="sub">Nothing here is generated commentary. Every panel holds Scripture and
+    references, and the sources are named so they can be checked.</p>
+    <dl>
+      <dt>Bible text</dt>
+      <dd>American Standard Version, 1901 &mdash; public domain. Twenty further
+      translations are listed in the app with their licences; twelve are carried offline.</dd>
+
+      <dt>Cross-references</dt>
+      <dd>The <a href="https://www.openbible.info/labs/cross-references/">OpenBible.info
+      cross-reference dataset</a> (CC BY 4.0). The votes recorded there order the links;
+      they are not similarity scores.</dd>
+
+      <dt>Greek and Hebrew</dt>
+      <dd><a href="https://github.com/STEPBible/STEPBible-Data">STEPBible-Data</a>
+      (TAGNT, TAHOT, TBESG, TBESH), Tyndale House, Cambridge, CC BY 4.0. The Hebrew is the
+      Westminster Leningrad Codex.</dd>
+
+      <dt>The circle and the arc</dt>
+      <dd>The arc diagram follows the one Chris Harrison and Christoph R&ouml;mhild made in
+      2007. This is drawn independently, from different data, and uses none of their
+      artwork.</dd>
+
+      <dt>Story index</dt>
+      <dd>Composite Gospel Index 1.2. The colours describe that index, not an exact match
+      of wording.</dd>
+    </dl>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>Gospel Atlas &mdash; Developer: DAVID LEE. Code under the MIT licence; the bundled
+    texts keep their own licences, named above.</p>
+    <p><a href="https://github.com/Mulibwangi/gospel-atlas">Source and issues on GitHub</a>
+    &middot; <a href="https://github.com/Mulibwangi/gospel-atlas/blob/main/GUIDE.md">Reader's guide</a></p>
+  </div>
+</footer>
+
+</body>
+</html>
