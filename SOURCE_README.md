@@ -65,7 +65,9 @@ README.md, because that is what a recipient expects to find in the folder. The
 README.md in this repository is the project page shown on GitHub; it is not
 shipped.
 
-docs/ is what GitHub Pages serves. docs/index.html is the landing page, built
+docs/ is what GitHub Pages serves, at meaningcurve.com. docs/CNAME holds that
+domain and is copied from src/CNAME, because GitHub writes that file itself when
+the domain is set and a publish without it would take the site off the domain. docs/index.html is the landing page, built
 from src/site.html, and the Atlas is docs/gospel-atlas.html — src/notebook-kit.js
 knows that name, so the two change together. Refresh the whole of docs/ and the
 download with `npm run publish:docs` after a build you intend to publish, and

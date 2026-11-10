@@ -19,8 +19,13 @@ import {basename, join} from 'node:path';
 
 const check = process.argv.includes('--check');
 
+// docs/CNAME is the custom domain. GitHub writes that file itself when the domain is
+// entered under Settings > Pages, and a later publish that did not carry it would take
+// the site off meaningcurve.com. So it is tracked here with everything else.
+//
 // published path  <-  source path
 const FILES = [
+  ['docs/CNAME', 'src/CNAME'],
   ['docs/index.html', 'src/site.html'],
   ['docs/gospel-atlas.html', 'dist/index.html'],
   ['docs/preview.jpg', 'src/preview.jpg'],

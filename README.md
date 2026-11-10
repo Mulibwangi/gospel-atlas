@@ -7,8 +7,8 @@ it, side by side, in any of 21 languages.
 
 No installation, no account, no server, no internet connection, no tracking.
 
-**[Website — open or download](https://mulibwangi.github.io/gospel-atlas/)** &nbsp;·&nbsp;
-**[Open the Atlas straight away](https://mulibwangi.github.io/gospel-atlas/gospel-atlas.html)** &nbsp;·&nbsp;
+**[Website — open or download](https://meaningcurve.com/)** &nbsp;·&nbsp;
+**[Open the Atlas straight away](https://meaningcurve.com/gospel-atlas.html)** &nbsp;·&nbsp;
 **[Download the offline edition](https://github.com/Mulibwangi/gospel-atlas/raw/main/download/Gospel_Atlas_David_Lee.zip)** &nbsp;·&nbsp;
 [Reader's guide](GUIDE.md)
 
@@ -311,7 +311,7 @@ titles are in English.
 
 | | |
 |---|---|
-| **Use it now** | [mulibwangi.github.io/gospel-atlas](https://mulibwangi.github.io/gospel-atlas/) — the same app, hosted. Nothing to download. |
+| **Use it now** | [meaningcurve.com](https://meaningcurve.com/) — the same app, hosted. Nothing to download. |
 | **Keep a copy** | [Download the ZIP](https://github.com/Mulibwangi/gospel-atlas/raw/main/download/Gospel_Atlas_David_Lee.zip) (5.4 MB), unzip it, and double-click **1 START HERE - Open Gospel Atlas.html**. It works with no internet connection afterwards. |
 
 The download holds four files: the START HERE page with its Open button, the
