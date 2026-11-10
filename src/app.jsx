@@ -1,7 +1,8 @@
 import React, {useState, useEffect, useRef, useMemo} from 'react';
 import {createRoot} from 'react-dom/client';
 import {THEMES, Symbol, SymbolDialog, EditionBar, useEdition, VerseText, OnlinePassage, EditionSources, rangeIds, downloadJson, onlineUrl, getText} from './editions.jsx';
-import {deckHtml, download, readNotebook, nbNow, safeName, APP_NAMES} from './notebook-kit.js';
+import {deckHtml, download, readNotebook, nbNow, safeName, APP_NAMES, suiteLinks, wordFromHash} from './notebook-kit.js';
+const SUITE=suiteLinks();
 
 const BOOKS=['Matt','Mark','Luke','John'];
 const NAMES={Matt:'Matthew',Mark:'Mark',Luke:'Luke',John:'John'};
@@ -116,21 +117,63 @@ const IL_STOP=new Set(['the','a','an','of','to','and','in','is','was','were','be
   'will','shall','have','had','has','do','did','one','up','out','there','their','o','v','c','are','am']);
 const ilKeys=t=>String(t||'').toLowerCase().replace(/[^a-z ]+/g,' ').split(/\s+/)
   .filter(w=>w.length>2&&!IL_STOP.has(w));
-// Returns the matched pairs, plus the indices to mark on each side.
+// Returns what the two verses share, plus the indices to mark on each side. The count is
+// of shared words, not of matched boxes: in John 1:1 "God" stands twice, as θεόν and as
+// θεός, and counting each against Genesis 1:1 made two words in common read as three. So
+// the matches are gathered under the English word they share and named by dictionary
+// form, and that list is what is counted.
 function ilTouch(greekWords,hebrewWords){
-  if(!greekWords||!hebrewWords)return {pairs:[],greek:new Set(),hebrew:new Set()};
+  if(!greekWords||!hebrewWords)return {shared:[],greek:new Set(),hebrew:new Set()};
+  const LEX=(window.LEXICON&&window.LEXICON.lex)||{};
   const gk=greekWords.map(w=>ilKeys(w.gloss)), hk=hebrewWords.map(w=>ilKeys(w.gloss));
-  const pairs=[],G=new Set(),Hs=new Set(),seen=new Set();
+  const by=new Map(),G=new Set(),Hs=new Set();
   greekWords.forEach((g,gi)=>hebrewWords.forEach((h,hi)=>{
     const shared=gk[gi].filter(x=>hk[hi].includes(x));
     if(!shared.length)return;
     G.add(g.i);Hs.add(h.i);
-    const key=g.greek+'\u0000'+h.greek;
-    if(seen.has(key))return;
-    seen.add(key);
-    pairs.push({greek:g.greek,greekGloss:g.gloss,hebrew:h.greek,hebrewGloss:h.gloss,via:shared[0]});
+    for(const via of shared){
+      // Matching is done without regard to case; what is shown keeps the lexicon's own
+      // capital, so "God" is not printed as "god".
+      let e=by.get(via); if(!e)by.set(via,e={via,label:(String(g.gloss).match(/[A-Za-z]+/g)||[]).find(x=>x.toLowerCase()===via)||via,greek:new Set(),hebrew:new Set()});
+      e.greek.add(g.lemma||g.greek);
+      e.hebrew.add((LEX[h.strong]&&LEX[h.strong][1])||h.greek);
+    }
   }));
-  return {pairs,greek:G,hebrew:Hs};
+  return {shared:[...by.values()].map(e=>({via:e.via,label:e.label,greek:[...e.greek],hebrew:[...e.hebrew]})),greek:G,hebrew:Hs};
+}
+
+// Grammar in words. STEPBible expands each code as "Function=Noun; Case=Dative;
+// Number=Singular; Gender=Feminine", which is exact and reads like a database row. This
+// drops the labels and keeps their words, in their order: "Noun · dative singular
+// feminine". Nothing is added or reinterpreted. Where they explain a Hebrew stem in
+// passing - "Qal (hence Action=Simple; Voice=Active)" - the explanation is kept, as
+// "Qal (simple, active)". A code they do not expand is shown as the bare code.
+function ilGrammar(code){
+  const raw=code&&window.INTERLINEAR&&window.INTERLINEAR.morph[code];
+  if(!raw)return code||'';
+  const parts=[];let depth=0,cur='';
+  for(const ch of raw){
+    if(ch==='(')depth++; else if(ch===')')depth--;
+    if(ch===';'&&depth===0){parts.push(cur);cur=''} else cur+=ch;
+  }
+  parts.push(cur);
+  const lower=t=>t.charAt(0).toLowerCase()+t.slice(1);
+  const out=[];
+  for(const part of parts){
+    const eq=part.indexOf('=');
+    if(eq<0)continue;
+    const label=part.slice(0,eq).trim();
+    let value=part.slice(eq+1).trim();
+    if(!value)continue;
+    value=value.replace(/\(hence ([^)]*)\)/,(m,inner)=>'('+inner.split(';').map(x=>lower((x.split('=')[1]||x).trim())).join(', ')+')');
+    out.push(out.length===0||label==='Stem'||label==='Original language'?value:lower(value));
+  }
+  return out.length>1?out[0]+' · '+out.slice(1).join(' '):(out[0]||code);
+}
+// The dictionary entry behind a Strong number, in one shape for both languages.
+function ilLex(strong){
+  const e=strong&&window.LEXICON&&window.LEXICON.lex[strong];
+  return e?{hebrew:!!e[0],lemma:e[1]||'',translit:e[2]||'',gloss:e[3]||'',sense:e[4]||''}:null;
 }
 
 const IL_GOSPELS=new Set(['Matt','Mark','Luke','John']);
@@ -158,7 +201,7 @@ function Interlinear({refId,words,scale,onWord,shared,variants,lang,touch}){
       const touches=touch&&touch.has(w.i);
       return <li key={w.i} className={(same?'agree ':'')+(touches?'touch ':'')+(variants&&ilVaries(w)?'varies':'')}>
         <button type="button" onClick={()=>onWord(w)}
-          title={(window.INTERLINEAR.morph[w.morph]||w.morph||'')+(w.strong?' · '+w.strong:'')}>
+          title={ilGrammar(w.morph)+(w.strong?' · '+w.strong:'')}>
           <span className="il-greek" lang={hebrew?'he':'el'} dir={hebrew?'rtl':'ltr'}>{w.greek}</span>
           <span className="il-translit">{w.translit}</span>
           <span className="il-gloss">{w.gloss}</span>
@@ -187,7 +230,7 @@ const APP='gospel-atlas';
 const NB_KEY='gospel-atlas-notebook';
 const FILTER_WORDS={shared:'shared units',unique:'distinctive units',four:'units in all four'};
 
-function Notebook({items,onChange,onRestore,onDeck,onSave,onLoad,onClose,note,describe,scale}){
+function Notebook({items,onChange,onRestore,onDeck,onSave,onLoad,onClose,note,describe,scale,store}){
   const notes=items.filter(x=>x.kind==='note').length,marks=items.length-notes;
   const move=(from,to)=>{const n=items.slice();n.splice(to,0,n.splice(from,1)[0]);onChange(n)};
   return <section className="notebook" id="notebook" aria-label="Notebook">
@@ -215,6 +258,7 @@ function Notebook({items,onChange,onRestore,onDeck,onSave,onLoad,onClose,note,de
           {(()=>{const meta=(it.kind==='note'&&it.sub?it.sub+' — ':'')+(it.atText||describe(it.at));
             return meta&&meta!==it.title?<p className="nb-meta">{meta}</p>:null})()}
           {it.quote&&<blockquote className="nb-quote" style={{fontSize:scale}}>{it.quote}<cite>{it.cite}</cite></blockquote>}
+          {it.original&&it.original.map((o,k)=><p className="nb-orig" key={k} lang={o.lang} dir={o.lang==='he'?'rtl':'ltr'} style={{fontSize:scale}}>{o.words.map(w=>w[0]).join(' ')}</p>)}
           <textarea value={it.body||''} aria-label={'Your words about '+it.title}
             placeholder="Your own words — this is what the slide will say."
             onChange={e=>onChange(items.map((x,k)=>k===i?{...x,body:e.target.value}:x))}/>
@@ -227,8 +271,11 @@ function Notebook({items,onChange,onRestore,onDeck,onSave,onLoad,onClose,note,de
         </div>
       </li>;
     })}</ol>
+    {store!=='ok'&&items.length>0&&<p className="nb-warn" role="status">{store==='full'
+      ?'The browser’s storage is full, so these notes are no longer being kept between visits. They are all still here now — use Save file to keep them, then remove the ones you no longer need.'
+      :'This browser will not keep anything for a page opened from disk, so these notes last only until the page is closed. Use Save file to keep them.'}</p>}
     <p className="nb-foot">{note||(items.length
-      ?'Kept in this browser only. Save the file to move these to another machine, or to keep them at all.'
+      ?(store==='ok'?'Kept in this browser only. Save the file to move these to another machine, or to keep them at all.':'Not being kept by the browser. Save the file.')
       :'Nothing kept yet.')}</p>
   </section>;
 }
@@ -340,10 +387,17 @@ function App({data}){
   const [shareMessage,setShareMessage]=useState('');
   const [kept,setKept]=useState(()=>{try{const r=localStorage.getItem(NB_KEY);const a=r?JSON.parse(r):null;return Array.isArray(a)?a:[]}catch{return []}});
   const [nbOpen,setNbOpen]=useState(false),[nbNote,setNbNote]=useState('');
+  const [nbStore,setNbStore]=useState('ok');
   const [pngMsg,setPngMsg]=useState('');
   const [greek,setGreek]=useState(false),[variants,setVariants]=useState(false);
   const [wordQuery,setWordQuery]=useState(''),[word,setWord]=useState(null);
   const [otShown,setOtShown]=useState(3);
+  const [heOpen,setHeOpen]=useState({});
+  const [narrow,setNarrow]=useState(()=>typeof matchMedia==='function'&&matchMedia('(max-width:700px)').matches);
+  useEffect(()=>{
+    const m=matchMedia('(max-width:700px)'),f=()=>setNarrow(m.matches);
+    m.addEventListener('change',f);return()=>m.removeEventListener('change',f);
+  },[]);
   const dialog=useRef(null),reader=useRef(null),connectionSection=useRef(null),storyList=useRef(null),notebook=useRef(null);
   const s=stories[selected];
   const storyVerses=BOOKS.flatMap(b=>(s.sources[b]||[]).flatMap(r=>r.verses));
@@ -480,7 +534,16 @@ function App({data}){
   useEffect(()=>{if(!pngMsg)return;const t=setTimeout(()=>setPngMsg(''),1800);return()=>clearTimeout(t)},[pngMsg]);
   // A new verse starts the Old Testament list over, rather than keeping however far
   // the reader had expanded the last one.
-  useEffect(()=>{setOtShown(3)},[currentVerse]);
+  useEffect(()=>{setOtShown(3);setHeOpen({})},[currentVerse]);
+  // Opened from another page of the suite with a word in hand: search for it and go to it.
+  useEffect(()=>{
+    const w=wordFromHash();
+    if(!w)return;
+    setGreek(true);setWordQuery(w);
+    setTimeout(()=>connectionSection.current?.scrollIntoView({block:'start'}),60);
+  },[]);
+  // Escape puts the dictionary entry away, as it would any small window.
+  useEffect(()=>{if(!word)return;const k=e=>{if(e.key==='Escape')setWord(null)};addEventListener('keydown',k);return()=>removeEventListener('keydown',k)},[word]);
   // Bands joining the same story unit across the four maps. Drawn behind the cards,
   // so only the gutters show them: a horizontal band means both Gospels put the unit
   // in the same place, a steep one means they do not.
@@ -536,7 +599,16 @@ function App({data}){
   // ---- notebook ----------------------------------------------------------
   // Storage is attempted and its refusal ignored: the notebook is held in React state,
   // so it keeps working for this session either way, and the saved file is the real copy.
-  const keep=next=>{setKept(next);try{localStorage.setItem(NB_KEY,JSON.stringify(next))}catch{}};
+  // A snapshot note is about 130 KB once stored, so a browser's five megabytes hold some
+  // forty of them. Past that the write fails, and it used to fail in silence: the notes
+  // stayed on screen and were gone on the next visit. The notebook now says which of the
+  // two things has happened - storage full, or storage refused outright, as some browsers
+  // do for a file opened from disk - because the remedy differs and neither is obvious.
+  const keep=next=>{
+    setKept(next);
+    try{localStorage.setItem(NB_KEY,JSON.stringify(next));setNbStore('ok')}
+    catch(e){setNbStore(e&&(e.name==='QuotaExceededError'||e.code===22||e.code===1014)?'full':'refused')}
+  };
   const flash=msg=>{setNbNote(msg);setNbOpen(true)};
   const openNotebook=()=>{setNbOpen(true);setTimeout(()=>notebook.current?.scrollIntoView({behavior:'smooth',block:'nearest'}),0)};
   // Everything needed to put the page back as it was. The edition is held by id, so a
@@ -606,8 +678,30 @@ function App({data}){
       sub:refs.length+' connection'+(refs.length===1?'':'s')+scope
          +(refs.length?' · '+refs.slice(0,6).map(r=>refLabel(r[0])).join(', ')+(refs.length>6?' …':''):''),
       quote:(own||window.BASELINE[id]||'').trim(),
-      cite:refLabel(id)+' · '+(own?ed.short:'ASV 1901')})]);
-    flash('Note kept — '+refLabel(id)+', its text, and its connections.');
+      cite:refLabel(id)+' · '+(own?ed.short:'ASV 1901'),
+      // With the Greek switched on, the note takes it too, so the slide can show the
+      // words the lesson is about and not only their translation.
+      original:greek&&ilHere?[{lang:'el',label:'Greek · '+refLabel(id),words:ilHere.map(w=>[w.greek,w.translit,w.gloss])}]:undefined})]);
+    flash('Note kept — '+refLabel(id)+', its text'+(greek&&ilHere?', its Greek':'')+', and its connections.');
+  }
+  // One Old Testament verse from under the Greek: its English, its Hebrew, and what the
+  // two lexicons say it shares with the verse it was reached from.
+  function addHebrewNote(b){
+    if(!b||!b.words)return;
+    keep([...kept,nbItem({kind:'note',eyebrow:'HEBREW · OLD TESTAMENT',title:refLabel(b.id),
+      sub:(b.shared.length?'Shares \u201c'+b.shared.map(x=>x.label).join('\u201d, \u201c')+'\u201d with ':'Reached from ')+refLabel(currentVerse),
+      quote:(window.BASELINE[b.id]||'').trim(),cite:refLabel(b.id)+' · ASV 1901',
+      original:[{lang:'he',label:'Hebrew · '+refLabel(b.id),words:b.words.map(w=>[w.greek,w.translit,w.gloss])}]})]);
+    flash('Note kept — '+refLabel(b.id)+' in Hebrew, with what it shares with the Greek.');
+  }
+  // A study sheet: the verse, its Greek, and the Hebrew shown beneath it. The ordinary
+  // print is of the parallel passages and hides this section; the body is marked for the
+  // length of the print so the style sheet can tell the two apart.
+  function printStudy(){
+    document.body.dataset.print='study';
+    const done=()=>{delete document.body.dataset.print;removeEventListener('afterprint',done)};
+    addEventListener('afterprint',done);
+    window.print();
   }
   function addMark(){
     const v=viewState();
@@ -642,6 +736,13 @@ function App({data}){
     setSelectedVerse(ref);
     connectionSection.current?.scrollIntoView({behavior:'smooth',block:'start'});
   }
+  // A verse a word stands in. A Gospel verse is somewhere this page can go. An Old
+  // Testament verse is not - the Atlas is a map of the Gospels - and the button for one
+  // used to do nothing a reader could see. It is now a link that opens that chapter in the
+  // Cross-Reference Lab, which has the whole Bible.
+  const refJump=r=>verseById[r]
+    ?<button key={r} onClick={()=>jumpTo(r)}>{refLabel(r)}</button>
+    :<a key={r} href={SUITE.lab+'#verse='+r} target="_blank" rel="noopener" title="Open this chapter in the Cross-Reference Lab">{refLabel(r)}</a>;
   function savePng(){
     const c=composeMaps(Infinity);
     if(!c){flash('The maps are not drawn yet — give the page a moment.');return}
@@ -675,7 +776,7 @@ function App({data}){
   async function share(){const text=s.title+'\n'+Object.values(s.sources).flat().map(r=>refLabel(r.ref)).join(' · ')+'\n'+ed.name+(location.protocol==='file:'?'':'\n'+location.href);try{await navigator.clipboard.writeText(text);setShareMessage('References copied')}catch{window.prompt('Copy these references:',text)}}
 
   return <>
-    <header className="site-header"><a className="brand" href="#top" aria-label="Gospel Atlas home"><span className="brand-mark">{BOOKS.map(b=><i key={b} style={{background:COLORS[b]}}/>)}</span>Gospel Atlas</a><nav><a href="#atlas">Explore</a><button onClick={openNotebook} aria-expanded={nbOpen}>Notebook <span className="nb-pill">{kept.length}</span></button><button onClick={()=>dialog.current.showModal()}>How to read & sources</button></nav><span className="edition">STANDALONE EDITION · DAVID LEE</span></header>
+    <header className="site-header"><a className="brand" href="#top" aria-label="Gospel Atlas home"><span className="brand-mark">{BOOKS.map(b=><i key={b} style={{background:COLORS[b]}}/>)}</span>Gospel Atlas</a><nav><a href="#atlas">Explore</a><a href={SUITE.lab} title="Every cross-reference in the Bible, drawn three ways, with whole-Bible word search">Cross-Reference Lab</a><a href={SUITE.types} title="Where Scripture says one passage answers another">Shadow and Substance</a><button onClick={openNotebook} aria-expanded={nbOpen}>Notebook <span className="nb-pill">{kept.length}</span></button><button onClick={()=>dialog.current.showModal()}>How to read & sources</button></nav><span className="edition">STANDALONE EDITION · DAVID LEE</span></header>
     <main id="top">
       <section className="hero"><div><div className="eyebrow">MATTHEW · MARK · LUKE · JOHN</div><h1>Four Gospels, <em>in pixels.</em></h1><p>Read the accounts side by side.<br className="mobile-break"/> Follow their shared and distinctive passages.</p></div><div className="hero-stats"><div><strong>{fmt(meta.verseCount)}</strong><span>VERSE PIXELS</span></div><div><strong>{meta.storyCount}</strong><span>STORY UNITS</span></div><div><strong>{fmt(meta.crossReferenceCount)}</strong><span>SOURCE CROSS-REFERENCES</span></div></div></section>
       <EditionBar state={editionState}/><section className="atlas-section" id="atlas" aria-label="Gospel pixel maps">
@@ -706,50 +807,15 @@ function App({data}){
           <label><input type="checkbox" checked={greek} onChange={e=>setGreek(e.target.checked)}/> Greek and Hebrew, word by word</label>
           {greek&&<label><input type="checkbox" checked={variants} onChange={e=>setVariants(e.target.checked)}/> Mark words the editions differ over</label>}
           {greek&&sharedLemmas&&sharedLemmas.size>0&&<span className="il-agree-key">{sharedLemmas.size} word{sharedLemmas.size===1?'':'s'} also in another Gospel&rsquo;s telling of this story</span>}
-        </div>
-        {greek&&<div className="il-panel">
-          <p className="il-ref-head">Greek &mdash; {refLabel(currentVerse)}</p>
-          <Interlinear refId={currentVerse} words={ilHere} scale={editionState.scale}
-            shared={sharedLemmas} variants={variants} touch={greekTouch}
-            onWord={w=>{setWord(w);setWordQuery('')}}/>
-          {/* The Hebrew underneath the Greek, in the same panel. A verse of the Gospels
-              is Greek; the Old Testament it reaches for is Hebrew, and that belongs in
-              front of the reader rather than three clicks away inside a reference card. */}
-          {otRefs.length>0&&<div className="il-under">
-            <p className="il-under-head">Hebrew &mdash; the Old Testament this verse points to</p>
-            {otBlocks.map(b=>
-              <div className="il-sub" key={b.ref}>
-                <p className="il-ref-head">{refLabel(b.id)}
-                  <span className={'il-count'+(b.pairs.length?'':' none')}>
-                    {b.pairs.length?b.pairs.length+' word'+(b.pairs.length===1?'':'s')+' in common with the Greek':'no word in common with the Greek'}</span></p>
-                {b.pairs.length>0&&<ul className="il-pairs">{b.pairs.map((pr,k)=>
-                  <li key={k}><span lang="el">{pr.greek}</span><i>{pr.via}</i><span lang="he" dir="rtl">{pr.hebrew}</span></li>)}</ul>}
-                <Interlinear refId={b.id} words={b.words} lang="he" scale={editionState.scale}
-                  variants={false} shared={null} touch={b.hebrew}
-                  onWord={w=>{setWord(w);setWordQuery('')}}/>
-              </div>)}
-            {otRefs.length>otShown&&<button className="il-more" onClick={()=>setOtShown(otShown+3)}>
-              {otRefs.length-otShown} more Old Testament reference{otRefs.length-otShown===1?'':'s'} in Hebrew ↓</button>}
-          </div>}
-          {!otRefs.length&&<p className="il-under-none">This verse has no Old Testament cross-reference in the index, so there is no Hebrew to put under it.</p>}
-          <p className="il-note">Greek and Hebrew: STEPBible / Tyndale House, Cambridge (CC BY 4.0); the Hebrew text is the Westminster Leningrad Codex. The small English word under each word is a lexicon&rsquo;s gloss, not a translation — one English word stood in for one Greek or Hebrew one, outside the sentence it belongs to. Hebrew reads right to left, and writes as part of a word the &ldquo;and&rdquo;, &ldquo;the&rdquo;, &ldquo;in&rdquo; and &ldquo;his&rdquo; that English writes separately, so each of those has a box of its own.</p>
-        </div>}
-        <div className="wordsearch">
-          <label className="ws-label">Find a word in Greek and Hebrew
-            <input type="search" value={wordQuery} placeholder="yoke, love, zugos, ζυγός, עֹל, G2218, H5923"
+          {/* The word search sits with the switches it belongs to. It used to float between
+              the interlinear and the list of references, where it read as part of neither. */}
+          <label className="ws-label"><span>Find a word in Greek or Hebrew</span>
+            <input type="search" value={wordQuery} placeholder="yoke, zugos, G2218, H5923"
               onChange={e=>{setWordQuery(e.target.value);setWord(null)}}/>
           </label>
-          {word&&<div className="ws-one">
-            <p className="ws-head"><b lang="el">{word.lemma}</b> <span>{word.translit}</span> <span className="ws-strong">{word.strong}</span></p>
-            <p className="ws-gloss">{word.lgloss}</p>
-            <p className="ws-morph">{(window.INTERLINEAR.morph[word.morph]||word.morph)||''}</p>
-            {(()=>{const refs=(atlasIndex&&atlasIndex.get(word.strong))||[];
-              if(!refs.length)return <p className="ws-count">This word does not stand in any verse this file carries. The Cross-Reference Lab has it across the whole Bible.</p>;
-              return <p className="ws-count">{refs.length} verse{refs.length===1?'':'s'} here: {refs.slice(0,24).map(r=>
-                <button key={r} onClick={()=>jumpTo(r)}>{refLabel(r)}</button>)}{refs.length>24?<span> and {refs.length-24} more</span>:null}</p>})()}
-            <button className="ws-clear" onClick={()=>setWord(null)}>Close</button>
-          </div>}
-          {wordMatches&&(wordMatches.length?['el','he'].map(lang=>{
+        </div>
+        {wordMatches&&<div className="wordsearch">
+          {wordMatches.length?['el','he'].map(lang=>{
             const group=wordMatches.filter(h=>(lang==='he')===h.hebrew);
             if(!group.length)return null;
             return <div className="ws-group" key={lang}>
@@ -760,17 +826,76 @@ function App({data}){
                   <span className="ws-tr">{h.translit}</span>
                   <span className="ws-gl">{h.gloss}</span>
                   <span className="ws-strong">{h.strong}</span>
-                  <span className="ws-n">{h.refs.length?h.refs.length+' verse'+(h.refs.length===1?'':'s')+' here':'not in this file'}</span>
+                  <span className="ws-n">{h.refs.length?h.refs.length+' verse'+(h.refs.length===1?'':'s')+' here':'not in this file'}
+                    {' · '}<a href={SUITE.lab+'#word='+h.strong} target="_blank" rel="noopener">whole Bible &#8599;</a></span>
                   {h.sense&&<span className="ws-sense">{h.sense}</span>}
-                  <span className="ws-refs">{h.refs.slice(0,12).map(r=>
-                    <button key={r} onClick={()=>jumpTo(r)}>{refLabel(r)}</button>)}{h.refs.length>12?<em> +{h.refs.length-12}</em>:null}</span>
+                  <span className="ws-refs">{h.refs.slice(0,12).map(refJump)}{h.refs.length>12?<em> +{h.refs.length-12}</em>:null}</span>
                 </li>)}</ul></div>;
-          }):<ul className="ws-list"><li className="ws-none">Nothing matches that. Try the English gloss (yoke), a transliteration (zugos, ol), the word itself, or a Strong number (G2218, H5923).</li></ul>)}
-        </div>
+          }):<ul className="ws-list"><li className="ws-none">Nothing matches that. Try the English gloss (yoke), a transliteration (zugos, ol), the word itself, or a Strong number (G2218, H5923).</li></ul>}
+        </div>}
+        {greek&&<div className="il-panel">
+          <p className="il-ref-head">Greek &mdash; {refLabel(currentVerse)}
+            <span className="il-tools">
+              <a href="#cross-refs">{refs.length} cross-reference{refs.length===1?'':'s'} &darr;</a>
+              <button className="keep" onClick={printStudy} title="Print this verse with its Greek and the Hebrew shown beneath it">Print this study</button>
+            </span></p>
+          <Interlinear refId={currentVerse} words={ilHere} scale={editionState.scale}
+            shared={sharedLemmas} variants={variants} touch={greekTouch}
+            onWord={w=>{setWord(w);setWordQuery('')}}/>
+          {/* The Hebrew underneath the Greek, in the same panel. A verse of the Gospels
+              is Greek; the Old Testament it reaches for is Hebrew, and that belongs in
+              front of the reader rather than three clicks away inside a reference card. */}
+          {otRefs.length>0&&<div className="il-under">
+            <p className="il-under-head">Hebrew &mdash; the Old Testament this verse points to</p>
+            {otBlocks.map(b=>{
+              // On a phone three whole verses of Hebrew made a panel 1,600px tall. There
+              // each one opens as what it shares with the Greek, the verse a tap away.
+              const open=heOpen[b.ref]!==undefined?heOpen[b.ref]:!narrow;
+              return <div className="il-sub" key={b.ref}>
+                <p className="il-ref-head">{refLabel(b.id)}
+                  <span className={'il-count'+(b.shared.length?'':' none')}>
+                    {b.shared.length?b.shared.length+' word'+(b.shared.length===1?'':'s')+' in common with the Greek':'no word in common with the Greek'}</span>
+                  <span className="il-tools">
+                    <button className="keep il-open" aria-expanded={open} onClick={()=>setHeOpen({...heOpen,[b.ref]:!open})}>{open?'Hide the verse':'Show the verse'}</button>
+                    <button className="keep" onClick={()=>addHebrewNote(b)} title="Keep this verse, its Hebrew and what it shares with the Greek">+ Note</button>
+                  </span></p>
+                {b.shared.length>0&&<ul className="il-pairs">{b.shared.map(sh=>
+                  <li key={sh.via}><i>{sh.via}</i><span lang="el">{sh.greek.join(' · ')}</span><em aria-hidden="true">{'↔'}</em><span lang="he" dir="rtl">{sh.hebrew.join(' · ')}</span></li>)}</ul>}
+                {open&&<Interlinear refId={b.id} words={b.words} lang="he" scale={editionState.scale}
+                  variants={false} shared={null} touch={b.hebrew}
+                  onWord={w=>{setWord(w);setWordQuery('')}}/>}
+              </div>;
+            })}
+            {otRefs.length>otShown&&<button className="il-more" onClick={()=>setOtShown(otShown+3)}>
+              {otRefs.length-otShown} more Old Testament reference{otRefs.length-otShown===1?'':'s'} in Hebrew &darr;</button>}
+          </div>}
+          {!otRefs.length&&<p className="il-under-none">This verse has no Old Testament cross-reference in the index, so there is no Hebrew to put under it.</p>}
+          <details className="il-note"><summary>Greek and Hebrew from STEPBible / Tyndale House, Cambridge (CC BY 4.0). The English under each word is a gloss, not a translation.</summary>
+            <p>The Hebrew text is the Westminster Leningrad Codex. A gloss is one English word stood in for one Greek or Hebrew one, outside the sentence it belongs to; where it differs from the translation above, the translation is the considered reading. Hebrew reads right to left, and writes as part of a word the &ldquo;and&rdquo;, &ldquo;the&rdquo;, &ldquo;in&rdquo; and &ldquo;his&rdquo; that English writes separately, so each of those has a box of its own. A blue tint marks a word whose gloss the Greek and the Hebrew share; gold marks a word another Gospel also uses in telling this story.</p></details>
+        </div>}
+        <p className="refs-head" id="cross-refs">Cross-references from {refLabel(currentVerse)}</p>
       {crossError?<div className="empty-state">{crossError} <button onClick={loadCrossrefs}>Retry</button></div>:crossrefs?<><div className="reference-grid">{refs.slice(0,crossLimit).map(([r,votes])=><div key={r} className={'reference-card '+(expanded===r?'expanded':'')}><button className="reference-trigger" onClick={()=>expandRef(r)} aria-expanded={expanded===r}><span className="reference-dot" style={{background:COLORS[bookOf(r)]||'#a5aaa1'}}/><span>{refLabel(r)}</span><span className="ref-votes" title="OpenBible community votes, not a similarity percentage">{votes} votes</span><span>{expanded===r?'−':'+'}</span></button>{expanded===r&&<div className="reference-preview">{!ed.offline?<OnlinePassage ed={ed} refId={r}/>:BOOKS.includes(bookOf(r))||ed.id==='asv'||rangeIds(r).some(id=>ed.verses?.[id])?<div lang={ed.lang} dir={ed.dir}><span className="translation-label">{ed.short}</span>{rangeIds(r).map(id=><p key={id} style={{fontSize:editionState.scale}}><sup>{id.split('.').slice(1).join(':')}</sup> <VerseText ed={ed} id={id}/></p>)}</div>:<div><span className="translation-label">ASV 1901 · English · This book is not included in {ed.short}</span>{rangeIds(r).map(id=><p key={id} style={{fontSize:editionState.scale}}><sup>{id.split('.').slice(1).join(':')}</sup> {window.BASELINE[id]}</p>)}</div>}<RefOriginal refId={r.split('-')[0]} on={greek} scale={editionState.scale}
   onAsk={()=>setGreek(true)} onWord={w=>{setWord(w);setWordQuery('')}}/><div className="reference-actions">{verseById[r.split('-')[0]]&&<button onClick={()=>{jump(verseById[r.split('-')[0]].stories[0]);setSelectedVerse(r.split('-')[0]);reader.current.scrollIntoView({behavior:'smooth'})}}>Locate in Gospel map ↗</button>}{onlineUrl(ed,r)&&<a target="_blank" rel="noreferrer" href={onlineUrl(ed,r)}>Open {ed.short} online ↗</a>}</div></div>}</div>)}</div>{!refs.length&&<p className="empty-state">No outgoing references for this verse in the selected scope. This does not establish that it is unique.</p>}{refs.length>crossLimit&&<button className="load-more" onClick={()=>setCrossLimit(crossLimit+24)}>Show more connections ({refs.length-crossLimit} remaining) ↓</button>}</>:<div className="loading-inline">Loading cross-reference data…</div>}
       <p className="connection-note">{fmt(meta.gospelCrossReferenceCount)} outgoing Gospel links from {fmt(meta.crossReferenceCount)} source records. Ranked by source votes; these links do not determine the map colours.</p></section>
-      {nbOpen&&<div ref={notebook}><Notebook items={kept} onChange={keep} onRestore={restore} onDeck={deck} onSave={saveNotebook} onLoad={loadNotebook} onClose={()=>setNbOpen(false)} note={nbNote} describe={describeState} scale={editionState.scale}/></div>}
+      {nbOpen&&<div ref={notebook}><Notebook items={kept} onChange={keep} onRestore={restore} onDeck={deck} onSave={saveNotebook} onLoad={loadNotebook} onClose={()=>setNbOpen(false)} note={nbNote} describe={describeState} scale={editionState.scale} store={nbStore}/></div>}
+      {word&&(()=>{
+        // The headword and gloss come from the lexicon by Strong number, so a Hebrew word
+        // has them as surely as a Greek one. What was clicked is an inflected form in a
+        // sentence; what is shown first is the word it is a form of. The entry is docked
+        // to the foot of the window because the word clicked may be anywhere in a tall
+        // panel, and an entry that opens somewhere else on the page has not been shown.
+        const L=ilLex(word.strong)||{hebrew:false,lemma:word.lemma||word.greek,translit:word.translit,gloss:word.lgloss||word.gloss,sense:''};
+        const lang=L.hebrew?'he':'el', dir=L.hebrew?'rtl':'ltr';
+        const here=(atlasIndex&&atlasIndex.get(word.strong))||[];
+        return <aside className="ws-dock" role="dialog" aria-label={'Dictionary entry for '+(L.lemma||word.greek)}>
+          <button className="ws-clear" onClick={()=>setWord(null)} aria-label="Close this entry">Close</button>
+          <p className="ws-head"><b lang={lang} dir={dir}>{L.lemma||word.greek}</b> <span>{L.translit||word.translit}</span> <span className="ws-strong">{word.strong}</span></p>
+          <p className="ws-gloss">{L.gloss}{L.sense?<span className="ws-sense-inline"> &mdash; {L.sense}</span>:null}</p>
+          <p className="ws-morph">As it stands here: <span className="ws-form" lang={lang} dir={dir}>{word.greek}</span> &middot; {ilGrammar(word.morph)}</p>
+          <p className="ws-count">{here.length?<>{here.length} verse{here.length===1?'':'s'} in this file: {here.slice(0,14).map(refJump)}{here.length>14?<span> and {here.length-14} more</span>:null} </>:'It stands in no verse this file carries. '}
+            {word.strong&&<a href={SUITE.lab+'#word='+word.strong} target="_blank" rel="noopener">Every verse in the whole Bible, in the Cross-Reference Lab &#8599;</a>}</p>
+        </aside>;
+      })()}
       <footer><div className="brand"><span className="brand-mark small-mark">{BOOKS.map(b=><i key={b} style={{background:COLORS[b]}}/>)}</span>Gospel Atlas</div><p><strong>Developer: DAVID LEE</strong><br/>Story index: Sean Boisen / SemanticBible · Connections: OpenBible.info · Greek and Hebrew: STEPBible / Tyndale House</p><button onClick={()=>dialog.current.showModal()}>Method, sources & data ↗</button></footer>
     </main>
     <SymbolDialog book={symbolBook} onClose={()=>setSymbolBook(null)} ed={ed} scale={editionState.scale} onLocate={vid=>{setFilter("all");setQuery("");select(verseById[vid].stories[0],vid);reader.current.scrollIntoView({behavior:"smooth"})}}/>

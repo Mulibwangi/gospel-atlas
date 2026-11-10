@@ -12,13 +12,39 @@ assert len(set(e['lang'] for e in v if e['offline']))==12
 # senses are removed before the check rather than the check being loosened: anything
 # else carrying the word still fails.
 MANUSCRIPTS=r'(?:Leningrad|Sinaiticus|Vaticanus|Alexandrinus|Bezae|Ephraemi|Washingtonianus|Amiatinus)\s+Codex|Codex\s+(?:Leningradensis|Sinaiticus|Vaticanus|Alexandrinus|Bezae|Ephraemi|Washingtonianus|Amiatinus)'
-hh=re.sub(MANUSCRIPTS,' ',h,flags=re.I)
-assert not re.search(r'(chatgpt|openai|codex)',hh,re.I)
+# What is searched is what a reader could be shown: the page's own markup and code, and
+# the text inside the payload once it is unpacked. The payload as it sits in the file is
+# ten megabytes of compressed data written as letters, and letters at random spell things
+# - this check once failed on "COdex" in the middle of a base64 run, and had about one
+# chance in three of doing so on any build. The symbol artwork is a picture stored the
+# same way inside the payload, so it is left out for the same reason.
+shell=h.replace(m[1],'')
+inside=json.dumps({k:val for k,val in x.items() if k!='SYMBOL_IMAGE'},ensure_ascii=False)
+for where,text in (('page',shell),('payload',inside)):
+ hit=re.search(r'(chatgpt|openai|codex)',re.sub(MANUSCRIPTS,' ',text,flags=re.I),re.I)
+ assert not hit,(where,text[max(0,hit.start()-60):hit.end()+40])
 assert not re.search(r'<(?:script|link)\b[^>]*(?:src|href)=["\'](?!data:)',h,re.I)
 assert "connect-src 'none'" in h
 allvs=[vv for vs in a['verses'].values() for vv in vs];assert len(allvs)==3779
 assert len(a['stories'])==355
 assert sum(map(len,x['CROSSREFS'].values()))==44469
+# The file carries the ASV text it can show rather than the whole Bible. So every verse a
+# cross-reference points at - ranges expanded in canonical order - must be there, and so
+# must every Gospel verse; one missing would be a preview that opens empty. The order of
+# the whole Bible comes from the chapter lengths, which are carried in full.
+counts=x['VERSE_COUNTS'];order=[f'{bk}.{c+1}.{vv+1}' for bk,chs in counts.items() for c,n in enumerate(chs) for vv in range(n)]
+assert len(order)==31102,len(order)
+at={k:i for i,k in enumerate(order)}
+need=set(k for k in order if k.split('.')[0] in books)
+for targets in x['CROSSREFS'].values():
+ for t,_ in targets:
+  parts=t.split('-');i=at.get(parts[0])
+  if i is None:continue
+  j=at.get(parts[1],i) if len(parts)>1 else i
+  need.update(order[i:j+1])
+missing=[k for k in need if k not in b]
+assert not missing,('verses the Atlas can show are not in the file',missing[:5])
+assert len(b)==len(need),('the file carries text it cannot show',len(b),len(need))
 lookup={s['id']:s for s in a['stories']}
 assert all(len(vv['stories'])==1 and vv['id'] in b for vv in allvs)
 for e in v:

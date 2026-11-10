@@ -7,7 +7,27 @@ const APP_FILE='Gospel_Atlas_David_Lee.html',LAUNCHER_FILE='1 START HERE - Open 
 const readJSON=async p=>JSON.parse(await readFile(p,'utf8'));
 await mkdir('dist',{recursive:true});
 const bundled=await build({entryPoints:['src/app.jsx'],bundle:true,minify:true,write:false,jsx:'automatic',define:{'process.env.NODE_ENV':'"production"'},legalComments:'inline',target:['es2020'],format:'iife'});
-const ATLAS=await readJSON('data/atlas.json'),CROSSREFS=await readJSON('data/crossrefs.json'),BASELINE=await readJSON('data/bible.json');
+const ATLAS=await readJSON('data/atlas.json'),CROSSREFS=await readJSON('data/crossrefs.json'),BIBLE=await readJSON('data/bible.json');
+// The Atlas shows two kinds of verse: the Gospels themselves, and the targets of their
+// cross-references. That is 53% of the Bible, and the other 47% was being carried, 0.75 MB
+// of it, with no way for the page to put it on screen. So the text carried is the text
+// that can be shown - worked out from the cross-reference data here, not chosen, so it
+// follows the data if the data changes; verify_release.py fails the build if a single
+// cross-reference target is missing. The chapter lengths of the whole Bible are carried
+// separately, because "is this a real verse?" is still asked of every verse when someone
+// imports their own translation, and that question must not depend on what happens to be
+// reachable.
+const ORDER=Object.keys(BIBLE),AT=new Map(ORDER.map((k,i)=>[k,i]));
+const SHOWN=new Set(ORDER.filter(k=>/^(Matt|Mark|Luke|John)\./.test(k)));
+for(const list of Object.values(CROSSREFS))for(const [target] of list){
+  const [from,to]=String(target).split('-');
+  const a=AT.get(from); if(a===undefined)continue;
+  const b=to===undefined?a:(AT.get(to)??a);
+  for(let i=a;i<=b;i++)SHOWN.add(ORDER[i]);
+}
+const BASELINE=Object.fromEntries(ORDER.filter(k=>SHOWN.has(k)).map(k=>[k,BIBLE[k]]));
+const VERSE_COUNTS={};
+for(const k of ORDER){const [b,c,v]=k.split('.');const ch=VERSE_COUNTS[b]||(VERSE_COUNTS[b]=[]);ch[c-1]=Math.max(ch[c-1]||0,+v)}
 const INTERLINEAR=await readJSON('data/interlinear.json');
 const HEBREW=await readJSON('data/hebrew.json');
 const LEXICON=await readJSON('data/lexicon.json');
@@ -19,7 +39,7 @@ for(const ed of EDITIONS){
 const AUDIT={...(await readJSON('data/metadata.json')),standalonePrepared:'2026-11-02',developer:'DAVID LEE',languages:EDITIONS.filter((x,i,a)=>a.findIndex(y=>y.lang===x.lang)===i).length,editions:EDITIONS.map(({verses,...x})=>({...x,verseCount:verses?Object.keys(verses).length:0,textSha256:verses?createHash('sha256').update(JSON.stringify(verses)).digest('hex'):null})),headingSymbols:{Matthew:'Lion · King',Mark:'Ox · Servant',Luke:'Human figure · Son of Man',John:'Eagle · Son of God'}};
 await writeFile('data/release-audit.json',JSON.stringify(AUDIT,null,2));
 const SYMBOL_IMAGE='data:image/jpeg;base64,'+(await readFile('src/symbols.jpg')).toString('base64');
-const encoded=gzipSync(JSON.stringify({ATLAS,CROSSREFS,BASELINE,EDITIONS,AUDIT,SYMBOL_IMAGE,INTERLINEAR,HEBREW,LEXICON}),{level:9}).toString('base64');
+const encoded=gzipSync(JSON.stringify({ATLAS,CROSSREFS,BASELINE,EDITIONS,AUDIT,SYMBOL_IMAGE,INTERLINEAR,HEBREW,LEXICON,VERSE_COUNTS}),{level:9}).toString('base64');
 const css=await readFile('src/styles.css','utf8');
 const mit=await readFile('node_modules/react/LICENSE','utf8');
 const js=('/* React / React DOM — '+mit+' */\n'+bundled.outputFiles[0].text).replace(/<\/script/gi,'<\\/script');

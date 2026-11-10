@@ -47,11 +47,23 @@ export function useEdition(){
  const all=custom?[...versions,custom]:versions;
  return {ed,all,id,setId,scale,setScale,message,setMessage,setCustom};
 }
+// Is this a verse of the Bible at all? Asked of the chapter lengths of the whole Bible
+// rather than of the text this file carries, since that is only the text it can show: a
+// translation someone imports is checked verse by verse, and a real verse must not be
+// turned away for being one the Atlas happens not to reach.
+export function knownVerse(k){
+ const C=window.VERSE_COUNTS;
+ if(!C)return Object.hasOwn(window.BASELINE,k);
+ const m=/^([1-3]?[A-Za-z]+)\.(\d+)\.(\d+)$/.exec(k);
+ if(!m)return false;
+ const ch=C[m[1]];
+ return !!ch&&+m[2]>=1&&+m[2]<=ch.length&&+m[3]>=1&&+m[3]<=ch[+m[2]-1];
+}
 export function parseImport(obj){
  if(!obj||typeof obj!=='object'||Array.isArray(obj)||!obj.verses||typeof obj.verses!=='object'||Array.isArray(obj.verses))throw Error('Use the JSON format shown in the import example.');
  const verses={};let excluded=0;
  for(const[k,v]of Object.entries(obj.verses)){
-  if(!Object.hasOwn(window.BASELINE,k)||typeof v!=='string'||!v.trim()||v.length>15000){excluded++;continue}
+  if(!knownVerse(k)||typeof v!=='string'||!v.trim()||v.length>15000){excluded++;continue}
   verses[k]=v;
  }
  if(!Object.keys(verses).some(k=>BOOKS.includes(k.split('.')[0])))throw Error('No Gospel verses were found. Use references such as Mark.10.45.');
@@ -65,7 +77,7 @@ export function EditionBar({state}){
  <label>Bible language<select aria-label="Bible language" value={ed.lang} onChange={e=>setId(all.find(x=>x.lang===e.target.value).id)}>{langs.map(([code,name])=><option value={code} key={code}>{name}{all.some(e=>e.lang===code&&e.offline)?' · offline available':' · online'}</option>)}</select></label>
  <label>Bible translation<select aria-label="Bible translation" value={ed.id} onChange={e=>setId(e.target.value)}>{all.filter(x=>x.lang===ed.lang).map(x=><option key={x.id} value={x.id}>{x.name} · {x.offline?'offline':'online'}</option>)}</select></label>
  <div className="reading-tools"><button aria-label="Decrease text size" disabled={scale<=TEXT_MIN} onClick={()=>setScale(Math.max(TEXT_MIN,scale-2))}>A−</button><span className="text-size" aria-live="polite" aria-label={`Scripture text size ${scale} pixels`}>{scale}px</span><button aria-label="Increase text size" disabled={scale>=TEXT_MAX} onClick={()=>setScale(Math.min(TEXT_MAX,scale+2))}>A+</button><button onClick={()=>window.print()}>Print passages</button><button onClick={()=>help.current.showModal()}>Use my translation</button></div></div>
- <div className="edition-status"><span className={ed.offline?'offline-badge':'online-badge'}>{ed.offline?'● INCLUDED OFFLINE':'↗ ONLINE READER'}</span><span>{ed.offline?ed.id==='asv'?'Full ASV Bible included for cross-references.':ed.id==='custom'?'Imported text stays in this browser session.':'Four Gospels included. Other books are available in ASV.':'Passage buttons open '+(ed.id==='TCL02'?'YouVersion':'Bible Gateway')+'. Internet required.'}</span></div>
+ <div className="edition-status"><span className={ed.offline?'offline-badge':'online-badge'}>{ed.offline?'● INCLUDED OFFLINE':'↗ ONLINE READER'}</span><span>{ed.offline?ed.id==='asv'?'ASV text included for every cross-reference.':ed.id==='custom'?'Imported text stays in this browser session.':'Four Gospels included. Other books are available in ASV.':'Passage buttons open '+(ed.id==='TCL02'?'YouVersion':'Bible Gateway')+'. Internet required.'}</span></div>
  <p className="edition-footnote">English + 20 widely used languages. Published Bible translations; interface and story titles are in English. <a href="https://www.bible.com/languages" target="_blank" rel="noreferrer">Find another language ↗</a></p>
  {message&&<p className="import-message" role="status">{message}</p>}
  <dialog ref={help} className="method-dialog"><div className="dialog-top"><span className="eyebrow">YOUR BIBLE TRANSLATION</span><button aria-label="Close import help" onClick={()=>help.current.close()}>×</button></div><h2>Read your own text.</h2><p>Import a JSON Bible file you are permitted to use. It is read on your computer, never uploaded, and removed when you close or reload this app. Your imported text is not added to the shareable app file.</p><p>Verse keys use the reference format below. You can include one passage or a whole Bible. Missing verses are labelled; another translation is never silently substituted.</p><pre>{JSON.stringify({name:'My translation',language:'en',languageName:'English',direction:'ltr',verses:{'Mark.10.45':window.BASELINE['Mark.10.45']}},null,2)}</pre><div className="download-row"><button onClick={()=>input.current.click()}>Choose JSON file</button><button onClick={()=>downloadJson({name:'ASV example',language:'en',languageName:'English',direction:'ltr',license:'Public domain',verses:Object.fromEntries(rangeIds('Mark.10.42-Mark.10.45').map(k=>[k,window.BASELINE[k]]))},'translation-example.json')}>Download example</button></div><p className="small">Supported book codes: {Object.keys(window.ATLAS.meta.bookNames).join(', ')}. Use direction “rtl” for right-to-left text.</p><p role="status">{message}</p></dialog><input ref={input} type="file" accept=".json,application/json" hidden onChange={importFile}/></section>

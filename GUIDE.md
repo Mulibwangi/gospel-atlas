@@ -159,6 +159,23 @@ The address bar keeps the selected story and verse, so a link copied from it
 reopens at the same place. "Copy references" includes that link when the app is
 opened from a web address.
 
+## Moving between the three pages
+
+The Gospel Atlas, the Cross-Reference Lab and Shadow and Substance link to one
+another at the top of each page, and they hand things across rather than leaving
+you to find them again:
+
+- A word found in the Atlas offers **whole Bible ↗**, which opens the Lab with
+  that word already searched and every verse it stands in listed.
+- A word in the Lab offers **Word by word in the Gospel Atlas ↗**, which opens
+  the Atlas on the same word.
+- An Old Testament verse in an Atlas word result opens that chapter on the
+  Lab's drawing, since the Atlas is a map of the Gospels and has nowhere of its
+  own to show one.
+
+Keep the files together in one folder, as they come in the ZIP, for the links
+to find each other.
+
 ## Heading symbols
 
 Click an icon or its text label to display Scripture passages:
@@ -231,6 +248,11 @@ panel, and where the browser lets the two files see each other's storage they
 share the setting. “Print passages” prints the selected
 parallel passages. Inside a symbol panel, “Print passage” prints the selected
 passage. Use your browser's Save as PDF option to create a PDF if available.
+With the Greek and Hebrew switched on, **Print this study** prints a sheet of its
+own: the verse, its Greek word by word, and the Hebrew shown beneath it, without
+the maps. The grammar under each word reads in plain words — “Noun · dative
+singular feminine” — and those small lines grow with A+ along with everything
+else.
 “Copy references” copies the selected story's title, references and edition.
 The source panel provides downloadable index, cross-reference and audit data.
 
@@ -324,7 +346,10 @@ A **note** keeps what you found, so it can be carried into a lesson:
 - In the Atlas, “+ Note” beside a story keeps the unit, its references in each
   Gospel, and a picture of the four maps as they stand. “+ Note” in the
   connections section keeps a verse, its text in the edition you are reading,
-  and how many connections it has.
+  and how many connections it has. With the Greek switched on the note takes
+  the Greek too, and each Old Testament verse beneath it has a “+ Note” of its
+  own that keeps the Hebrew and the words it shares with the Greek. The slide
+  then shows the words the lesson is about, not only their translation.
 - In the Lab, “+ Note” keeps the chapter or the link the panel is showing, the
   numbers behind it, and the diagram as drawn.
 
@@ -342,6 +367,11 @@ one back, on this machine or another. A notebook saved in one app can be opened
 in the other, and a deck built from both; a note from the other app shows where
 it came from, and offers no “Open”, since only the app that kept a view can put
 it back.
+
+A browser holds roughly forty notes with pictures before its storage is full.
+The notebook says so when that happens — and says so if the browser refuses to
+keep anything at all — rather than letting notes vanish on the next visit; the
+notes on screen are still there to save to a file.
 
 Nothing in the notebook leaves your computer.
 
@@ -385,6 +415,14 @@ Nothing in the notebook leaves your computer.
 - Icon artwork supplied by David Lee.
 - React: MIT licence, copyright Meta Platforms, Inc. and affiliates.
   Full licence notices are embedded in the HTML JavaScript.
+
+## On a phone
+
+Each page fits a phone without sideways scrolling. The Cross-Reference Lab opens
+on its drawing, with the view tabs and search in reach and the rest of the
+settings behind one **Settings** button. In the Atlas, each Old Testament verse
+under the Greek opens as the words it shares, with **Show the verse** a tap
+away, so three verses of Hebrew do not bury the cross-references.
 
 ## Privacy and compatibility
 

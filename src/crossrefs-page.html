@@ -32,6 +32,9 @@ button,input,select{font:inherit}
 .wrap{max-width:1500px;margin:0 auto;padding-block:26px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 header{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-end;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:18px}
 .eyebrow{font-size:10px;letter-spacing:1.7px;font-weight:650;color:var(--faint);margin:0 0 8px}
+.suite{display:flex;gap:16px;margin:0 0 10px;font-size:12px}
+.suite a{color:var(--muted);text-underline-offset:2px}
+.suite a:hover{color:var(--ink)}
 h1{font-family:var(--serif);font-weight:400;font-size:clamp(27px,4vw,40px);letter-spacing:-1.1px;line-height:1.08;margin:0}
 h1 em{color:var(--gold);font-style:italic}
 .lede{margin:10px 0 0;color:var(--muted);max-width:62ch;font-size:13px}
@@ -134,6 +137,7 @@ canvas:focus-visible{outline:2px solid var(--gold);outline-offset:-3px}
 .verse-card p{font-family:var(--serif);font-size:var(--vtext,15px);line-height:1.7;margin:0}
 .verse-card.target h3 b{color:var(--gold)}
 .pair-votes{grid-column:1/-1;font-size:10px;color:var(--faint)}
+.nb-warn{margin:14px 0 0;padding:10px 13px;border:1px solid #e3c9a8;border-left:3px solid #c98a3a;border-radius:6px;background:#fbf3e6;color:#7a5522;font-size:12px;line-height:1.6}
 .words{margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:18px 20px 22px}
 .w-field{display:flex;flex-direction:column;gap:6px;margin:14px 0 0;max-width:460px;
   font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
@@ -156,6 +160,7 @@ canvas:focus-visible{outline:2px solid var(--gold);outline-offset:-3px}
 .w-verses button[disabled]{text-decoration:none;cursor:default;opacity:.7}
 .w-verses em{font-size:10px;color:var(--faint)}
 .w-sense{margin:0;padding:0 12px 10px;font-size:11px;line-height:1.65;color:var(--muted);max-width:90ch}
+.w-across{flex:1 1 100%;font-size:10.5px;color:var(--muted);text-underline-offset:2px;margin-bottom:2px}
 .w-affix{margin:14px 0 2px;font-size:10.5px;line-height:1.7;color:var(--faint)}
 .w-note{margin:14px 0 0;font-size:10.5px;line-height:1.8;color:var(--muted);max-width:92ch}
 @media(max-width:700px){.w-n{margin-left:0}}
@@ -184,7 +189,20 @@ footer p{margin:0 0 7px}
   .bar .opt select{flex:0 1 auto;min-width:0}
   .bar .search{flex:1 1 100%}
   .opt{flex-wrap:wrap}
+  /* Seventeen controls stacked on a phone came to 410px, and with the heading above them
+     the drawing began 699px down an 844px screen: the page opened on its own dashboard.
+     The dials now fold away behind one button, shut to begin with. What stays is what
+     chooses the picture - the three views and the search - and the chip that says a focus
+     is in force, since a filter nobody can see is worse than no filter. */
+  .bar .dials-toggle{display:inline-block}
+  .bar.shut .opt{display:none}
+  .bar .spacer{display:none}
+  header{gap:10px;padding-bottom:12px}
+  .lede{display:none}
+  .counts strong{font-size:17px}
+  .counts span{font-size:8px}
 }
+.dials-toggle{display:none}
 select,input[type=search]{max-inline-size:100%}
 canvas{max-width:100%}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -566,6 +584,7 @@ root.innerHTML=`
   <header>
     <div>
       <p class="eyebrow">GOSPEL ATLAS · CROSS-REFERENCE LAB</p>
+      <p class="suite"><a href="${suiteLinks().atlas}">Gospel Atlas</a><a href="${suiteLinks().types}">Shadow and Substance</a></p>
       <h1>Where Scripture <em>points</em>.</h1>
       <p class="lede">${COMPLETE?'Every cross-reference in the collection':'Every cross-reference that starts in Matthew, Mark, Luke or John'}, drawn three ways from the same data. Narrow it to one book, or to a section \u2014 the Law, the Prophets, Paul\u2019s Letters \u2014 and read what crosses into it.</p>
     </div>
@@ -624,6 +643,7 @@ root.innerHTML=`
       </select>
     </div>
     <div class="spacer"></div>
+    <button class="ghost dials-toggle" id="dialsToggle" aria-expanded="false" aria-controls="root">Settings</button>
     <button class="ghost" id="wOpen" aria-expanded="false">Word search</button>
     <button class="ghost" id="nbOpen" aria-expanded="false">Notebook <span class="pill" id="nbCount">0</span></button>
     <button class="ghost" id="clear">Clear</button>
@@ -661,7 +681,8 @@ root.innerHTML=`
       </div>
     </div>
     <ol class="nb-list" id="nb-list"></ol>
-    <p class="nb-foot" id="nb-foot"></p>
+    <p class="nb-warn" id="nb-warn" role="status" hidden></p>
+      <p class="nb-foot" id="nb-foot"></p>
   </section>
   <section class="words" id="words" hidden>
     <div class="passages-top">
@@ -1797,6 +1818,10 @@ function wRender(){
       body.hidden=!body.hidden;
       head.setAttribute('aria-expanded',String(!body.hidden));
     });
+    const across=document.createElement('a');across.className='w-across';
+    across.href=suiteLinks().atlas+'#word='+encodeURIComponent(k);across.target='_blank';across.rel='noopener';
+    across.textContent='Word by word in the Gospel Atlas \u2197';
+    body.appendChild(across);
     row.append(head,body);
     // The fuller sense, where the lexicon gives one beyond the single-word gloss.
     if(e[4]){const sn=document.createElement('p');sn.className='w-sense';sn.textContent=e[4];row.insertBefore(sn,body)}
@@ -1813,6 +1838,17 @@ function wRender(){
   note.textContent=(real.length>60?'Showing the first 60 of '+fmt(real.length)+' words. ':'')
     +WORDS.attribution+'. Click a word to see every verse it stands in; click a verse to bring that chapter up on the diagram.';
 }
+// The dials fold away on a phone. Shut to begin with there, and never on a wider screen,
+// where the button is not shown and the class has no effect.
+{
+  const bar=document.querySelector('.bar'),tog=document.getElementById('dialsToggle');
+  if(matchMedia('(max-width:560px)').matches)bar.classList.add('shut');
+  tog.addEventListener('click',()=>{
+    const open=!bar.classList.toggle('shut');
+    tog.setAttribute('aria-expanded',String(open));
+    tog.textContent=open?'Hide settings':'Settings';
+  });
+}
 document.getElementById('w-q').addEventListener('input',wRender);
 document.getElementById('wOpen').addEventListener('click',()=>{
   const box=document.getElementById('words');
@@ -1820,6 +1856,29 @@ document.getElementById('wOpen').addEventListener('click',()=>{
   document.getElementById('wOpen').setAttribute('aria-expanded',String(!box.hidden));
   if(!box.hidden){wRender();box.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});document.getElementById('w-q').focus()}
 });
+// Opened from another page with a verse in hand: "#verse=Deut.28.48" brings that chapter
+// up on the drawing. The Atlas sends Old Testament verses here, since it is a map of the
+// Gospels and has nowhere of its own to open one.
+{
+  const m=/[#&]verse=([1-3]?[A-Za-z]+)\.(\d+)\.(\d+)/.exec(location.hash||'');
+  const book=m&&BOOKS.find(b=>b.code===m[1]);
+  if(book&&+m[2]>=1&&+m[2]<=book.chapters){
+    state.focus=null;chip();renderBase();select(book.first+(+m[2]-1));caption();
+    setTimeout(()=>document.getElementById('plot').scrollIntoView({block:'center'}),80);
+  }
+}
+// Opened from another page of the suite with a word in hand: "#word=H5923" opens the
+// search on that word, so "the Lab has this across the whole Bible" is a link that works.
+{
+  const carried=wordFromHash();
+  if(carried){
+    const box=document.getElementById('words');
+    box.hidden=false;document.getElementById('wOpen').setAttribute('aria-expanded','true');
+    document.getElementById('w-q').value=carried;wRender();
+    const first=box.querySelector('.w-head');if(first)first.click();
+    setTimeout(()=>box.scrollIntoView({block:'start'}),80);
+  }
+}
 document.getElementById('w-close').addEventListener('click',()=>{
   document.getElementById('words').hidden=true;
   document.getElementById('wOpen').setAttribute('aria-expanded','false');
@@ -2084,7 +2143,21 @@ __DECK__
 const APP='cross-reference-lab';
 const NB_KEY='gospel-atlas-lab-notebook';
 let NB=[];
-const nbSave=()=>{try{localStorage.setItem(NB_KEY,JSON.stringify(NB))}catch(e){}};
+// A snapshot note is about 130 KB once stored, so five megabytes hold some forty. Past
+// that the write fails, and it used to fail in silence. The notebook now says whether
+// storage is full or was refused outright, since the remedy differs.
+let nbStore='ok';
+const nbSave=()=>{
+  try{localStorage.setItem(NB_KEY,JSON.stringify(NB));nbStore='ok'}
+  catch(e){nbStore=e&&(e.name==='QuotaExceededError'||e.code===22||e.code===1014)?'full':'refused'}
+  const w=document.getElementById('nb-warn');
+  if(w){
+    w.hidden=nbStore==='ok'||!NB.length;
+    w.textContent=nbStore==='full'
+      ?'The browser\u2019s storage is full, so these notes are no longer being kept between visits. They are all still here now \u2014 use Save file to keep them, then remove the ones you no longer need.'
+      :'This browser will not keep anything for a page opened from disk, so these notes last only until the page is closed. Use Save file to keep them.';
+  }
+};
 try{const raw=localStorage.getItem(NB_KEY);if(raw)NB=JSON.parse(raw)||[]}catch(e){NB=[]}
 const nbEl=id=>document.getElementById(id);
 const safe=safeName;

@@ -12,6 +12,8 @@
 //   img      a data URL, if the view was worth a picture
 //   quote    Scripture itself, where a note is about one passage
 //   cite     where that quotation is from, and in which edition
+//   original the Greek or Hebrew of the passage, word by word: a list of
+//            {lang, label, words: [[word, transliteration, gloss], …]}
 //   body     the words typed into the notebook — this is what the slide says
 //   atText   the view it was kept from, already written out
 //   app      which app kept it, so a mixed deck says so
@@ -24,6 +26,24 @@
 // So it must stay plain: declarations only, no imports, nothing that assumes a bundler.
 
 export const APP_NAMES = {'cross-reference-lab': 'Cross-Reference Lab', 'gospel-atlas': 'Gospel Atlas'};
+
+// The three pages of the suite go by one set of names in the emailed archive and another
+// on the published site, and the same bytes serve both. So a page works out which set it
+// is living under from its own file name, and links to its neighbours accordingly. A
+// link can carry a word across: every page that searches words reads "#word=H5923" when
+// it opens, so "the Lab has this across the whole Bible" is a link and not a suggestion.
+export function suiteLinks() {
+  let here = '';
+  try { here = decodeURIComponent(location.pathname.split('/').pop() || ''); } catch (e) {}
+  return /^(Gospel_Atlas_David_Lee|Cross_Reference_Lab|Shadow_and_Substance)\.html$/i.test(here)
+    ? {atlas: 'Gospel_Atlas_David_Lee.html', lab: 'Cross_Reference_Lab.html', types: 'Shadow_and_Substance.html'}
+    : {atlas: 'index.html', lab: 'cross-references.html', types: 'typology.html'};
+}
+// The word a link carried, if any: "#word=G2218" gives "G2218".
+export function wordFromHash() {
+  const m = /[#&]word=([^&]+)/.exec(location.hash || '');
+  try { return m ? decodeURIComponent(m[1]) : ''; } catch (e) { return ''; }
+}
 
 export const nbNow = () => new Date().toISOString().slice(0, 16).replace('T', ' ');
 
@@ -52,6 +72,10 @@ export function deckHtml(items, title) {
       (it.sub ? '<p class="s">' + esc(it.sub) + '</p>' : '') +
       (it.img ? '<img alt="" src="' + it.img + '">' : '') +
       (it.quote ? '<blockquote>' + esc(it.quote) + (it.cite ? '<cite>' + esc(it.cite) + '</cite>' : '') + '</blockquote>' : '') +
+      (it.original ? it.original.map(o => '<div class="o"><p class="ol">' + esc(o.label) + '</p>' +
+        '<div class="ow" lang="' + esc(o.lang) + '" dir="' + (o.lang === 'he' ? 'rtl' : 'ltr') + '">' +
+        o.words.map(w => '<span><b>' + esc(w[0]) + '</b><i>' + esc(w[1]) + '</i><u>' + esc(w[2]) + '</u></span>').join('') +
+        '</div></div>').join('') : '') +
       (it.body ? '<p class="b">' + esc(it.body).replace(/\n+/g, '</p><p class="b">') + '</p>' : '') +
       '<p class="f">' + esc(it.atText || '') + ' · ' + (n + 1) + ' of ' + items.length + '</p></section>';
   }).join('\n');
@@ -71,6 +95,15 @@ export function deckHtml(items, title) {
   "blockquote{font-family:Georgia,'Times New Roman',serif;font-size:clamp(.95rem,2.4vmin,1.5rem);line-height:1.5;" +
   'margin:.6rem 0 0;padding-left:1rem;border-left:3px solid var(--g);overflow:auto}' +
   'blockquote cite{display:block;margin-top:.5rem;font:400 .7rem/1 Inter,ui-sans-serif,sans-serif;font-style:normal;color:var(--m);letter-spacing:.08em}' +
+  // The original language, word over sound over gloss. Hebrew runs right to left, but the
+  // sound and the gloss under each word are English and stay left to right.
+  '.o{margin:.7rem 0 0}.ol{margin:0 0 .25rem;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--m);font-weight:700}' +
+  '.ow{display:flex;flex-wrap:wrap;gap:.3em .8em}.ow span{display:grid}' +
+  ".ow b{font:400 clamp(1rem,2.7vmin,1.75rem)/1.3 Georgia,'Times New Roman',serif}" +
+  '.ow i{font-style:normal;font-size:clamp(.5rem,1.2vmin,.7rem);color:var(--m)}' +
+  '.ow u{text-decoration:none;font-size:clamp(.58rem,1.4vmin,.82rem);color:#5e7050}' +
+  '.ow[dir=rtl] i,.ow[dir=rtl] u{direction:ltr;text-align:right}' +
+  'section{overflow:auto}' +
   '.f{margin-top:auto;font-size:.68rem;color:var(--m);border-top:1px solid var(--l);padding-top:.5rem}' +
   '#n{position:fixed;bottom:12px;right:16px;color:#8d978f;font-size:.72rem}' +
   '@media print{body{display:block;padding:0;background:#fff}section{display:flex!important;' +

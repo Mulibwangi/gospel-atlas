@@ -43,7 +43,7 @@ nav button.read::after{content:' \00b7 a reading';font-size:10px;letter-spacing:
 h3{font-family:var(--serif);font-weight:400;font-size:22px;margin:0 0 4px}
 .sub{color:var(--muted);font-size:13px;margin:0 0 18px}
 .align{background:var(--field);border:1px solid var(--line);border-radius:4px;padding:6px 0 10px;margin-bottom:18px;overflow-x:auto}
-svg{display:block;min-width:560px;width:100%}
+svg{display:block;width:100%}
 svg text{font-family:var(--sans);font-size:11px;fill:var(--ink)}
 svg text.side{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;fill:var(--faint);font-weight:600}
 svg text.motif{font-size:9.5px;fill:var(--muted)}
@@ -54,7 +54,7 @@ svg circle{fill:var(--scarlet)}
 .legend b{color:var(--ink);font-weight:600}
 .rows{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
 .rows li{border-bottom:1px solid var(--line)}
-.head{display:flex;gap:10px;align-items:baseline;padding:9px 4px;cursor:pointer}
+.head{display:flex;gap:10px;align-items:baseline;padding:9px 4px;cursor:pointer;width:100%;border:0;background:none;font:inherit;color:inherit;text-align:left}
 .head:hover{background:var(--panel)}
 .n{width:18px;color:var(--faint);font-size:11px;flex:none;text-align:right}
 .refs{flex:1;font-size:13px}
@@ -67,12 +67,26 @@ li.open .body{display:block}
 .body .who{font-family:var(--sans);font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--faint);font-weight:600}
 footer{border-top:1px solid var(--line);margin-top:34px;padding:20px;color:var(--muted);font-size:12.5px}
 footer p{max-width:78ch;margin:0 0 9px}
+/* A grid track is at least as wide as its widest content unless told otherwise, so the
+   diagram's own minimum was widening the page and pushing text off a phone's right edge. */
+main>*{min-width:0}
+/* Keyboard focus was invisible on this page: the list and the passages could be reached
+   but not seen to be reached. */
+nav button:focus-visible,.head:focus-visible,.toggle input:focus-visible,.suite a:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+.suite{display:flex;gap:6px 18px;flex-wrap:wrap;margin:0 0 9px;padding:0;list-style:none;font-size:12.5px}
+.suite a{color:var(--accent);text-underline-offset:2px}
+.suite span{color:var(--faint)}
 @media(max-width:860px){main{grid-template-columns:1fr}nav{position:static}}
 @media print{nav,header p{display:none}main{display:block}.body{display:block}}
 </style>
 </head>
 <body>
 <header><div class="wrap">
+  <ul class="suite" aria-label="The other pages of the Gospel Atlas">
+    <li><a id="go-atlas" href="index.html">Gospel Atlas</a></li>
+    <li><a id="go-lab" href="cross-references.html">Cross-Reference Lab</a></li>
+    <li><span>Shadow and Substance</span></li>
+  </ul>
   <h1>Shadow and Substance</h1>
   <p>Places where Scripture reads itself: a verse states that one passage answers another, and
      the verse is given. The readings the typological tradition adds can be shown beside
@@ -111,6 +125,16 @@ footer p{max-width:78ch;margin:0 0 9px}
 </div></footer>
 <script>
 const DATA=__DATA__;
+// The three pages go by one set of names in the emailed archive and another on the
+// published site, and the same bytes serve both; so this page works out which set it is
+// living under from its own name and points at its neighbours accordingly.
+{
+  let here='';try{here=decodeURIComponent(location.pathname.split('/').pop()||'')}catch(e){}
+  if(/^Shadow_and_Substance\.html$/i.test(here)){
+    document.getElementById('go-atlas').href='Gospel_Atlas_David_Lee.html';
+    document.getElementById('go-lab').href='Cross_Reference_Lab.html';
+  }
+}
 const el=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 const clip=(s,n)=>{s=String(s||'');return s.length>n?s.slice(0,n-1).replace(/[ ,;]+$/,'')+'\u2026':s};
@@ -118,13 +142,23 @@ let current=0;
 
 function draw(t){
   const A=t.type.motifs,B=t.antitype.motifs;
-  const rowH=26,padT=34,padB=14,labelW=150;
+  // Drawn to the width there is. Scaling a 720-unit drawing down to a phone put its labels
+  // at six pixels, and holding it at a minimum width made it run off the side; so on a
+  // narrow screen the labels take a smaller share and are cut shorter, and the type stays
+  // the size it is everywhere else.
+  const box=(el('plot')&&el('plot').parentElement.clientWidth)||720;
+  const narrow=box<640;
+  const w=narrow?Math.max(300,box):720;
+  const rowH=narrow?30:26,padT=34,padB=14,labelW=narrow?Math.round(w*0.36):150;
+  const chars=narrow?Math.max(10,Math.floor((labelW-12)/5.7)):38;
   const h=padT+Math.max(A.length,B.length)*rowH+padB;
-  const w=720,lx=labelW+14,rx=w-labelW-14;
+  const lx=labelW+14,rx=w-labelW-14;
   const put=(n,i)=>padT+i*rowH+9;
   let s=`<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" style="height:${h}px">`;
-  s+=`<text class="side" x="${lx}" y="18" text-anchor="middle">${esc(t.type.label.toUpperCase())}</text>`;
-  s+=`<text class="side" x="${rx}" y="18" text-anchor="middle">${esc(t.antitype.label.toUpperCase())}</text>`;
+  // Centred on rails that are close together, the two headings ran into each other on a
+  // narrow screen. There each is set against its own side instead.
+  s+=`<text class="side" x="${lx}" y="18" text-anchor="${narrow?'end':'middle'}">${esc(clip(t.type.label.toUpperCase(),narrow?chars:60))}</text>`;
+  s+=`<text class="side" x="${rx}" y="18" text-anchor="${narrow?'start':'middle'}">${esc(clip(t.antitype.label.toUpperCase(),narrow?chars:60))}</text>`;
   s+=`<line class="rail" x1="${lx}" y1="${padT-4}" x2="${lx}" y2="${h-padB+2}"/>`;
   s+=`<line class="rail" x1="${rx}" y1="${padT-4}" x2="${rx}" y2="${h-padB+2}"/>`;
   // one line per shared motif, from where it falls on the left to where it falls on the right
@@ -139,14 +173,14 @@ function draw(t){
   A.forEach((m,i)=>{
     const y=put(m,i);
     s+=`<circle cx="${lx}" cy="${y}" r="3.2"/>`;
-    s+=`<text x="${lx-10}" y="${y+3.5}" text-anchor="end">${esc(clip(m.label,38))}</text>`;
-    s+=`<text class="motif" x="${lx-10}" y="${y+14}" text-anchor="end">${esc(m.motif.replace(/-/g,' '))}</text>`;
+    s+=`<text x="${lx-10}" y="${y+3.5}" text-anchor="end">${esc(clip(m.label,chars))}</text>`;
+    s+=`<text class="motif" x="${lx-10}" y="${y+14}" text-anchor="end">${esc(clip(m.motif.replace(/-/g,' '),chars+2))}</text>`;
   });
   B.forEach((m,i)=>{
     const y=put(m,i);
     s+=`<circle cx="${rx}" cy="${y}" r="3.2"/>`;
-    s+=`<text x="${rx+10}" y="${y+3.5}">${esc(clip(m.label,38))}</text>`;
-    s+=`<text class="motif" x="${rx+10}" y="${y+14}">${esc(m.motif.replace(/-/g,' '))}</text>`;
+    s+=`<text x="${rx+10}" y="${y+3.5}">${esc(clip(m.label,chars))}</text>`;
+    s+=`<text class="motif" x="${rx+10}" y="${y+14}">${esc(clip(m.motif.replace(/-/g,' '),chars+2))}</text>`;
   });
   return s+'</svg>';
 }
@@ -179,19 +213,26 @@ function show(i){
   t.type.motifs.forEach((m,k)=>{
     const o=t.antitype.motifs.find(x=>x.motif===m.motif); if(!o)return;
     const li=document.createElement('li');
-    li.innerHTML='<div class="head"><span class="n">'+(k+1)+'</span>'
+    li.innerHTML='<button type="button" class="head" aria-expanded="false"><span class="n">'+(k+1)+'</span>'
       +'<span class="refs">'+esc(m.label)+' <em>·</em> '+esc(m.ref)+' <em>and</em> '+esc(o.ref)+'</span>'
-      +'<span class="mark '+(t.pairs[m.motif]?'yes':'')+'">'+(t.pairs[m.motif]?'linked':'no link')+'</span></div>'
+      +'<span class="mark '+(t.pairs[m.motif]?'yes':'')+'">'+(t.pairs[m.motif]?'linked':'no link')+'</span></button>'
       +'<div class="body"><p><span class="who">'+esc(m.ref)+'</span><br>'+esc(m.text)+'</p>'
       +'<p><span class="who">'+esc(o.ref)+'</span><br>'+esc(o.text)+'</p></div>';
-    li.querySelector('.head').addEventListener('click',()=>li.classList.toggle('open'));
+    li.querySelector('.head').addEventListener('click',e=>{
+      e.currentTarget.setAttribute('aria-expanded',String(li.classList.toggle('open')))});
     rows.appendChild(li);
   });
 }
 DATA.typologies.forEach((t,i)=>{
   const li=document.createElement('li'),b=document.createElement('button');
   b.type='button'; b.textContent=t.name; if(!t.asserted)b.className='read';
-  b.addEventListener('click',()=>show(i));
+  b.addEventListener('click',()=>{
+    show(i);
+    // On a narrow screen the list sits above the answer, so choosing from it changed
+    // something a screen and a half further down with nothing to show it had.
+    if(matchMedia('(max-width:860px)').matches)
+      document.querySelector('.said').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});
+  });
   li.appendChild(b); el('list').appendChild(li);
 });
 const nAsserted=DATA.typologies.filter(t=>t.asserted).length;
@@ -210,6 +251,12 @@ applyToggle();
 el('foot-count').textContent=nAsserted+' correspondences asserted by the verse quoted with them, and '+(DATA.typologies.length-nAsserted)+' more the typological tradition reads without one. '
   +DATA.verses+' verses of Scripture are embedded in this file, which needs nothing else to open. Built '+DATA.built+'.';
 show(0);
+// The drawing is sized to its box, so it is redrawn when the box changes.
+let redraw=0;
+addEventListener('resize',()=>{clearTimeout(redraw);redraw=setTimeout(()=>{
+  const t=DATA.typologies[current];
+  el('plot').outerHTML=draw(t).replace('<svg','<svg id="plot"');
+},120)});
 </script>
 </body>
 </html>

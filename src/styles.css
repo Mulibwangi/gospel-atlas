@@ -90,7 +90,7 @@
 /* The Greek underneath, and the word search */
 .il-bar{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin:14px 0 0;font-size:11px;color:#79836f}
 .il-bar label{display:flex;gap:6px;align-items:center;cursor:pointer}
-.il-agree-key{margin-left:auto;color:#8a7430;font-size:10.5px}
+.il-agree-key{color:#8a7430;font-size:10.5px}
 .il-panel{margin-top:10px;padding:14px 16px 12px;background:#f4f4ec;border:1px solid #e1e3d8;border-radius:8px}
 .il{list-style:none;display:flex;flex-wrap:wrap;gap:3px;margin:0;padding:0}
 .il li{min-width:0}
@@ -100,16 +100,18 @@
 .il li.agree button:hover{border-color:#cbb46f}
 .il li.varies .il-greek{border-bottom:1px dashed #b4867c}
 .il-greek{font-family:var(--serif);font-size:var(--il,17px);line-height:1.35;color:var(--ink)}
-.il-translit{font-size:9.5px;color:#9aa290;letter-spacing:.02em}
-.il-gloss{font-size:11px;color:#5e7050;line-height:1.3;max-width:15ch}
-.il-morph{font-size:8.5px;color:#aab19d;letter-spacing:.05em;font-variant-numeric:tabular-nums}
+.il-translit{font-size:max(10px,calc(var(--il,17px)*.58));color:#8a927f;letter-spacing:.02em}
+.il-gloss{font-size:max(11.5px,calc(var(--il,17px)*.68));color:#5e7050;line-height:1.3;max-width:15ch}
+.il-morph{font-size:max(10px,calc(var(--il,17px)*.6));color:#9aa290;letter-spacing:.05em;font-variant-numeric:tabular-nums}
 .il-none{font-size:12px;line-height:1.7;color:#848c7c;margin:10px 0 0;padding:12px 14px;background:#f4f4ec;border:1px solid #e1e3d8;border-radius:8px}
 .il-variants{margin:10px 0 0;padding-top:9px;border-top:1px solid #e1e3d8;font-size:10.5px;line-height:1.8;color:#8d7a74;display:flex;flex-wrap:wrap;gap:12px}
 .il-variants b{font-family:var(--serif);font-size:13px;font-weight:400;color:var(--ink)}
-.il-note{font-size:10px;line-height:1.7;color:#9aa290;margin:11px 0 0;padding-top:9px;border-top:1px solid #e1e3d8}
-.wordsearch{margin-top:14px}
-.ws-label{display:flex;flex-direction:column;gap:5px;font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:#9aa290;max-width:340px}
-.ws-label input{font:inherit;font-size:13px;text-transform:none;letter-spacing:0;padding:7px 10px;border:1px solid #d9ddd0;border-radius:6px;background:#fff;color:var(--ink)}
+.il-note{font-size:11px;line-height:1.7;color:#8a927f;margin:12px 0 0;padding-top:9px;border-top:1px solid #e1e3d8}
+.il-note summary{cursor:pointer;list-style-position:outside;margin-left:14px}
+.il-note p{margin:7px 0 0 14px;max-width:96ch}
+.wordsearch{margin-top:10px}
+.ws-label{display:flex;align-items:center;gap:8px;margin-left:auto;font-size:11px;color:#79836f}
+.ws-label input{font:inherit;font-size:13px;padding:6px 10px;border:1px solid #d9ddd0;border-radius:6px;background:#fff;color:var(--ink);width:210px}
 .ws-one{margin-top:12px;padding:13px 15px;background:#fffef8;border:1px solid #e1e3d8;border-radius:8px;position:relative}
 .ws-head{margin:0;display:flex;gap:9px;align-items:baseline;flex-wrap:wrap}
 .ws-head b{font-family:var(--serif);font-weight:400;font-size:21px}
@@ -135,12 +137,12 @@
 .il.rtl button{text-align:right;direction:rtl}
 .il.rtl .il-translit,.il.rtl .il-gloss,.il.rtl .il-morph{direction:ltr;text-align:right}
 .il-ref{margin:12px 0 14px;font-family:Inter,ui-sans-serif,system-ui,sans-serif}
-.il-ref-head{font-size:9px;letter-spacing:1.1px;text-transform:uppercase;color:#a0a795;font-weight:700;margin:0 0 8px}
+.il-ref-head{display:flex;align-items:center;flex-wrap:wrap;gap:4px 0;font-size:10px;letter-spacing:1.1px;text-transform:uppercase;color:#8a927f;font-weight:700;margin:0 0 8px}
 .il-ask{display:block;margin:10px 0 2px;font-size:11px;padding:6px 11px;border:1px solid #d5dbcb;border-radius:5px;background:#fcfcf5;color:#64745c;font-family:Inter,ui-sans-serif,system-ui,sans-serif}
 .il-ask:hover{background:#eef1e6;color:#2d4033}
 .il-absent{margin:10px 0 2px;font-size:10.5px;line-height:1.7;color:#9aa290;font-family:Inter,ui-sans-serif,system-ui,sans-serif}
 .il-under{margin-top:16px;padding-top:14px;border-top:1px solid #e1e3d8}
-.il-under-head{font-size:9px;letter-spacing:1.1px;text-transform:uppercase;color:#8a7430;font-weight:700;margin:0 0 10px}
+.il-under-head{font-size:10px;letter-spacing:1.1px;text-transform:uppercase;color:#8a7430;font-weight:700;margin:0 0 10px}
 .il-under-none{margin:14px 0 0;padding-top:12px;border-top:1px solid #e1e3d8;font-size:10.5px;line-height:1.7;color:#9aa290}
 .il-sub{margin-bottom:14px}
 .il-sub:last-of-type{margin-bottom:0}
@@ -154,5 +156,46 @@
 .il-pairs li{display:flex;align-items:baseline;gap:7px;font-family:var(--serif);font-size:15px}
 .il-pairs i{font-family:Inter,ui-sans-serif,system-ui,sans-serif;font-style:normal;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:#7d9aa6}
 .ws-group{margin-top:12px}
-.ws-lang{font-size:9px;letter-spacing:1.1px;text-transform:uppercase;color:#a0a795;font-weight:700;margin:0 0 5px}
+.ws-lang{font-size:10px;letter-spacing:1.1px;text-transform:uppercase;color:#a0a795;font-weight:700;margin:0 0 5px}
 .ws-sense{flex:1 1 100%;font-size:10.5px;line-height:1.6;color:#9aa290}
+
+.nb-warn{margin:14px 0 0;padding:10px 13px;border:1px solid #e3c9a8;border-left:3px solid #c98a3a;border-radius:6px;background:#fbf3e6;color:#7a5522;font-size:12px;line-height:1.6}
+.ws-sense-inline{color:#9aa290}
+.ws-form{font-family:var(--serif);font-size:15px;color:var(--ink)}
+.il-pairs em{font-style:normal;color:#9db5bf;font-family:Inter,ui-sans-serif,system-ui,sans-serif;font-size:12px}
+
+/* The connections section, put back in order */
+.il-tools{margin-left:auto;display:flex;align-items:center;gap:8px;letter-spacing:0;text-transform:none;font-weight:400}
+.il-tools a{font-size:11px;color:#5a7050;text-underline-offset:2px}
+.il-tools .keep{margin-left:0;font-size:10.5px;padding:4px 9px}
+.refs-head{margin:26px 0 10px;font-size:10px;letter-spacing:1.1px;text-transform:uppercase;color:#8a927f;font-weight:700;scroll-margin-top:16px}
+.ws-n a{color:#5a7050;text-underline-offset:2px}
+.nb-orig{font-family:var(--serif);line-height:1.6;color:var(--ink);margin:0 0 9px}
+/* The dictionary entry, docked where it can be seen from anywhere in a tall panel */
+.ws-dock{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:40;width:min(720px,calc(100vw - 24px));max-height:46vh;overflow:auto;padding:14px 16px 13px;background:#fffef8;border:1px solid #cfd6c3;border-radius:10px;box-shadow:0 10px 34px rgba(38,54,47,.2)}
+.ws-dock .ws-clear{position:absolute;top:10px;right:12px}
+.ws-dock .ws-head{padding-right:64px}
+.ws-dock .ws-count a{color:#5a7050;text-underline-offset:2px;white-space:nowrap}
+@media(max-width:700px){
+  .ws-label{margin-left:0;flex:1 1 100%}
+  .ws-label input{flex:1;width:auto;min-width:0}
+  .il-tools{flex:1 1 100%;margin-left:0}
+  .ws-dock{bottom:0;border-radius:12px 12px 0 0;width:100vw;max-height:52vh}
+}
+/* A study sheet: the verse, its Greek, the Hebrew beneath. Marked on the body for the
+   length of the print, so the ordinary print of the parallel passages is left alone. */
+@media print{
+  .ws-dock,.il-tools,.il-more,.refs-head{display:none!important}
+  body[data-print="study"] .story-section{display:none!important}
+  body[data-print="study"] .connections-section{display:block!important;border:0!important;padding:0!important;margin:0!important}
+  body[data-print="study"] .connections-section>*{display:none!important}
+  body[data-print="study"] .connections-section>.selected-verse-quote,
+  body[data-print="study"] .connections-section>.il-panel{display:block!important}
+  body[data-print="study"] .il-panel{border:0!important;background:#fff!important;padding:0!important;margin-top:14pt!important}
+  body[data-print="study"] .il li.agree button,body[data-print="study"] .il li.touch button{background:#fff!important;border-color:#999!important}
+  body[data-print="study"] .il-sub{break-inside:avoid}
+  body[data-print="study"] .il-note[open] summary,body[data-print="study"] .il-note summary{list-style:none}
+  body[data-print="study"] .selected-verse-quote{border:0!important;background:#fff!important}
+}
+.ws-count a,.ws-refs a{font-size:10.5px;color:#5a7050;text-decoration:underline;text-underline-offset:2px}
+.ws-count a:hover,.ws-refs a:hover{color:var(--ink)}
