@@ -14,13 +14,46 @@ Standalone edition — 2 November 2026
    with one button, "Open the Gospel Atlas". Click it.
 
 The same page carries a second button, "Open the Cross-Reference Lab", which
-draws every cross-reference in the Gospels three ways: as an arc, as a circle
-with the chords bundled by book, and as a matrix that keeps the direction of
-each link. Search a book or a chapter to jump to it, or choose a whole book to
+draws every cross-reference in the Gospels four ways: as an arc, as a circle
+with the chords bundled by book, as a matrix that keeps the direction of
+each link, and as "Canon" — a cell for every verse in the Bible. Search a book or a chapter to jump to it, or choose a whole book to
 see only what touches it: the ring turns that book to the top and widens it,
 and the panel lists the other books it links to. Choose one of those links and
 the passages open underneath, verse by verse, with the ASV text on both sides.
 That file is Cross_Reference_Lab.html and it is self-contained in the same way.
+
+"Canon" is the whole Bible as a grid: one small cell for each of the 31,102 verses,
+each book starting at the left edge, Genesis at the top and Revelation at the
+bottom with a gold line where the testaments meet. Point at a cell to read that
+verse; click to hold it. What the colours mean depends on the question you pick
+from "Query":
+
+  Gravity            how many cross-references touch the verse.
+  Reach              click any verse, and every other verse is coloured by how
+                     many links it takes to get there. Four hops reach almost
+                     the whole Bible from most verses.
+  Grain              whether a verse's links point forward in the canon or back.
+                     Genesis is nearly all forward; Jude is nearly all back.
+  Crossing           only the links that run between the Old Testament and the
+                     New — a fifth of them all.
+  Where a book points  pick a book and see what it reaches, or what reaches it.
+  A word             type a word, a transliteration or a Strong number and every
+                     verse holding it lights up.
+  No link            the 54 verses nothing points at, and the barely-touched
+                     ones beside them.
+
+The subject box changes with the question and disappears when a question takes
+no subject, so there is never a combination that draws nothing. "Show me one"
+picks a question and a subject at random — a way of finding what you would not
+have thought to ask for; the drawing chooses where to look and the text beside
+it says what is there. "Full screen" gives the grid the whole window, and Escape
+brings it back. The chapter-level dials — minimum links, focus, thread, order —
+are hidden while Canon is up, because this view counts every link there is.
+
+The colour scale for a count is compressed: the busiest verse has fourteen times
+the links of the middling one, so a straight scale would leave half the Bible
+looking blank. Read the colour as more and less; the number itself is always in
+the panel.
 
 "Order" lays the books out either as they are bound or in the order their events are
 usually dated — Job beside Genesis, the prophets among the kings, Paul's letters by

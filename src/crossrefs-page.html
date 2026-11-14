@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="author" content="David Lee">
-<meta name="description" content="Biblical cross-references drawn three ways — arc, circle and matrix. Developer: DAVID LEE.">
+<meta name="description" content="Biblical cross-references drawn four ways — arc, circle, matrix and a cell for every verse in the Bible. Developer: DAVID LEE.">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
 <title>Cross-Reference Lab · Gospel Atlas</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='2' y='2' width='12' height='12' fill='%233e7598'/%3E%3Crect x='18' y='2' width='12' height='12' fill='%23b25c51'/%3E%3Crect x='2' y='18' width='12' height='12' fill='%234e8875'/%3E%3Crect x='18' y='18' width='12' height='12' fill='%23866a9f'/%3E%3C/svg%3E">
@@ -46,6 +46,19 @@ h1 em{color:var(--gold);font-style:italic}
 .views{display:flex;gap:4px}
 .views button{font-size:13px;padding:9px 16px;border:0;border-radius:5px;background:none;color:var(--muted);cursor:pointer}
 .views button[aria-pressed=true]{background:var(--accent);color:var(--paper);font-weight:600}
+/* Full screen for the canon strip: the grid is 31,102 cells, and on a laptop the panel
+   beside it costs a third of the width. This is a class rather than the Fullscreen API
+   so it behaves the same in a file:// window, where that API is often refused. */
+body.full .stage{position:fixed;inset:0;z-index:40;background:var(--paper);padding:10px 14px;
+  display:block;overflow:auto}
+body.full .stage .panel{display:none}
+body.full .stage .plot{width:100%}
+body.full .bar{position:fixed;left:0;right:0;bottom:0;z-index:41;background:var(--panel);
+  border-top:1px solid var(--line);border-bottom:0}
+body.full .head,body.full .notebook,body.full .words,body.full .passages{display:none}
+#optSubject{gap:6px}
+#optSubject .qv{font-variant-numeric:tabular-nums;color:var(--ink)}
+#optSubject input{width:11ch}
 .search{position:relative;flex:1;min-width:210px;max-width:330px}
 .search input{width:100%;background:var(--field);border:1px solid var(--line);border-radius:5px;padding:9px 11px;color:var(--ink);font-size:12px}
 .results{position:absolute;z-index:5;top:calc(100% + 5px);left:0;right:0;background:var(--field);border:1px solid var(--line);border-radius:6px;box-shadow:0 10px 30px rgba(20,34,28,.16);overflow:hidden}
@@ -95,10 +108,10 @@ h1 em{color:var(--gold);font-style:italic}
 @media print{.bar,.notebook,.keepbar{display:none}}
 .ghost{font-size:11px;background:none;border:0;color:var(--muted);text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:0}
 .stage{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:18px;margin-top:18px}
-.plot{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:9px;overflow:hidden;min-width:0;padding-bottom:30px}
+.plot{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:9px;overflow:hidden;min-width:0}
 canvas{display:block;width:100%;touch-action:pan-y}
 canvas:focus-visible{outline:2px solid var(--gold);outline-offset:-3px}
-.caption{position:absolute;left:14px;bottom:9px;right:14px;font-size:10px;color:var(--faint);pointer-events:none}
+.caption{margin:0;padding:7px 14px 10px;font-size:10px;line-height:1.5;color:var(--faint);pointer-events:none}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:17px 18px;min-width:0}
 .panel h2{font-family:var(--serif);font-weight:400;font-size:21px;margin:4px 0 2px;letter-spacing:-.4px}
 .panel .sub{font-size:11px;color:var(--muted);margin:0 0 14px}
@@ -586,7 +599,7 @@ root.innerHTML=`
       <p class="eyebrow">GOSPEL ATLAS · CROSS-REFERENCE LAB</p>
       <p class="suite"><a href="${suiteLinks().atlas}">Gospel Atlas</a><a href="${suiteLinks().types}">Shadow and Substance</a></p>
       <h1>Where Scripture <em>points</em>.</h1>
-      <p class="lede">${COMPLETE?'Every cross-reference in the collection':'Every cross-reference that starts in Matthew, Mark, Luke or John'}, drawn three ways from the same data. Narrow it to one book, or to a section \u2014 the Law, the Prophets, Paul\u2019s Letters \u2014 and read what crosses into it.</p>
+      <p class="lede">${COMPLETE?'Every cross-reference in the collection':'Every cross-reference that starts in Matthew, Mark, Luke or John'}, drawn four ways from the same data. Narrow it to one book, or to a section \u2014 the Law, the Prophets, Paul\u2019s Letters \u2014 and read what crosses into it. Or open <b>Canon</b>, where every verse in the Bible is one cell and the question is what to colour them by.</p>
     </div>
     <div class="counts">
       <div><strong>${fmt(LINKS.reduce((n,l)=>n+l[2],0))}</strong><span>VERSE LINKS</span></div>
@@ -599,25 +612,26 @@ root.innerHTML=`
       <button data-view="arc" aria-pressed="false">Arc</button>
       <button data-view="circle" aria-pressed="true">Circle</button>
       <button data-view="matrix" aria-pressed="false">Matrix</button>
+      <button data-view="strip" aria-pressed="false">Canon</button>
     </div>
     <div class="search">
       <input id="q" type="search" autocomplete="off" placeholder="Search — Isaiah 53, Ps 22, the Prophets, Paul" aria-label="Search for a book or chapter">
       <div id="results" hidden></div>
     </div>
-    <div class="opt">Order
+    <div class="opt" id="optOrder">Order
       <select id="order" aria-label="The order the books are laid out in">
         <option value="canonical">Canonical</option>
         <option value="chronological">Chronological</option>
       </select>
     </div>
-    <div class="opt">Colour
+    <div class="opt" id="optColour">Colour
       <select id="colour" aria-label="Colour mode">
         <option value="distance">By distance</option>
         <option value="testament">By target testament</option>
         ${COMPLETE?'':'<option value="gospel">By Gospel</option>'}
       </select>
     </div>
-    <div class="opt">Thread
+    <div class="opt" id="optThread">Thread
       <select id="threadPick" aria-label="Trace a thread through the links">
         <option value="">None</option>
       </select>
@@ -626,14 +640,26 @@ root.innerHTML=`
       <input id="threadInput" type="text" aria-label="Words that define the thread" spellcheck="false">
       <button type="button" id="threadApply">Trace</button>
     </div>
-    <div class="opt"><label><input type="checkbox" id="flow" checked> Show direction</label></div>
+    <div class="opt" id="optFlow"><label><input type="checkbox" id="flow" checked> Show direction</label></div>
     <div class="opt"><label><input type="checkbox" id="cbsafe"> Colour-blind safe</label></div>
-    <div class="opt">Minimum links <input type="range" id="minlinks" min="1" max="12" value="${COMPLETE?2:1}" aria-label="Minimum verse links per chapter pair"><strong id="minlabel" style="font-variant-numeric:tabular-nums;color:var(--ink)">${COMPLETE?2:1}</strong></div>
-    <div class="opt">Focus
+    <div class="opt" id="optMin">Minimum links <input type="range" id="minlinks" min="1" max="12" value="${COMPLETE?2:1}" aria-label="Minimum verse links per chapter pair"><strong id="minlabel" style="font-variant-numeric:tabular-nums;color:var(--ink)">${COMPLETE?2:1}</strong></div>
+    <div class="opt" id="optSection">Focus
       <select id="section" aria-label="Focus on a section of the Bible">
         <option value="">Whole Bible</option>
       </select>
     </div>
+    <div class="opt" id="optQuery" hidden>Query
+      <select id="query" aria-label="What to colour every verse by">
+        <option value="gravity">Gravity &mdash; links per verse</option>
+        <option value="reach">Reach &mdash; hops from one verse</option>
+        <option value="grain">Grain &mdash; forward or backward</option>
+        <option value="testament">Crossing the testaments</option>
+        <option value="bookreach">Where a book points</option>
+        <option value="lemma">A Hebrew or Greek word</option>
+        <option value="orphans">Verses with no link</option>
+      </select>
+    </div>
+    <div class="opt" id="optSubject" hidden></div>
     <div id="chipslot"></div>
     <div class="opt" id="dirslot" hidden>Direction
       <select id="direction" aria-label="Which links to show for the focused book">
@@ -643,6 +669,8 @@ root.innerHTML=`
       </select>
     </div>
     <div class="spacer"></div>
+    <button class="ghost" id="qSpin" hidden title="Pick a query and a subject at random, from the combinations that mean something">Show me one</button>
+    <button class="ghost" id="fullOpen" hidden aria-pressed="false">Full screen</button>
     <button class="ghost dials-toggle" id="dialsToggle" aria-expanded="false" aria-controls="root">Settings</button>
     <button class="ghost" id="wOpen" aria-expanded="false">Word search</button>
     <button class="ghost" id="nbOpen" aria-expanded="false">Notebook <span class="pill" id="nbCount">0</span></button>
@@ -730,7 +758,173 @@ const SECTIONS=[
   const a=BOOKS.find(b=>b.code===from),z=BOOKS.find(b=>b.code===to);
   return a&&z?{name,from:a.first,to:z.first+z.chapters-1,alias}:null;
 }).filter(Boolean);
-const state={view:'circle',colour:'distance',cbsafe:false,flow:true,thread:null,chain:null,min:COMPLETE?2:1,hover:null,locked:null,focus:null,dir:'both',order:'canonical'};
+const state={view:'circle',colour:'distance',cbsafe:false,flow:true,thread:null,chain:null,min:COMPLETE?2:1,hover:null,locked:null,focus:null,dir:'both',order:'canonical',
+  query:'gravity',qVerse:null,qBook:null,qDir:'out',qLemma:'',qKey:null,hoverVerse:null,lockedVerse:null};
+
+// ---- the canon strip ----------------------------------------------------
+// One cell per verse, all 31,102 of them, in reading order. Every query below is the
+// same thing - a number for each verse - so they all share one grid, one colour ramp
+// and one hit test. The chapter-level dials (minimum links, focus, thread, direction)
+// are hidden while this view is up, because they do not apply to it: the strip counts
+// every link there is. A dial that does nothing is worse than no dial.
+const VCOUNT=TEXT.length;
+const BOOK_FIRST_VERSE=new Int32Array(BOOKS.length+1);
+const BOOK_OF_VERSE=new Int16Array(VCOUNT);
+BOOKS.forEach((b,bi)=>{BOOK_FIRST_VERSE[bi]=CHAPTER_START[b.first]});
+BOOK_FIRST_VERSE[BOOKS.length]=VCOUNT;
+for(let bi=0;bi<BOOKS.length;bi++)
+  for(let v=BOOK_FIRST_VERSE[bi];v<BOOK_FIRST_VERSE[bi+1];v++)BOOK_OF_VERSE[v]=bi;
+const NT_FIRST_VERSE=CHAPTER_START[BOOKS[NT].first];
+let CROSSING=null;
+function crossingCount(){
+  if(CROSSING!==null)return CROSSING;
+  let n=0;
+  for(let i=0;i<COUNT;i++){
+    const f=VL_FROM[i];if(f<0||f>=VCOUNT)continue;
+    const a=VL_TO[i],b=Math.min(VCOUNT-1,a+VL_SPAN[i]);if(a<0||a>=VCOUNT)continue;
+    const mine=f<NT_FIRST_VERSE;
+    for(let v=a;v<=b;v++)if((v<NT_FIRST_VERSE)!==mine)n++;
+  }
+  return CROSSING=n;
+}
+
+// Every link as an undirected verse graph, in compressed-row form. A link whose target
+// is a range counts once for each verse the range covers, because that is what it says.
+// Built on first use: it is five megabytes of typed array and most people never open
+// this view.
+let VG=null;
+function verseGraph(){
+  if(VG)return VG;
+  const deg=new Int32Array(VCOUNT);
+  for(let i=0;i<COUNT;i++){
+    const f=VL_FROM[i];if(f<0||f>=VCOUNT)continue;
+    const a=VL_TO[i],b=Math.min(VCOUNT-1,a+VL_SPAN[i]);if(a<0||a>=VCOUNT)continue;
+    deg[f]+=b-a+1;for(let v=a;v<=b;v++)deg[v]++;
+  }
+  const off=new Int32Array(VCOUNT+1);
+  for(let i=0;i<VCOUNT;i++)off[i+1]=off[i]+deg[i];
+  const cur=off.slice(0,VCOUNT),nbr=new Int32Array(off[VCOUNT]);
+  for(let i=0;i<COUNT;i++){
+    const f=VL_FROM[i];if(f<0||f>=VCOUNT)continue;
+    const a=VL_TO[i],b=Math.min(VCOUNT-1,a+VL_SPAN[i]);if(a<0||a>=VCOUNT)continue;
+    for(let v=a;v<=b;v++){nbr[cur[f]++]=v;nbr[cur[v]++]=f}
+  }
+  VG={off,nbr,deg};return VG;
+}
+// A heat scale that a handful of hubs cannot flatten. The top of the ramp is the 97th
+// percentile, not the maximum, and anything above it is drawn at the top. Even then the
+// busiest verse has fourteen times the links of the median one, so a scale that ran
+// straight from none to most would leave half the Bible looking empty: the ramp is
+// compressed, and the caption says so rather than letting the colour imply a count.
+const HEAT_GAMMA=0.6;
+function clipMax(val){
+  const seen=[];for(let i=0;i<val.length;i++)if(val[i]>0)seen.push(val[i]);
+  if(!seen.length)return 1;
+  seen.sort((a,b)=>a-b);
+  return Math.max(1,seen[Math.min(seen.length-1,Math.floor(seen.length*0.97))]);
+}
+function heatColour(t){
+  t=Math.max(0,Math.min(1,t));
+  const dark=isDark();
+  if(state.cbsafe){
+    const stops=dark?[[32,38,40],[14,70,110],[0,114,178],[86,180,233],[240,228,66]]
+                    :[[233,236,232],[146,197,222],[33,113,181],[8,48,107],[214,153,0]];
+    const u=t*(stops.length-1),i=Math.min(stops.length-2,Math.floor(u)),f=u-i;
+    const a=stops[i],b=stops[i+1];
+    return 'rgb('+a.map((v,k)=>Math.round(v+(b[k]-v)*f)).join(',')+')';
+  }
+  const h=150-105*t;                       // green through olive to gold
+  const sat=18+48*t;
+  const lig=dark?(16+54*t):(90-62*t);      // one direction only, so greyscale still reads
+  return 'hsl('+Math.round(h)+','+Math.round(sat)+'%,'+Math.round(lig)+'%)';
+}
+const STRIP_WARM=()=>state.cbsafe?[213,94,0]:[176,106,31];
+const STRIP_COOL=()=>state.cbsafe?[0,114,178]:[47,111,143];
+function stripScalar(){
+  const g=verseGraph();
+  const val=new Float32Array(VCOUNT);
+  if(state.query==='gravity'||state.query==='orphans'){
+    for(let v=0;v<VCOUNT;v++)val[v]=g.deg[v];
+    if(state.query==='orphans')return {val,max:1,kind:'thin'};
+    return {val,max:clipMax(val),kind:'heat'};
+  }
+  if(state.query==='grain'){
+    for(let v=0;v<VCOUNT;v++){
+      let f=0,b=0;
+      for(let p=g.off[v];p<g.off[v+1];p++){const o=g.nbr[p];if(o>v)f++;else if(o<v)b++}
+      val[v]=(f+b)?(f-b)/(f+b):NaN;
+    }
+    return {val,max:1,kind:'signed'};
+  }
+  if(state.query==='testament'){
+    for(let v=0;v<VCOUNT;v++){
+      const mine=v<NT_FIRST_VERSE;let n=0;
+      for(let p=g.off[v];p<g.off[v+1];p++)if((g.nbr[p]<NT_FIRST_VERSE)!==mine)n++;
+      val[v]=n;
+    }
+    return {val,max:clipMax(val),kind:'heat'};
+  }
+  if(state.query==='reach'){
+    const start=state.qVerse;
+    if(start===null||start===undefined)return {val:null,kind:'none'};
+    val.fill(-1);val[start]=0;
+    let q=[start];
+    while(q.length){
+      const next=[];
+      for(const u of q)for(let p=g.off[u];p<g.off[u+1];p++){
+        const w=g.nbr[p];if(val[w]<0&&w!==start){val[w]=val[u]+1;next.push(w)}}
+      q=next;
+    }
+    return {val,max:6,kind:'hops'};
+  }
+  if(state.query==='bookreach'){
+    const bi=state.qBook;
+    if(bi===null||bi===undefined)return {val:null,kind:'none'};
+    const lo=BOOK_FIRST_VERSE[bi],hi=BOOK_FIRST_VERSE[bi+1]-1;
+    for(let i=0;i<COUNT;i++){
+      const f=VL_FROM[i];if(f<0||f>=VCOUNT)continue;
+      const a=VL_TO[i],b=Math.min(VCOUNT-1,a+VL_SPAN[i]);if(a<0||a>=VCOUNT)continue;
+      const fromBook=f>=lo&&f<=hi;
+      if(state.qDir!=='in'&&fromBook)for(let v=a;v<=b;v++){if(v<lo||v>hi)val[v]++}
+      if(state.qDir!=='out'&&!fromBook)for(let v=a;v<=b;v++)if(v>=lo&&v<=hi)val[f]++;
+    }
+    return {val,max:clipMax(val),kind:'heat'};
+  }
+  if(state.query==='lemma'){
+    if(!state.qKey)return {val:null,kind:'none'};
+    for(const v of wVerses(state.qKey))if(v>=0&&v<VCOUNT)val[v]=1;
+    return {val,max:1,kind:'bool'};
+  }
+  return {val,max:1,kind:'heat'};
+}
+// A cell's colour, as a bucket index and a palette, so the drawing can set the fill
+// once per bucket instead of once per verse.
+const STRIP_BUCKETS=26;
+function stripPalette(kind){
+  const faint=isDark()?'#2a2f2b':'#e7e8e0';
+  if(kind==='signed'){
+    const w=STRIP_WARM(),c=STRIP_COOL(),mid=isDark()?[58,64,58]:[226,228,219];
+    return Array.from({length:STRIP_BUCKETS},(_,i)=>{
+      const t=i/(STRIP_BUCKETS-1)*2-1,a=t<0?c:w,f=Math.abs(t);
+      return 'rgb('+mid.map((m,k)=>Math.round(m+(a[k]-m)*f)).join(',')+')';
+    }).concat([faint]);
+  }
+  if(kind==='bool')return [faint,css('--scarlet')||'#b2403a'];
+  if(kind==='thin')return [css('--scarlet')||'#b2403a',isDark()?'#6b7a68':'#b9c0b1',faint];
+  if(kind==='hops')return state.cbsafe
+    ?[css('--scarlet')||'#b2403a','#08306b','#2171b5','#6baed6','#c6dbef','#fdd49e','#fa9e3b',faint]
+    :[css('--scarlet')||'#b2403a','#15382a','#2f6f4f','#73a95f','#c3cb8e','#e3dcb4','#efe6cc',faint];
+  return [faint,...Array.from({length:STRIP_BUCKETS-1},(_,i)=>heatColour(i/(STRIP_BUCKETS-2)))];
+}
+function stripBucket(x,kind,max){
+  if(kind==='signed')return Number.isNaN(x)?STRIP_BUCKETS:Math.max(0,Math.min(STRIP_BUCKETS-1,Math.round((x+1)/2*(STRIP_BUCKETS-1))));
+  if(kind==='bool')return x>0?1:0;
+  if(kind==='thin')return x===0?0:(x<=2?1:2);
+  if(kind==='hops')return x<0?7:(x===0?0:Math.min(6,x));
+  if(x<=0)return 0;
+  const t=Math.pow(Math.min(1,x/max),HEAT_GAMMA);
+  return Math.max(1,Math.min(STRIP_BUCKETS-1,Math.round(t*(STRIP_BUCKETS-2))+1));
+}
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const GOSPEL={Matt:'--matt',Mark:'--mark',Luke:'--luke',John:'--john'};
 const CB={Matt:'#0072b2',Mark:'#d55e00',Luke:'#009e73',John:'#cc79a7'};
@@ -760,7 +954,11 @@ const geom={};
 function sizes(){
   const rect=canvas.parentElement.getBoundingClientRect();
   W=Math.max(300,Math.round(rect.width));
-  H=state.view==='arc'?Math.round(Math.min(560,Math.max(300,W*0.42))):Math.round(Math.min(840,Math.max(360,W*0.86)));
+  H=state.view==='arc'?Math.round(Math.min(560,Math.max(300,W*0.42)))
+   :state.view==='strip'?(document.body.classList.contains('full')
+      ?Math.max(320,Math.round((window.innerHeight||700)-108))
+      :Math.round(Math.min(760,Math.max(380,W*0.62))))
+   :Math.round(Math.min(840,Math.max(360,W*0.86)));
   dpr=Math.min(2,window.devicePixelRatio||1);
   canvas.style.height=H+'px';
   canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);
@@ -794,10 +992,105 @@ function layout(){
     geom.end=i=>(focused&&i>=state.focus.from&&i<=state.focus.to)
       ? {p:geom.dialPoint(i,Rin),inner:true,a:geom.dial(i)}
       : {p:geom.point(i,R*0.985),inner:false,a:geom.angle(i)};
+  }else if(state.view==='strip'){
+    // Every book begins at the left edge, so a book is a block of whole rows and the
+    // eye can find it. True proportions are kept: a verse is one cell everywhere, so
+    // Obadiah is 21 cells and Psalms is 2,461, and the answer to a query has the same
+    // shape in both. The cell size is whatever makes the whole canon fit the canvas.
+    const narrow=W<560;
+    const padL=narrow?58:92,padT=12,padR=narrow?4:10,padB=18;
+    const availW=Math.max(60,W-padL-padR),availH=Math.max(60,H-padT-padB);
+    let pitch=3,cols=1,rows=1;
+    for(let p=11;p>=2;p--){
+      const c=Math.max(1,Math.floor(availW/p));
+      let r=0;for(let bi=0;bi<BOOKS.length;bi++)r+=Math.ceil((BOOK_FIRST_VERSE[bi+1]-BOOK_FIRST_VERSE[bi])/c);
+      if(r*p<=availH){pitch=p;cols=c;rows=r;break}
+      if(p===2){pitch=2;cols=c;rows=r}    // a phone: the grid is taller than the pane
+    }
+    const rowOf=new Int32Array(BOOKS.length+1);
+    for(let bi=0,r=0;bi<BOOKS.length;bi++){rowOf[bi]=r;r+=Math.ceil((BOOK_FIRST_VERSE[bi+1]-BOOK_FIRST_VERSE[bi])/cols);rowOf[BOOKS.length]=r}
+    geom.strip={padL,padT,padR,padB,pitch,cols,rows,rowOf,cell:Math.max(1,pitch-1)};
+    // The grid decides its own height. Left-over canvas would sit under it as blank and
+    // a saved image would carry the blank with it; too little and, on a phone, the grid
+    // would run out under the caption. So the canvas is made to fit either way.
+    const want=Math.max(200,Math.min(2600,padT+rows*pitch+padB));
+    if(Math.abs(want-H)>6){H=Math.round(want);canvas.style.height=H+'px';canvas.height=Math.round(H*dpr)}
+    geom.cellAt=v=>{
+      const bi=BOOK_OF_VERSE[v],local=v-BOOK_FIRST_VERSE[bi];
+      return [padL+(local%cols)*pitch, padT+(rowOf[bi]+Math.floor(local/cols))*pitch];
+    };
   }else{
     const padL=74,padT=16,padB=36,padR=16;
     geom.matrix={padL,padT,padB,padR,cw:(W-padL-padR)/sources.length,ch:(H-padT-padB)/N};
   }
+}
+// ---- drawing the strip ---------------------------------------------------
+let stripInfo=null;      // what the last drawn query was, for the caption and the panel
+function drawStrip(c){
+  const g=geom.strip,{pitch,cols,cell,rowOf,padL,padT}=g;
+  const scal=stripScalar();
+  stripInfo=scal;
+  const faint=isDark()?'#232724':'#eceade';
+  c.save();
+  if(!scal.val){
+    c.fillStyle=faint;
+    for(let v=0;v<VCOUNT;v++){const [x,y]=geom.cellAt(v);c.fillRect(x,y,cell,cell)}
+    c.restore();return;
+  }
+  const pal=stripPalette(scal.kind);
+  // One pass per colour: 31,102 cells but only a couple of dozen fill changes.
+  const bins=[];for(let i=0;i<pal.length;i++)bins.push([]);
+  for(let v=0;v<VCOUNT;v++)bins[Math.max(0,Math.min(pal.length-1,stripBucket(scal.val[v],scal.kind,scal.max)))].push(v);
+  bins.forEach((list,i)=>{
+    if(!list.length)return;
+    c.fillStyle=pal[i];
+    for(const v of list){const [x,y]=geom.cellAt(v);c.fillRect(x,y,cell,cell)}
+  });
+  c.restore();
+}
+// Book names down the left, and a name is skipped rather than overdrawn when the book
+// above it is too short to leave room. So the long books are always named and the very
+// short ones are found by pointing at them, which is what the readout is for.
+function drawStripFrame(c){
+  const g=geom.strip;if(!g)return;
+  const {pitch,rowOf,padL,padT,cols}=g;
+  c.save();
+  c.font='500 10px Inter,ui-sans-serif,system-ui,sans-serif';
+  c.textAlign='right';c.textBaseline='top';
+  let lastY=-99;
+  for(let bi=0;bi<BOOKS.length;bi++){
+    const y=padT+rowOf[bi]*pitch;
+    if(y-lastY>=10){
+      c.fillStyle=css('--muted');
+      c.fillText(shortName(BOOKS[bi].name).slice(0,padL<70?7:12),padL-6,y-1);
+      lastY=y;
+    }
+    if(bi===NT){
+      c.strokeStyle=css('--gold');c.globalAlpha=.75;c.lineWidth=1;
+      c.beginPath();c.moveTo(padL-2,y-2.5);c.lineTo(padL+cols*pitch,y-2.5);c.stroke();c.globalAlpha=1;
+    }
+  }
+  const mark=(v,colour,w)=>{
+    const [x,y]=geom.cellAt(v);
+    c.strokeStyle=colour;c.lineWidth=w;
+    c.strokeRect(x-1.5,y-1.5,g.cell+3,g.cell+3);
+  };
+  if(state.query==='reach'&&state.qVerse!==null&&state.qVerse!==undefined)mark(state.qVerse,css('--ink'),1.6);
+  if(state.lockedVerse!==null&&state.lockedVerse!==undefined)mark(state.lockedVerse,css('--gold'),1.6);
+  if(state.hoverVerse!==null&&state.hoverVerse!==undefined)mark(state.hoverVerse,css('--accent'),1.2);
+  c.restore();
+}
+function verseAt(px,py){
+  const g=geom.strip;if(!g)return null;
+  const {pitch,cols,rowOf,padL,padT}=g;
+  const col=Math.floor((px-padL)/pitch),row=Math.floor((py-padT)/pitch);
+  if(col<0||col>=cols||row<0||row>=g.rows)return null;
+  let bi=-1;
+  for(let i=0;i<BOOKS.length;i++)if(rowOf[i]<=row&&row<rowOf[i+1]){bi=i;break}
+  if(bi<0)return null;
+  const local=(row-rowOf[bi])*cols+col;
+  const v=BOOK_FIRST_VERSE[bi]+local;
+  return v<BOOK_FIRST_VERSE[bi+1]?v:null;
 }
 // The four control points of a link's curve, so it can be drawn whole or in pieces.
 function curveControls(l){
@@ -1235,6 +1528,13 @@ function buildIndex(){
 function renderBase(){
   const token=++renderToken;
   layout();          // the circle's geometry depends on the focus, so recompute it here
+  if(state.view==='strip'){
+    byChapter=byChapter||new Map();
+    linkLayer=document.createElement('canvas');
+    linkLayer.width=Math.max(1,W);linkLayer.height=Math.max(1,H);
+    drawStrip(linkLayer.getContext('2d'));
+    progress=1;paint();legend();return;
+  }
   buildIndex();
   linkLayer=document.createElement('canvas');
   linkLayer.width=Math.max(1,W);linkLayer.height=Math.max(1,H);
@@ -1310,6 +1610,7 @@ function paint(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   if(linkLayer)ctx.drawImage(linkLayer,0,0,canvas.width,canvas.height);
   ctx.save();ctx.scale(dpr,dpr);
+  if(state.view==='strip'){drawStripFrame(ctx);ctx.restore();return}
   const focus=state.locked!==null?state.locked:state.hover;
   if(focus===null||focus===undefined){
     drawFrame(ctx);
@@ -1339,8 +1640,10 @@ function caption(){
     circle:state.focus
       ?'The dial is '+state.focus.label+': one full turn, its chapters numbered. Every chord runs from a chapter out to where it points, and the rim now profiles how much lands in each chapter.'
       :'The whole canon clockwise from Genesis 1 at the top. Chords are pulled toward the centre of each book, so links sharing a destination braid together. Choose a book to make it the dial.',
-    matrix:'Each dot is one chapter pair: the chapter a link starts from across the bottom, the chapter it points to down the side. Direction is kept here and nowhere else.'
+    matrix:'Each dot is one chapter pair: the chapter a link starts from across the bottom, the chapter it points to down the side. Direction is kept here and nowhere else.',
+    strip:stripCaption()
   }[state.view];
+  if(state.view==='strip')return;
   if(state.order==='chronological')
     document.getElementById('caption').textContent+=
       ' The books are laid out in the order the events are usually dated rather than the order they are bound in'
@@ -1348,6 +1651,155 @@ function caption(){
       +' to have been written. Whole books are moved, never split, and the dates behind such an order are'
       +' widely contested; a second published plan puts Joel four centuries from where this one does.'
       +' Nothing in the data changes, only where each chapter is drawn.';
+}
+function stripCaption(){
+  const base='One cell per verse, all '+fmt(VCOUNT)+' of them, each book starting at the left edge. '
+    +'Every link in the data is counted here \u2014 the minimum-links dial and the focus do not apply. ';
+  const q=state.query==='reach'?((state.qVerse===null||state.qVerse===undefined)
+      ?'Click any verse to colour the canon by how many links it takes to reach it from there.'
+      :'How many links it takes to get from '+verseLabel(state.qVerse)+' to everywhere else. Four hops reach almost the whole Bible from most verses; some corners of the law take five.')
+    :{
+    gravity:'Colour is how many links touch the verse. The scale is compressed and stops at the 97th busiest verse rather than the busiest, so the middle of the Bible is visible at all; read it as more and less, not as a count. The number itself is in the panel.',
+    grain:'Whether a verse\u2019s links point forward in the canon or back. Nothing is chosen here: each verse counts its own neighbours.',
+    testament:'Only the links that cross between the Old Testament and the New are counted \u2014 '+fmt(crossingCount())+' of them.',
+    bookreach:(state.qBook===null||state.qBook===undefined)?'Choose a book.'
+      :(state.qDir==='in'?'Every verse that points into ':state.qDir==='out'?'Every verse that '+shortName(BOOKS[state.qBook].name)+' points at, and how often. ':'Links either way between ')
+        +(state.qDir==='in'?shortName(BOOKS[state.qBook].name)+', and how often.':state.qDir==='both'?shortName(BOOKS[state.qBook].name)+' and the rest of the canon.':''),
+    lemma:state.qKey?('Every verse holding '+((WORDS.lex[state.qKey]||[])[1]||state.qKey)+' ('+state.qKey+'), '+fmt(wVerses(state.qKey).filter(v=>v<VCOUNT).length)+' of them. Psalm superscriptions are not numbered in this English text, so occurrences there are not on the grid.')
+      :'Type a word, a transliteration or a Strong number.',
+    orphans:'The verses no cross-reference touches at all, and the barely-touched ones beside them. Most are speech formulae and genealogy.'
+  }[state.query]||'';
+  return base+q;
+}
+// The panel beside the strip answers for one verse: what it says, what the query makes
+// of it, and what it points at. A cell is one verse, so the panel is too.
+function describeStrip(eyebrow,title,sub,list){
+  const v=state.lockedVerse!==null&&state.lockedVerse!==undefined?state.lockedVerse:state.hoverVerse;
+  if(v===null||v===undefined){
+    eyebrow.textContent='THE WHOLE CANON';
+    title.textContent=({gravity:'Where the links gather',reach:'How far anything is from anything',
+      grain:'Which way the canon points',testament:'Where the testaments touch',
+      bookreach:'What a book reaches',lemma:'Where a word stands',orphans:'Where nothing points'})[state.query]||'The canon';
+    sub.textContent='Move across the grid to read a verse; click to hold it. '
+      +fmt(VCOUNT)+' verses, '+fmt(COUNT)+' cross-references, every one of them counted.';
+    return;
+  }
+  const scal=stripInfo;
+  eyebrow.textContent=(state.lockedVerse!==null&&state.lockedVerse!==undefined?'HELD \u00b7 ':'')
+    +shortName(BOOKS[BOOK_OF_VERSE[v]].name).toUpperCase();
+  title.textContent=verseLabel(v);
+  const g=verseGraph();
+  const n=g.off[v+1]-g.off[v];
+  let read='';
+  if(scal&&scal.val){
+    const x=scal.val[v];
+    const from=(state.qVerse===null||state.qVerse===undefined)?'':' from '+verseLabel(state.qVerse);
+    switch(state.query){
+      case 'gravity': read=fmt(n)+' link'+(n===1?'':'s');break;
+      case 'reach': read=x<0?'never reached'+from:x===0?'this is where the count starts'
+        :x+' hop'+(x===1?'':'s')+from;break;
+      case 'grain': read=Number.isNaN(x)?'no links'
+        :x>0?Math.round(x*100)+'% of its links point forward'
+        :x<0?Math.round(-x*100)+'% point back':'evenly split';break;
+      case 'testament': read=x?fmt(x)+' link'+(x===1?'':'s')+' across the testaments':'nothing across the testaments';break;
+      case 'bookreach': read=x?fmt(x)+' link'+(x===1?'':'s'):'nothing';break;
+      case 'lemma': read=x?'holds the word':'does not hold it';break;
+      case 'orphans': read=n?fmt(n)+' link'+(n===1?'':'s'):'no link at all';break;
+    }
+  }
+  sub.textContent=(read?read+'. ':'')+(TEXT[v]||'');
+  // Where this verse points, strongest first.
+  const out=[];
+  for(let i=0;i<COUNT;i++)if(VL_FROM[i]===v)out.push(i);
+  out.sort((a,b)=>VL_VOTES[b]-VL_VOTES[a]);
+  out.slice(0,24).forEach(i=>{
+    const li=document.createElement('li');
+    const head=document.createElement('div');head.className='link-head';
+    const dot=document.createElement('span');dot.className='dot';
+    dot.style.background=testamentColour(CHAPTER_OF_VERSE[VL_TO[i]]);
+    const ref=document.createElement('span');ref.className='ref';ref.textContent=verseRange(VL_TO[i],VL_SPAN[i]);
+    const cnt=document.createElement('span');cnt.className='n';cnt.textContent=VL_VOTES[i]+' votes';
+    head.append(dot,ref,cnt);li.appendChild(head);
+    head.addEventListener('click',()=>{
+      state.lockedVerse=VL_TO[i];state.locked=CHAPTER_OF_VERSE[VL_TO[i]];
+      if(state.query==='reach'){state.qVerse=VL_TO[i];renderBase()}else paint();
+      describe();
+    });
+    list.appendChild(li);
+  });
+  if(!out.length){
+    const li=document.createElement('li');li.className='empty';
+    li.textContent=n?'Nothing points out of this verse; '+fmt(n)+' link'+(n===1?' arrives':'s arrive')+' here.'
+      :'No cross-reference touches this verse.';
+    list.appendChild(li);
+  }
+}
+// The subject dial changes with the query, and disappears for the queries that take no
+// subject. Three reels that spin independently would offer combinations that mean
+// nothing - a word search needs a word, reach needs a verse - and an empty grid reads
+// as a broken page rather than as a question nobody asked.
+function qSubject(){
+  const box=document.getElementById('optSubject');if(!box)return;
+  box.hidden=state.view!=='strip'||!['reach','bookreach','lemma'].includes(state.query);
+  if(box.hidden){box.innerHTML='';return}
+  if(state.query==='reach'){
+    box.innerHTML='From <span class="qv"></span>';
+    box.querySelector('.qv').textContent=(state.qVerse===null||state.qVerse===undefined)
+      ?'\u2014 click the grid' : verseLabel(state.qVerse);
+    return;
+  }
+  if(state.query==='bookreach'){
+    box.innerHTML='Book <select id="qBook" aria-label="Which book"></select> '
+      +'<select id="qDir" aria-label="Which direction"><option value="out">points at</option>'
+      +'<option value="in">is pointed at by</option><option value="both">either way</option></select>';
+    const sel=box.querySelector('#qBook');
+    BOOKS.forEach((b,bi)=>{const o=document.createElement('option');o.value=bi;o.textContent=b.name;sel.appendChild(o)});
+    if(state.qBook===null||state.qBook===undefined)state.qBook=BOOKS.findIndex(b=>b.code==='Isa');
+    sel.value=state.qBook;box.querySelector('#qDir').value=state.qDir;
+    sel.addEventListener('change',e=>{state.qBook=+e.target.value;renderBase();caption();describe()});
+    box.querySelector('#qDir').addEventListener('change',e=>{state.qDir=e.target.value;renderBase();caption();describe()});
+    return;
+  }
+  box.innerHTML='Word <input id="qLemma" type="search" placeholder="chesed, love, H2617" autocomplete="off" spellcheck="false">'
+    +'<span class="qv"></span>';
+  const inp=box.querySelector('#qLemma');inp.value=state.qLemma||'';
+  const show=()=>{const e=state.qKey?WORDS.lex[state.qKey]:null;
+    box.querySelector('.qv').textContent=state.qKey?((e&&e[2])||state.qKey):(state.qLemma?'nothing matches':'')};
+  show();
+  const run=()=>{
+    state.qLemma=inp.value;
+    const keys=wSearch(state.qLemma);
+    const real=keys?keys.filter(k=>!W_AFFIX.has(k)):[];
+    state.qKey=real.length?real[0]:null;
+    show();renderBase();caption();describe();
+  };
+  inp.addEventListener('change',run);
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();run()}});
+}
+function stripLegend(){
+  const el=document.getElementById('legend');el.innerHTML='';
+  const kind=stripInfo?stripInfo.kind:'heat';
+  const add=(t,c)=>{const sp=document.createElement('span');sp.innerHTML='<i style="background:'+c+'"></i>'+t;el.appendChild(sp)};
+  if(kind==='none'){el.textContent=state.query==='reach'?'Click a verse on the grid.':'Choose a subject.';return}
+  if(kind==='signed'){
+    const ramp=document.createElement('div');ramp.className='ramp';
+    const pal=stripPalette('signed');
+    ramp.style.background='linear-gradient(90deg,'+pal[0]+','+pal[Math.floor(STRIP_BUCKETS/2)]+','+pal[STRIP_BUCKETS-1]+')';
+    const a=document.createElement('span');a.textContent='points back';
+    const b=document.createElement('span');b.textContent='points forward';
+    el.append(a,ramp,b);return;
+  }
+  if(kind==='bool'){add('holds the word',stripPalette('bool')[1]);add('does not',stripPalette('bool')[0]);return}
+  if(kind==='thin'){const p=stripPalette('thin');add('no link at all',p[0]);add('one or two',p[1]);add('more',p[2]);return}
+  if(kind==='hops'){const p=stripPalette('hops');
+    add('from here',p[0]);[1,2,3,4,5].forEach(h=>add(h+(h===5?'+ hops':' hop'+(h===1?'':'s')),p[h]));
+    add('never reached',p[7]);return}
+  const ramp=document.createElement('div');ramp.className='ramp';
+  ramp.style.background='linear-gradient(90deg,'+[0,.2,.4,.6,.8,1].map(heatColour).join(',')+')';
+  if(stripInfo&&stripInfo.max>1){const t=document.createElement('span');t.textContent='';el.appendChild(t)}
+  const a=document.createElement('span');a.textContent='none';
+  const b=document.createElement('span');b.textContent='most';
+  el.append(a,ramp,b);
 }
 function render(){sizes();buildOrder();layout();renderBase();caption()}
 
@@ -1374,6 +1826,7 @@ function labelAt(px,py){
   return best;
 }
 function chapterAt(px,py){
+  if(state.view==='strip'){const v=verseAt(px,py);return v===null?null:CHAPTER_OF_VERSE[v]}
   if(state.view==='matrix')return matrixAt(px,py);
   const named=labelAt(px,py);
   if(named!==null)return named;
@@ -1415,15 +1868,51 @@ function select(ci){
   describe();
 }
 canvas.addEventListener('pointermove',e=>{
-  const r=canvas.getBoundingClientRect(),i=chapterAt(e.clientX-r.left,e.clientY-r.top);
+  const r=canvas.getBoundingClientRect();
+  if(state.view==='strip'){
+    const v=verseAt(e.clientX-r.left,e.clientY-r.top);
+    if(v!==state.hoverVerse){state.hoverVerse=v;state.hover=v===null?null:CHAPTER_OF_VERSE[v];paint();describe()}
+    return;
+  }
+  const i=chapterAt(e.clientX-r.left,e.clientY-r.top);
   if(i!==state.hover){state.hover=i;paint();describe()}
 });
-canvas.addEventListener('pointerleave',()=>{if(state.hover!==null){state.hover=null;paint();describe()}});
+canvas.addEventListener('pointerleave',()=>{
+  if(state.hoverVerse!==null){state.hoverVerse=null}
+  if(state.hover!==null){state.hover=null;paint();describe();return}
+  if(state.view==='strip'){paint();describe()}
+});
 canvas.addEventListener('click',e=>{
-  const r=canvas.getBoundingClientRect(),i=chapterAt(e.clientX-r.left,e.clientY-r.top);
+  const r=canvas.getBoundingClientRect();
+  if(state.view==='strip'){
+    const v=verseAt(e.clientX-r.left,e.clientY-r.top);
+    if(v===null)return;
+    const off=v===state.lockedVerse;
+    state.lockedVerse=off?null:v;
+    state.locked=off?null:CHAPTER_OF_VERSE[v];
+    // Reach is asked of a verse, so clicking one is how you ask it.
+    if(state.query==='reach'&&!off){state.qVerse=v;qSubject();renderBase();caption()}
+    else paint();
+    describe();return;
+  }
+  const i=chapterAt(e.clientX-r.left,e.clientY-r.top);
   select(i===state.locked?null:i);          // one path, so a click and an arrow key agree
 });
 canvas.addEventListener('keydown',e=>{
+  if(state.view==='strip'){
+    const cols=geom.strip?geom.strip.cols:40;
+    const st={ArrowRight:1,ArrowLeft:-1,ArrowUp:-cols,ArrowDown:cols}[e.key];
+    if(st||e.key==='Home'||e.key==='End'||e.key==='Escape'){
+      e.preventDefault();
+      if(e.key==='Escape'){state.lockedVerse=null;state.locked=null;paint();describe();return}
+      const from=state.lockedVerse!=null?state.lockedVerse:(state.hoverVerse!=null?state.hoverVerse:0);
+      const to=e.key==='Home'?0:e.key==='End'?VCOUNT-1:Math.max(0,Math.min(VCOUNT-1,from+st));
+      state.lockedVerse=to;state.locked=CHAPTER_OF_VERSE[to];
+      if(state.query==='reach'){state.qVerse=to;qSubject();renderBase();caption()}else paint();
+      describe();return;
+    }
+    return;
+  }
   const step={ArrowRight:1,ArrowLeft:-1,ArrowUp:-10,ArrowDown:10}[e.key];
   if(step){e.preventDefault();
     // Carry on from whatever is held, else from whatever is under the pointer.
@@ -1484,6 +1973,7 @@ function describe(){
   const eyebrow=document.getElementById('p-eyebrow'),title=document.getElementById('p-title'),
         sub=document.getElementById('p-sub'),list=document.getElementById('p-list');
   list.innerHTML='';
+  if(state.view==='strip')return describeStrip(eyebrow,title,sub,list);
   if(focus===null||focus===undefined){
     if(state.focus){
       // Which other books this one actually talks to, which is the question the bezel asks.
@@ -1903,6 +2393,7 @@ document.getElementById('txtUp').addEventListener('click',()=>setTextSize(textSi
 setTextSize(textSize);
 
 function legend(){
+  if(state.view==='strip')return stripLegend();
   const el=document.getElementById('legend');el.innerHTML='';
   if(state.colour==='distance'){
     const ramp=document.createElement('div');ramp.className='ramp';
@@ -2024,11 +2515,66 @@ function chip(){
 function clearFocus(){state.focus=null;input.value='';chip();renderBase();describe();caption()}
 
 // ---- controls -----------------------------------------------------------
+// Which dials belong to which view. The canon strip counts every link and lays the
+// books out canonically, so the chapter-pair threshold, the focus, the thread, the
+// chronological order and the link-colour dial have nothing to act on: they are taken
+// away rather than left sitting there doing nothing.
+function dials(){
+  const strip=state.view==='strip';
+  const show=(id,on)=>{const e=document.getElementById(id);if(e)e.hidden=!on};
+  ['optOrder','optColour','optThread','optFlow','optMin','optSection'].forEach(id=>show(id,!strip));
+  show('optQuery',strip);show('qSpin',strip);show('fullOpen',strip);
+  const chips=document.getElementById('chipslot');       // the focus chip, which the strip ignores
+  if(chips)chips.style.display=strip?'none':'';
+  const tw=document.getElementById('threadWords');
+  if(strip&&tw)tw.hidden=true;
+  const dir=document.getElementById('dirslot');
+  if(strip&&dir)dir.hidden=true;
+  if(!strip)document.body.classList.remove('full');
+  const fo=document.getElementById('fullOpen');
+  if(fo)fo.setAttribute('aria-pressed',document.body.classList.contains('full')?'true':'false');
+  const q=document.getElementById('query');if(q)q.value=state.query;
+  qSubject();
+}
 document.querySelectorAll('.views button').forEach(b=>b.addEventListener('click',()=>{
   state.view=b.dataset.view;
   document.querySelectorAll('.views button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
-  render();describe();
+  dials();render();describe();
 }));
+document.getElementById('query').addEventListener('change',e=>{
+  state.query=e.target.value;qSubject();renderBase();caption();describe();
+});
+// Pick a query and a subject at random, from the combinations that mean something. It is
+// a way of finding what nobody thought to ask for, not a way of being told anything: the
+// draw chooses where to look, and the text says what is there.
+document.getElementById('qSpin').addEventListener('click',()=>{
+  const pick=a=>a[Math.floor(Math.random()*a.length)];
+  state.query=pick(['gravity','reach','grain','testament','bookreach','lemma','orphans']);
+  if(state.query==='reach'){
+    const g=verseGraph();
+    do{state.qVerse=Math.floor(Math.random()*VCOUNT)}while(g.off[state.qVerse+1]===g.off[state.qVerse]);
+  }
+  if(state.query==='bookreach'){state.qBook=Math.floor(Math.random()*BOOKS.length);state.qDir=pick(['out','in','both'])}
+  if(state.query==='lemma'){
+    const real=WORDS.keys.filter(k=>!W_AFFIX.has(k));
+    for(let t=0;t<40;t++){const k=pick(real);if(wVerses(k).length>=6&&wVerses(k).length<=900){state.qKey=k;break}}
+    state.qLemma=state.qKey?((WORDS.lex[state.qKey]||[])[2]||state.qKey):'';
+  }
+  document.getElementById('query').value=state.query;
+  qSubject();renderBase();caption();describe();
+});
+document.getElementById('fullOpen').addEventListener('click',()=>{
+  document.body.classList.toggle('full');
+  document.getElementById('fullOpen').setAttribute('aria-pressed',document.body.classList.contains('full')?'true':'false');
+  render();describe();
+});
+addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&document.body.classList.contains('full')){
+    document.body.classList.remove('full');
+    document.getElementById('fullOpen').setAttribute('aria-pressed','false');
+    render();describe();
+  }
+});
 document.getElementById('colour').addEventListener('change',e=>{state.colour=e.target.value;renderBase();legend();describe()});
 document.getElementById('order').addEventListener('change',e=>{
   state.order=e.target.value;buildOrder();renderBase();describe();caption();
@@ -2178,8 +2724,20 @@ const viewState=()=>({view:state.view,order:state.order,colour:state.colour,cbsa
   flow:state.flow,min:state.min,dir:state.dir,locked:state.locked,
   focus:state.focus?{from:state.focus.from,to:state.focus.to,label:state.focus.label}:null,
   thread:state.thread?{label:state.thread.label||null}:null,
-  chainLabel:state.chain?state.chain.label:null});
+  chainLabel:state.chain?state.chain.label:null,
+  query:state.query,qVerse:state.qVerse,qBook:state.qBook,qDir:state.qDir,
+  qLemma:state.qLemma,qKey:state.qKey,lockedVerse:state.lockedVerse});
 function describeState(v){
+  if(v.view==='strip'){
+    const q=({gravity:'gravity',reach:'reach',grain:'grain',testament:'across the testaments',
+      bookreach:'where a book points',lemma:'a word',orphans:'verses with no link'})[v.query]||v.query;
+    const parts=['Canon',q];
+    if(v.query==='reach'&&v.qVerse!=null)parts.push('from '+verseLabel(v.qVerse));
+    if(v.query==='bookreach'&&v.qBook!=null)parts.push(shortName(BOOKS[v.qBook].name)+' '+(v.qDir||'out'));
+    if(v.query==='lemma'&&v.qKey)parts.push(v.qKey);
+    if(v.lockedVerse!=null)parts.push('holding '+verseLabel(v.lockedVerse));
+    return parts.join(' · ');
+  }
   const bits=[({arc:'Arc',circle:'Circle',matrix:'Matrix'})[v.view]||v.view];
   if(v.order==='chronological')bits.push('chronological');
   bits.push(v.focus?v.focus.label:'whole Bible');
@@ -2211,6 +2769,10 @@ function restore(v){
   state.cbsafe=!!v.cbsafe;state.flow=v.flow!==false;state.min=v.min||1;state.dir=v.dir||'both';
   state.focus=v.focus?{...v.focus}:null;state.locked=v.locked==null?null:v.locked;
   state.thread=null;state.chain=null;
+  state.query=v.query||'gravity';
+  state.qVerse=v.qVerse==null?null:v.qVerse;state.qBook=v.qBook==null?null:v.qBook;
+  state.qDir=v.qDir||'out';state.qLemma=v.qLemma||'';state.qKey=v.qKey||null;
+  state.lockedVerse=v.lockedVerse==null?null:v.lockedVerse;state.hoverVerse=null;
   const set=(id,val)=>{const e=document.getElementById(id);if(e)e.value=val};
   set('order',state.order);set('colour',state.colour);set('direction',state.dir);
   set('section',state.focus?state.focus.label:'');set('threadPick','');
@@ -2219,7 +2781,7 @@ function restore(v){
   document.querySelectorAll('.views button').forEach(b=>{
     const on=b.dataset.view===state.view;b.setAttribute('aria-pressed',on?'true':'false')});
   try{chip()}catch(e){}
-  buildOrder();render();legend();describe();
+  dials();buildOrder();render();legend();describe();
   document.getElementById('plot').scrollIntoView({block:'center',behavior:'smooth'});
 }
 function nbFlash(msg){const f=nbEl('nb-foot');if(!f)return;f.textContent=msg;
@@ -2317,7 +2879,7 @@ if(COMPLETE&&window.matchMedia&&window.matchMedia('(max-width:560px)').matches){
     try{chip()}catch(e){}
   }
 }
-render();legend();describe();
+dials();render();legend();describe();
 })();
 </script>
 </body>
