@@ -24,7 +24,12 @@ That file is Cross_Reference_Lab.html and it is self-contained in the same way.
 
 "Canon" is the whole Bible as a grid: one small cell for each of the 31,102 verses,
 each book starting at the left edge, Genesis at the top and Revelation at the
-bottom with a gold line where the testaments meet. Point at a cell to read that
+bottom with a gold line where the testaments meet. On a wide screen the sixty-six
+books are named in one straight column down the side, each name on its own
+book's first row; where a short book would not be tall enough to carry a name the
+gap after it is opened out, so no cell changes size and nothing moves out of
+order. On a narrow screen there is room for neither, so the names go in two
+columns with a hairline back to the row each belongs to. Point at a cell to read that
 verse; click to hold it. What the colours mean depends on the question you pick
 from "Query":
 
