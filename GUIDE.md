@@ -39,6 +39,18 @@ from "Query":
   Where a book points  pick a book and see what it reaches, or what reaches it.
   A word             type a word, a transliteration or a Strong number and every
                      verse holding it lights up.
+  Rare vocabulary    how uncommon a verse's own words are — the information each
+                     tagged word carries, averaged over the verse. The darkest
+                     places are the Aramaic chapters of Daniel and Ezra, the
+                     genealogies, Job and the Song; the palest is the whole New
+                     Testament, whose Greek repeats itself far more.
+  Shared vocabulary  click a verse, and every other verse is coloured by how much
+                     of its wording it shares — by Strong number, not by English.
+                     Psalm 23:1 finds the shepherd chapter of Ezekiel; Matthew
+                     1:23 finds Luke 1:31. The panel lists the shared words and
+                     how rare each one is, so you can see what the match rests
+                     on. This is shared wording, not a cross-reference: nobody
+                     judged these verses to belong together.
   No link            the 54 verses nothing points at, and the barely-touched
                      ones beside them.
 
@@ -49,6 +61,13 @@ have thought to ask for; the drawing chooses where to look and the text beside
 it says what is there. "Full screen" gives the grid the whole window, and Escape
 brings it back. The chapter-level dials — minimum links, focus, thread, order —
 are hidden while Canon is up, because this view counts every link there is.
+
+The two vocabulary questions count Hebrew and Greek separately, because a word's
+frequency in one is no guide to the other, and they leave out the prefixes and
+suffixes written joined to the next word — those are grammar rather than
+vocabulary and they stand everywhere. For shared vocabulary, a word standing in
+more than 600 verses is not followed at all: below that the words that actually
+tie two passages together survive, and above it the particles drown them.
 
 The colour scale for a count is compressed: the busiest verse has fourteen times
 the links of the middling one, so a straight scale would leave half the Bible

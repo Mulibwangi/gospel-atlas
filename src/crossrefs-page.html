@@ -209,6 +209,8 @@ footer p{margin:0 0 7px}
      is in force, since a filter nobody can see is worse than no filter. */
   .bar .dials-toggle{display:inline-block}
   .bar.shut .opt{display:none}
+  .bar.shut #optQuery,.bar.shut #optSubject{display:flex}
+  .bar #optQuery{flex:1 1 100%}
   .bar .spacer{display:none}
   header{gap:10px;padding-bottom:12px}
   .lede{display:none}
@@ -656,6 +658,8 @@ root.innerHTML=`
         <option value="testament">Crossing the testaments</option>
         <option value="bookreach">Where a book points</option>
         <option value="lemma">A Hebrew or Greek word</option>
+        <option value="rare">Rare vocabulary</option>
+        <option value="similar">Words shared with one verse</option>
         <option value="orphans">Verses with no link</option>
       </select>
     </div>
@@ -811,12 +815,80 @@ function verseGraph(){
   }
   VG={off,nbr,deg};return VG;
 }
+// The concordance is written the other way round - each word, then every verse it
+// stands in - which answers "where is this word" and not "what words are here". Both
+// of the questions below need the second, so the whole thing is turned inside out once
+// into a verse-to-words index. Half a million entries, built the first time one of
+// those questions is asked and never otherwise.
+//
+// A word's weight is its information content: -log2 of how often it stands, counted
+// within its own language, because a Hebrew word's frequency and a Greek one's are
+// counts of different corpora and cannot be compared. Affixes - the article, the
+// conjunction, the prepositions written joined to the next word - are left out: they
+// are morphemes rather than vocabulary, and they stand everywhere.
+// A word standing in more than this many verses - two in every hundred - is not
+// followed when comparing vocabulary. The figure was chosen by trying it: at two
+// thousand, Micah 6:8's nearest verse was Nehemiah 2:12, tied to it by "what", "with",
+// "do", "except" and nothing else, while at three hundred the real ties were being cut
+// as well. At six hundred the particles drop out and the words that actually hold two
+// passages together remain - Psalm 23:1 finds the shepherd chapter of Ezekiel, and
+// Matthew 1:23 finds Luke 1:31.
+const COMMON=600;
+let WIDX=null;
+function wordIndex(){
+  if(WIDX)return WIDX;
+  const K=WORDS.keys.length;
+  const use=new Uint8Array(K),freq=new Int32Array(K),isHeb=new Uint8Array(K);
+  const lists=new Array(K);
+  let totH=0,totG=0;
+  for(let i=0;i<K;i++){
+    const key=WORDS.keys[i];
+    if(W_AFFIX.has(key))continue;
+    const occ=wVerses(key).filter(v=>v>=0&&v<VCOUNT);   // psalm titles sit past the canon
+    if(!occ.length)continue;
+    use[i]=1;lists[i]=occ;freq[i]=occ.length;
+    if(String(key)[0]==='H'){isHeb[i]=1;totH+=occ.length}else totG+=occ.length;
+  }
+  const weight=new Float32Array(K);
+  for(let i=0;i<K;i++)if(use[i])
+    weight[i]=Math.max(0,-Math.log2(freq[i]/Math.max(1,isHeb[i]?totH:totG)));
+  const deg=new Int32Array(VCOUNT);
+  for(let i=0;i<K;i++)if(use[i])for(const v of lists[i])deg[v]++;
+  const off=new Int32Array(VCOUNT+1);
+  for(let v=0;v<VCOUNT;v++)off[v+1]=off[v]+deg[v];
+  const cur=off.slice(0,VCOUNT),at=new Int32Array(off[VCOUNT]);
+  for(let i=0;i<K;i++)if(use[i])for(const v of lists[i])at[cur[v]++]=i;
+  // How much a verse is worth in total, for comparing two of them. Without it the
+  // long verses win every time: a sentence sharing eight middling words would beat
+  // one sharing the single word that actually ties the two passages together.
+  const norm=new Float32Array(VCOUNT);
+  for(let v=0;v<VCOUNT;v++){
+    let sq=0,seen=null;
+    for(let p=off[v];p<off[v+1];p++){const k=at[p];if(freq[k]>COMMON)continue;
+      if(seen===null)seen=new Set();
+      if(seen.has(k))continue;seen.add(k);sq+=weight[k]*weight[k]}
+    norm[v]=Math.sqrt(sq);
+  }
+  WIDX={off,at,weight,freq,use,lists,norm,totH,totG};
+  return WIDX;
+}
 // A heat scale that a handful of hubs cannot flatten. The top of the ramp is the 97th
 // percentile, not the maximum, and anything above it is drawn at the top. Even then the
 // busiest verse has fourteen times the links of the median one, so a scale that ran
 // straight from none to most would leave half the Bible looking empty: the ramp is
 // compressed, and the caption says so rather than letting the colour imply a count.
 const HEAT_GAMMA=0.6;
+// Where a measure does not start at nothing, the bottom of the ramp would be spent on
+// a range no verse occupies. Rare vocabulary runs from about 5.6 bits a word to about
+// 10.8, so without this the whole Bible is drawn in the top half of the scale and looks
+// uniform. The floor is the third percentile, not the minimum, for the same reason the
+// ceiling is not the maximum.
+function clipMin(val){
+  const seen=[];for(let i=0;i<val.length;i++)if(val[i]>0)seen.push(val[i]);
+  if(!seen.length)return 0;
+  seen.sort((a,b)=>a-b);
+  return seen[Math.floor(seen.length*0.03)];
+}
 function clipMax(val){
   const seen=[];for(let i=0;i<val.length;i++)if(val[i]>0)seen.push(val[i]);
   if(!seen.length)return 1;
@@ -890,6 +962,36 @@ function stripScalar(){
     }
     return {val,max:clipMax(val),kind:'heat'};
   }
+  if(state.query==='rare'){
+    const w=wordIndex();
+    for(let v=0;v<VCOUNT;v++){
+      const a=w.off[v],b=w.off[v+1];
+      if(b===a){val[v]=0;continue}
+      let sum=0;for(let p=a;p<b;p++)sum+=w.weight[w.at[p]];
+      // Smoothed by two words: a two-word verse holding one uncommon word is not the
+      // rarest vocabulary in the Bible, it is a short verse.
+      val[v]=sum/((b-a)+2);
+    }
+    return {val,max:clipMax(val),min:clipMin(val),kind:'heat'};
+  }
+  if(state.query==='similar'){
+    const a=state.qVerse;
+    if(a===null||a===undefined)return {val:null,kind:'none'};
+    const w=wordIndex();
+    if(!w.norm[a])return {val,max:1,kind:'heat'};
+    const done=new Set();
+    for(let p=w.off[a];p<w.off[a+1];p++){
+      const k=w.at[p];
+      if(w.freq[k]>COMMON||done.has(k))continue;
+      done.add(k);
+      const sq=w.weight[k]*w.weight[k];
+      for(const v of w.lists[k])if(v!==a)val[v]+=sq;
+    }
+    // Cosine, so what counts is the share of each verse's vocabulary that is held in
+    // common rather than the length of the verse holding it.
+    for(let v=0;v<VCOUNT;v++)if(val[v])val[v]=val[v]/(w.norm[a]*(w.norm[v]||1));
+    return {val,max:clipMax(val),kind:'heat'};
+  }
   if(state.query==='lemma'){
     if(!state.qKey)return {val:null,kind:'none'};
     for(const v of wVerses(state.qKey))if(v>=0&&v<VCOUNT)val[v]=1;
@@ -916,13 +1018,14 @@ function stripPalette(kind){
     :[css('--scarlet')||'#b2403a','#15382a','#2f6f4f','#73a95f','#c3cb8e','#e3dcb4','#efe6cc',faint];
   return [faint,...Array.from({length:STRIP_BUCKETS-1},(_,i)=>heatColour(i/(STRIP_BUCKETS-2)))];
 }
-function stripBucket(x,kind,max){
+function stripBucket(x,kind,max,min){
   if(kind==='signed')return Number.isNaN(x)?STRIP_BUCKETS:Math.max(0,Math.min(STRIP_BUCKETS-1,Math.round((x+1)/2*(STRIP_BUCKETS-1))));
   if(kind==='bool')return x>0?1:0;
   if(kind==='thin')return x===0?0:(x<=2?1:2);
   if(kind==='hops')return x<0?7:(x===0?0:Math.min(6,x));
   if(x<=0)return 0;
-  const t=Math.pow(Math.min(1,x/max),HEAT_GAMMA);
+  const lo=min||0;
+  const t=Math.pow(Math.max(0,Math.min(1,(x-lo)/Math.max(1e-9,max-lo))),HEAT_GAMMA);
   return Math.max(1,Math.min(STRIP_BUCKETS-1,Math.round(t*(STRIP_BUCKETS-2))+1));
 }
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
@@ -957,7 +1060,7 @@ function sizes(){
   H=state.view==='arc'?Math.round(Math.min(560,Math.max(300,W*0.42)))
    :state.view==='strip'?(document.body.classList.contains('full')
       ?Math.max(320,Math.round((window.innerHeight||700)-108))
-      :Math.round(Math.min(760,Math.max(380,W*0.62))))
+      :Math.round(Math.min(900,Math.max(380,W*0.68))))
    :Math.round(Math.min(840,Math.max(360,W*0.86)));
   dpr=Math.min(2,window.devicePixelRatio||1);
   canvas.style.height=H+'px';
@@ -997,8 +1100,13 @@ function layout(){
     // eye can find it. True proportions are kept: a verse is one cell everywhere, so
     // Obadiah is 21 cells and Psalms is 2,461, and the answer to a query has the same
     // shape in both. The cell size is whatever makes the whole canon fit the canvas.
-    const narrow=W<560;
-    const padL=narrow?58:92,padT=12,padR=narrow?4:10,padB=18;
+    // The gutter carries every book's name, in two staggered columns, because one
+    // column cannot: twenty-nine of the sixty-six - Isaiah, Ezekiel, Matthew, Hebrews
+    // and Revelation among them - had no room and went unnamed, and a reader looking
+    // for Revelation could not tell whether it was unlabelled or missing.
+    const wide=W>=1150,narrow=W<560;
+    const padL=narrow?62:wide?148:96,padT=12,padR=narrow?4:10,padB=18;
+    const nameMax=narrow?0:wide?13:7;   // 0 means the book's short code
     const availW=Math.max(60,W-padL-padR),availH=Math.max(60,H-padT-padB);
     let pitch=3,cols=1,rows=1;
     for(let p=11;p>=2;p--){
@@ -1009,7 +1117,7 @@ function layout(){
     }
     const rowOf=new Int32Array(BOOKS.length+1);
     for(let bi=0,r=0;bi<BOOKS.length;bi++){rowOf[bi]=r;r+=Math.ceil((BOOK_FIRST_VERSE[bi+1]-BOOK_FIRST_VERSE[bi])/cols);rowOf[BOOKS.length]=r}
-    geom.strip={padL,padT,padR,padB,pitch,cols,rows,rowOf,cell:Math.max(1,pitch-1)};
+    geom.strip={padL,padT,padR,padB,pitch,cols,rows,rowOf,nameMax,narrow,cell:Math.max(1,pitch-1)};
     // The grid decides its own height. Left-over canvas would sit under it as blank and
     // a saved image would carry the blank with it; too little and, on a phone, the grid
     // would run out under the caption. So the canvas is made to fit either way.
@@ -1040,7 +1148,7 @@ function drawStrip(c){
   const pal=stripPalette(scal.kind);
   // One pass per colour: 31,102 cells but only a couple of dozen fill changes.
   const bins=[];for(let i=0;i<pal.length;i++)bins.push([]);
-  for(let v=0;v<VCOUNT;v++)bins[Math.max(0,Math.min(pal.length-1,stripBucket(scal.val[v],scal.kind,scal.max)))].push(v);
+  for(let v=0;v<VCOUNT;v++)bins[Math.max(0,Math.min(pal.length-1,stripBucket(scal.val[v],scal.kind,scal.max,scal.min)))].push(v);
   bins.forEach((list,i)=>{
     if(!list.length)return;
     c.fillStyle=pal[i];
@@ -1053,29 +1161,52 @@ function drawStrip(c){
 // short ones are found by pointing at them, which is what the readout is for.
 function drawStripFrame(c){
   const g=geom.strip;if(!g)return;
-  const {pitch,rowOf,padL,padT,cols}=g;
+  const {pitch,rowOf,padL,padT,cols,rows,nameMax}=g;
   c.save();
-  c.font='500 10px Inter,ui-sans-serif,system-ui,sans-serif';
+  const fs=g.narrow?9:10;
+  c.font='500 '+fs+'px Inter,ui-sans-serif,system-ui,sans-serif';
   c.textAlign='right';c.textBaseline='top';
-  let lastY=-99;
-  for(let bi=0;bi<BOOKS.length;bi++){
-    const y=padT+rowOf[bi]*pitch;
-    if(y-lastY>=10){
-      c.fillStyle=css('--muted');
-      c.fillText(shortName(BOOKS[bi].name).slice(0,padL<70?7:12),padL-6,y-1);
-      lastY=y;
+  const GAP=fs+1;
+  const colW=Math.round((padL-10)/2);
+  const colX=[padL-6,padL-6-colW];     // the nearer column first
+  const held=state.lockedVerse!=null?BOOK_OF_VERSE[state.lockedVerse]
+            :state.hoverVerse!=null?BOOK_OF_VERSE[state.hoverVerse]:-1;
+  // Where each name goes. Books take the two columns in turn, so two books that begin
+  // a few rows apart are never fighting for the same column; then each column is
+  // spread - pushed down off its neighbour, then pushed back up off the bottom - so
+  // no name is lost over the edge. A name that ends up away from its own row gets a
+  // hairline back to it. Every book is named, at every width.
+  const bottom=padT+rows*pitch-fs;
+  const lanes=[[],[]];
+  for(let bi=0;bi<BOOKS.length;bi++)lanes[bi%2].push({bi,y:padT+rowOf[bi]*pitch});
+  for(const lane of lanes){
+    let prev=-1e9;
+    for(const L of lane){L.at=Math.max(L.y,prev+GAP);prev=L.at}
+    let next=bottom;
+    for(let i=lane.length-1;i>=0;i--){const L=lane[i];L.at=Math.max(padT,Math.min(L.at,next));next=L.at-GAP}
+  }
+  for(let col=0;col<2;col++)for(const L of lanes[col]){
+    const name=nameMax?shortName(BOOKS[L.bi].name).slice(0,nameMax):BOOKS[L.bi].code;
+    c.fillStyle=L.bi===held?css('--ink'):css('--muted');
+    c.fillText(name,colX[col],L.at-1);
+    if(Math.abs(L.at-L.y)>2){
+      c.strokeStyle=css('--line');c.lineWidth=1;c.globalAlpha=.9;
+      c.beginPath();c.moveTo(colX[col]+2,L.at+fs*0.5);c.lineTo(padL-3,L.y+1);c.stroke();c.globalAlpha=1;
     }
-    if(bi===NT){
-      c.strokeStyle=css('--gold');c.globalAlpha=.75;c.lineWidth=1;
-      c.beginPath();c.moveTo(padL-2,y-2.5);c.lineTo(padL+cols*pitch,y-2.5);c.stroke();c.globalAlpha=1;
-    }
+  }
+  c.fillStyle=css('--line');
+  for(let bi=0;bi<BOOKS.length;bi++)c.fillRect(padL-3,padT+rowOf[bi]*pitch,2,1);
+  {
+    const y=padT+rowOf[NT]*pitch;
+    c.strokeStyle=css('--gold');c.globalAlpha=.75;c.lineWidth=1;
+    c.beginPath();c.moveTo(padL-2,y-2.5);c.lineTo(padL+cols*pitch,y-2.5);c.stroke();c.globalAlpha=1;
   }
   const mark=(v,colour,w)=>{
     const [x,y]=geom.cellAt(v);
     c.strokeStyle=colour;c.lineWidth=w;
     c.strokeRect(x-1.5,y-1.5,g.cell+3,g.cell+3);
   };
-  if(state.query==='reach'&&state.qVerse!==null&&state.qVerse!==undefined)mark(state.qVerse,css('--ink'),1.6);
+  if((state.query==='reach'||state.query==='similar')&&state.qVerse!==null&&state.qVerse!==undefined)mark(state.qVerse,css('--ink'),1.6);
   if(state.lockedVerse!==null&&state.lockedVerse!==undefined)mark(state.lockedVerse,css('--gold'),1.6);
   if(state.hoverVerse!==null&&state.hoverVerse!==undefined)mark(state.hoverVerse,css('--accent'),1.2);
   c.restore();
@@ -1655,6 +1786,9 @@ function caption(){
 function stripCaption(){
   const base='One cell per verse, all '+fmt(VCOUNT)+' of them, each book starting at the left edge. '
     +'Every link in the data is counted here \u2014 the minimum-links dial and the focus do not apply. ';
+  if(state.query==='similar')return base+((state.qVerse===null||state.qVerse===undefined)
+    ?'Click any verse to colour the canon by how much of its vocabulary each other verse shares.'
+    :'How much of the vocabulary of '+verseLabel(state.qVerse)+' each verse shares, by Strong number rather than by English. A word counts for what it is worth: one standing in a handful of verses counts heavily, one standing in hundreds barely at all, and words standing in more than '+COMMON+' verses are not followed at all. What is measured is the share of each verse\u2019s own vocabulary held in common, so a long verse is not favoured over a short one. This is shared wording, not shared meaning, and it is not a cross-reference: nobody judged these to belong together.');
   const q=state.query==='reach'?((state.qVerse===null||state.qVerse===undefined)
       ?'Click any verse to colour the canon by how many links it takes to reach it from there.'
       :'How many links it takes to get from '+verseLabel(state.qVerse)+' to everywhere else. Four hops reach almost the whole Bible from most verses; some corners of the law take five.')
@@ -1667,6 +1801,7 @@ function stripCaption(){
         +(state.qDir==='in'?shortName(BOOKS[state.qBook].name)+', and how often.':state.qDir==='both'?shortName(BOOKS[state.qBook].name)+' and the rest of the canon.':''),
     lemma:state.qKey?('Every verse holding '+((WORDS.lex[state.qKey]||[])[1]||state.qKey)+' ('+state.qKey+'), '+fmt(wVerses(state.qKey).filter(v=>v<VCOUNT).length)+' of them. Psalm superscriptions are not numbered in this English text, so occurrences there are not on the grid.')
       :'Type a word, a transliteration or a Strong number.',
+    rare:'The highest scores are lists of names, which are rare words by definition, and the Aramaic chapters of Daniel and Ezra, whose every word is uncommon in a Hebrew corpus. Both are what the measure says rather than faults in it. How uncommon a verse\u2019s own words are: the information each tagged word carries, averaged over the verse and counted within its own language, since Hebrew and Greek are different corpora. Prefixes and suffixes are left out. A short verse is not promoted for holding one odd word.',
     orphans:'The verses no cross-reference touches at all, and the barely-touched ones beside them. Most are speech formulae and genealogy.'
   }[state.query]||'';
   return base+q;
@@ -1679,7 +1814,8 @@ function describeStrip(eyebrow,title,sub,list){
     eyebrow.textContent='THE WHOLE CANON';
     title.textContent=({gravity:'Where the links gather',reach:'How far anything is from anything',
       grain:'Which way the canon points',testament:'Where the testaments touch',
-      bookreach:'What a book reaches',lemma:'Where a word stands',orphans:'Where nothing points'})[state.query]||'The canon';
+      bookreach:'What a book reaches',lemma:'Where a word stands',rare:'Where the vocabulary is uncommon',
+      similar:'Which verses are worded alike',orphans:'Where nothing points'})[state.query]||'The canon';
     sub.textContent='Move across the grid to read a verse; click to hold it. '
       +fmt(VCOUNT)+' verses, '+fmt(COUNT)+' cross-references, every one of them counted.';
     return;
@@ -1704,10 +1840,59 @@ function describeStrip(eyebrow,title,sub,list){
       case 'testament': read=x?fmt(x)+' link'+(x===1?'':'s')+' across the testaments':'nothing across the testaments';break;
       case 'bookreach': read=x?fmt(x)+' link'+(x===1?'':'s'):'nothing';break;
       case 'lemma': read=x?'holds the word':'does not hold it';break;
+      case 'rare': read=x?x.toFixed(2)+' bits a word':'no tagged words';break;
+      case 'similar': read=x?Math.round(x*100)+'% of its vocabulary shared with '+(state.qVerse!=null?verseLabel(state.qVerse):'it'):'nothing shared';break;
       case 'orphans': read=n?fmt(n)+' link'+(n===1?'':'s'):'no link at all';break;
     }
   }
   sub.textContent=(read?read+'. ':'')+(TEXT[v]||'');
+  // A number nobody can check is not an answer, so the two vocabulary questions show
+  // their working: which words these are, and what each of them is worth.
+  if(state.query==='rare'||state.query==='similar'){
+    const w=wordIndex();
+    const mine=[];for(let p=w.off[v];p<w.off[v+1];p++)mine.push(w.at[p]);
+    let shown=[...new Set(mine)];
+    let heading='RAREST WORDS HERE';
+    if(state.query==='similar'){
+      heading='SHARED WITH '+(state.qVerse!=null?verseLabel(state.qVerse).toUpperCase():'IT');
+      if(state.qVerse!=null&&state.qVerse!==v){
+        const theirs=new Set();
+        for(let p=w.off[state.qVerse];p<w.off[state.qVerse+1];p++)theirs.add(w.at[p]);
+        shown=shown.filter(k=>theirs.has(k)&&w.freq[k]<=COMMON);
+      }else{
+        // The verse being matched against itself: show what is being matched on.
+        heading='THE WORDS BEING MATCHED';
+        shown=shown.filter(k=>w.freq[k]<=COMMON);
+      }
+    }
+    shown.sort((a,b)=>w.weight[b]-w.weight[a]);
+    if(shown.length){
+      const h=document.createElement('li');h.className='empty';h.textContent=heading;
+      list.appendChild(h);
+      shown.slice(0,10).forEach(k=>{
+        const key=WORDS.keys[k],e=WORDS.lex[key]||[];
+        const li=document.createElement('li');
+        const head=document.createElement('div');head.className='link-head';
+        const dot=document.createElement('span');dot.className='dot';dot.style.background=css('--gold');
+        const ref=document.createElement('span');ref.className='ref';
+        ref.textContent=(e[1]||key)+(e[2]?' \u00b7 '+e[2]:'')+(e[3]?' \u2014 '+e[3]:'');
+        const cnt=document.createElement('span');cnt.className='n';
+        cnt.textContent=w.freq[k]+(w.freq[k]===1?' verse':' verses');
+        head.append(dot,ref,cnt);li.appendChild(head);
+        head.addEventListener('click',()=>{
+          state.query='lemma';state.qKey=key;state.qLemma=e[2]||key;
+          document.getElementById('query').value='lemma';
+          qSubject();renderBase();caption();describe();
+        });
+        list.appendChild(li);
+      });
+    }else if(state.query==='similar'&&state.qVerse!=null&&state.qVerse!==v){
+      const li=document.createElement('li');li.className='empty';
+      li.textContent='No informative word in common with '+verseLabel(state.qVerse)+'.';
+      list.appendChild(li);
+    }
+    if(state.query==='similar')return;
+  }
   // Where this verse points, strongest first.
   const out=[];
   for(let i=0;i<COUNT;i++)if(VL_FROM[i]===v)out.push(i);
@@ -1722,7 +1907,7 @@ function describeStrip(eyebrow,title,sub,list){
     head.append(dot,ref,cnt);li.appendChild(head);
     head.addEventListener('click',()=>{
       state.lockedVerse=VL_TO[i];state.locked=CHAPTER_OF_VERSE[VL_TO[i]];
-      if(state.query==='reach'){state.qVerse=VL_TO[i];renderBase()}else paint();
+      if(state.query==='reach'||state.query==='similar'){state.qVerse=VL_TO[i];qSubject();renderBase();caption()}else paint();
       describe();
     });
     list.appendChild(li);
@@ -1740,9 +1925,9 @@ function describeStrip(eyebrow,title,sub,list){
 // as a broken page rather than as a question nobody asked.
 function qSubject(){
   const box=document.getElementById('optSubject');if(!box)return;
-  box.hidden=state.view!=='strip'||!['reach','bookreach','lemma'].includes(state.query);
+  box.hidden=state.view!=='strip'||!['reach','similar','bookreach','lemma'].includes(state.query);
   if(box.hidden){box.innerHTML='';return}
-  if(state.query==='reach'){
+  if(state.query==='reach'||state.query==='similar'){
     box.innerHTML='From <span class="qv"></span>';
     box.querySelector('.qv').textContent=(state.qVerse===null||state.qVerse===undefined)
       ?'\u2014 click the grid' : verseLabel(state.qVerse);
@@ -1862,6 +2047,15 @@ function turnsTheDial(next){
   return inside(next)||inside(state.locked);
 }
 function select(ci){
+  // Searching for a book is also how you find it on the grid: the strip holds verses,
+  // so a chapter arrives as its first verse, ringed.
+  if(state.view==='strip'){
+    state.locked=ci;
+    state.lockedVerse=ci===null?null:CHAPTER_START[ci];
+    if((state.query==='reach'||state.query==='similar')&&ci!==null){state.qVerse=state.lockedVerse;qSubject();renderBase();caption()}
+    else paint();
+    describe();return;
+  }
   const rebuild=turnsTheDial(ci);
   state.locked=ci;
   if(rebuild)renderBase();else paint();
@@ -1891,7 +2085,7 @@ canvas.addEventListener('click',e=>{
     state.lockedVerse=off?null:v;
     state.locked=off?null:CHAPTER_OF_VERSE[v];
     // Reach is asked of a verse, so clicking one is how you ask it.
-    if(state.query==='reach'&&!off){state.qVerse=v;qSubject();renderBase();caption()}
+    if((state.query==='reach'||state.query==='similar')&&!off){state.qVerse=v;qSubject();renderBase();caption()}
     else paint();
     describe();return;
   }
@@ -1908,7 +2102,7 @@ canvas.addEventListener('keydown',e=>{
       const from=state.lockedVerse!=null?state.lockedVerse:(state.hoverVerse!=null?state.hoverVerse:0);
       const to=e.key==='Home'?0:e.key==='End'?VCOUNT-1:Math.max(0,Math.min(VCOUNT-1,from+st));
       state.lockedVerse=to;state.locked=CHAPTER_OF_VERSE[to];
-      if(state.query==='reach'){state.qVerse=to;qSubject();renderBase();caption()}else paint();
+      if(state.query==='reach'||state.query==='similar'){state.qVerse=to;qSubject();renderBase();caption()}else paint();
       describe();return;
     }
     return;
@@ -2549,8 +2743,8 @@ document.getElementById('query').addEventListener('change',e=>{
 // draw chooses where to look, and the text says what is there.
 document.getElementById('qSpin').addEventListener('click',()=>{
   const pick=a=>a[Math.floor(Math.random()*a.length)];
-  state.query=pick(['gravity','reach','grain','testament','bookreach','lemma','orphans']);
-  if(state.query==='reach'){
+  state.query=pick(['gravity','reach','grain','testament','bookreach','lemma','rare','similar','orphans']);
+  if(state.query==='reach'||state.query==='similar'){
     const g=verseGraph();
     do{state.qVerse=Math.floor(Math.random()*VCOUNT)}while(g.off[state.qVerse+1]===g.off[state.qVerse]);
   }
@@ -2730,9 +2924,10 @@ const viewState=()=>({view:state.view,order:state.order,colour:state.colour,cbsa
 function describeState(v){
   if(v.view==='strip'){
     const q=({gravity:'gravity',reach:'reach',grain:'grain',testament:'across the testaments',
-      bookreach:'where a book points',lemma:'a word',orphans:'verses with no link'})[v.query]||v.query;
+      bookreach:'where a book points',lemma:'a word',rare:'rare vocabulary',
+      similar:'shared vocabulary',orphans:'verses with no link'})[v.query]||v.query;
     const parts=['Canon',q];
-    if(v.query==='reach'&&v.qVerse!=null)parts.push('from '+verseLabel(v.qVerse));
+    if((v.query==='reach'||v.query==='similar')&&v.qVerse!=null)parts.push('from '+verseLabel(v.qVerse));
     if(v.query==='bookreach'&&v.qBook!=null)parts.push(shortName(BOOKS[v.qBook].name)+' '+(v.qDir||'out'));
     if(v.query==='lemma'&&v.qKey)parts.push(v.qKey);
     if(v.lockedVerse!=null)parts.push('holding '+verseLabel(v.lockedVerse));
