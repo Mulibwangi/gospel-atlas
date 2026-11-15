@@ -79,9 +79,14 @@ the links of the middling one, so a straight scale would leave half the Bible
 looking blank. Read the colour as more and less; the number itself is always in
 the panel.
 
-All four drawings use the same scale, climbing in one direction from pale green
-through teal to deep blue, so "more" looks like more whether you read it on a
-screen, in grey on a printer, or with any kind of colour blindness. On the three
+All four drawings use the same scale. "Scale" offers two. "Ramp" is the default:
+pale green through teal to deep blue, climbing in one direction, so "more" looks
+like more whether you read it on a screen, in grey on a printer, or with any
+kind of colour blindness. "Rainbow" is the scale this page was first drawn with,
+a sweep of hue from violet round to red; it tells apart values that lie close
+together better than any ordered scale can, but it has to be read against the
+key rather than at a glance. It is the one scale that cannot also be made
+colour-blind safe, so turning that on puts the rainbow out of reach and says so. On the three
 link diagrams it colours distance: a short link is pale, a link across the canon
 is dark. Half of all cross-references join chapters less than a tenth of the
 canon apart, so the short end is stretched to make it visible — the ends mean

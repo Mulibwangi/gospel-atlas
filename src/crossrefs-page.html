@@ -633,6 +633,12 @@ root.innerHTML=`
         ${COMPLETE?'':'<option value="gospel">By Gospel</option>'}
       </select>
     </div>
+    <div class="opt" id="optScale">Scale
+      <select id="scale" aria-label="Which colour scale the drawings use">
+        <option value="ramp">Ramp</option>
+        <option value="rainbow">Rainbow</option>
+      </select>
+    </div>
     <div class="opt" id="optThread">Thread
       <select id="threadPick" aria-label="Trace a thread through the links">
         <option value="">None</option>
@@ -762,7 +768,7 @@ const SECTIONS=[
   const a=BOOKS.find(b=>b.code===from),z=BOOKS.find(b=>b.code===to);
   return a&&z?{name,from:a.first,to:z.first+z.chapters-1,alias}:null;
 }).filter(Boolean);
-const state={view:'circle',colour:'distance',cbsafe:false,flow:true,thread:null,chain:null,min:COMPLETE?2:1,hover:null,locked:null,focus:null,dir:'both',order:'canonical',
+const state={view:'circle',colour:'distance',cbsafe:false,palette:'ramp',flow:true,thread:null,chain:null,min:COMPLETE?2:1,hover:null,locked:null,focus:null,dir:'both',order:'canonical',
   query:'gravity',qVerse:null,qBook:null,qDir:'out',qLemma:'',qKey:null,hoverVerse:null,lockedVerse:null};
 
 // ---- the canon strip ----------------------------------------------------
@@ -896,8 +902,8 @@ function clipMax(val){
   return Math.max(1,seen[Math.min(seen.length-1,Math.floor(seen.length*0.97))]);
 }
 const heatColour=t=>rampColour(t,false);
-const STRIP_WARM=()=>state.cbsafe?[213,94,0]:[176,106,31];
-const STRIP_COOL=()=>state.cbsafe?[0,114,178]:[47,111,143];
+const STRIP_WARM=()=>state.cbsafe?[213,94,0]:(state.palette==='rainbow'?[205,46,46]:[176,106,31]);
+const STRIP_COOL=()=>state.cbsafe?[0,114,178]:(state.palette==='rainbow'?[86,58,190]:[47,111,143]);
 function stripScalar(){
   const g=verseGraph();
   const val=new Float32Array(VCOUNT);
@@ -1038,6 +1044,14 @@ function gospelColour(ci){const code=BOOKS[bookOfChapter[ci]].code;return state.
 function rampColour(t,links){
   t=Math.max(0,Math.min(1,t));
   const dark=isDark();
+  // The rainbow, for anyone who wants it. It is the scale this page was first drawn
+  // with: a sweep of hue from violet round to red at one fixed lightness. It separates
+  // neighbouring values more sharply than any ordered scale can, which is why it is
+  // worth keeping - but hue has no order, so it has to be read against the key rather
+  // than at a glance, and it is the one scale that cannot also be colour-blind safe.
+  // Asking for both gets the safe one.
+  if(state.palette==='rainbow'&&!state.cbsafe)
+    return 'hsl('+Math.round(272-272*t)+','+(links?72:66)+'%,'+(links?52:(dark?52:56))+'%)';
   // A ramp that climbs in one direction - pale green, teal, blue, navy - so it still
   // reads as more and less printed in grey or seen by a colour-blind reader. The hue
   // travels far enough to tell a short link from a middling one, which a single hue
@@ -1062,7 +1076,14 @@ function rampColour(t,links){
 // coloured, which opens out the short end where the links actually are. The ends still
 // mean what the key says they mean - near and far - only the middle is stretched.
 const DIST_GAMMA=0.45;
-const distanceColour=d=>rampColour(Math.pow(Math.max(0,Math.min(1,d)),DIST_GAMMA),true);
+// The ramp needs the short end opened out or the picture comes out one colour; the
+// rainbow does not, because its hue already separates values that are close together.
+// So the stretch belongs to the scale rather than to the data.
+const distanceColour=d=>{
+  const x=Math.max(0,Math.min(1,d));
+  const rainbow=state.palette==='rainbow'&&!state.cbsafe;
+  return rampColour(rainbow?x:Math.pow(x,DIST_GAMMA),true);
+};
 function testamentColour(ci){return bookOfChapter[ci]>=NT?(state.cbsafe?'#0072b2':css('--luke')):(state.cbsafe?'#e69f00':css('--gold'))}
 function linkColour(l){
   if(state.colour==='gospel')return gospelColour(l[0]);
@@ -2873,6 +2894,7 @@ function dials(){
   const show=(id,on)=>{const e=document.getElementById(id);if(e)e.hidden=!on};
   ['optOrder','optColour','optThread','optFlow','optMin','optSection'].forEach(id=>show(id,!strip));
   show('optQuery',strip);show('qSpin',strip);show('fullOpen',strip);
+  scaleDial();        // the scale belongs to every view, so it is never taken away
   const chips=document.getElementById('chipslot');       // the focus chip, which the strip ignores
   if(chips)chips.style.display=strip?'none':'';
   const tw=document.getElementById('threadWords');
@@ -3014,7 +3036,23 @@ document.getElementById('order').addEventListener('change',e=>{
   input.addEventListener('keydown',e=>{if(e.key==='Enter')run('My thread',input.value)});
 })();
 document.getElementById('flow').addEventListener('change',e=>{state.flow=e.target.checked;renderBase()});
-document.getElementById('cbsafe').addEventListener('change',e=>{state.cbsafe=e.target.checked;renderBase();legend();describe()});
+document.getElementById('scale').addEventListener('change',e=>{
+  state.palette=e.target.value;renderBase();legend();describe();
+});
+// Colour-blind safe and the rainbow are a contradiction, so the one rules the other out
+// rather than quietly winning: the option is greyed while the safe scale is on, and it
+// says why.
+function scaleDial(){
+  const sel=document.getElementById('scale');if(!sel)return;
+  const rb=sel.querySelector('option[value=rainbow]');
+  rb.disabled=state.cbsafe;
+  rb.textContent=state.cbsafe?'Rainbow (not colour-blind safe)':'Rainbow';
+  sel.value=state.cbsafe?'ramp':state.palette;
+  sel.title=state.cbsafe?'The rainbow cannot be made colour-blind safe, so it is off while that is on.':'';
+}
+document.getElementById('cbsafe').addEventListener('change',e=>{
+  state.cbsafe=e.target.checked;scaleDial();renderBase();legend();describe();
+});
 document.getElementById('minlinks').addEventListener('input',e=>{
   state.min=+e.target.value;document.getElementById('minlabel').textContent=e.target.value;renderBase();describe();
 });
@@ -3085,7 +3123,7 @@ function snapshot(maxW){
   x.drawImage(c,0,0,w,h);
   try{return o.toDataURL('image/jpeg',0.82)}catch(e){return null}
 }
-const viewState=()=>({view:state.view,order:state.order,colour:state.colour,cbsafe:state.cbsafe,
+const viewState=()=>({view:state.view,order:state.order,colour:state.colour,cbsafe:state.cbsafe,palette:state.palette,
   flow:state.flow,min:state.min,dir:state.dir,locked:state.locked,
   focus:state.focus?{from:state.focus.from,to:state.focus.to,label:state.focus.label}:null,
   thread:state.thread?{label:state.thread.label||null}:null,
@@ -3132,7 +3170,7 @@ function addMark(){
 }
 function restore(v){
   state.view=v.view;state.order=v.order||'canonical';state.colour=v.colour||'distance';
-  state.cbsafe=!!v.cbsafe;state.flow=v.flow!==false;state.min=v.min||1;state.dir=v.dir||'both';
+  state.cbsafe=!!v.cbsafe;state.palette=v.palette||'ramp';state.flow=v.flow!==false;state.min=v.min||1;state.dir=v.dir||'both';
   state.focus=v.focus?{...v.focus}:null;state.locked=v.locked==null?null:v.locked;
   state.thread=null;state.chain=null;
   state.query=v.query||'gravity';
@@ -3143,6 +3181,7 @@ function restore(v){
   set('order',state.order);set('colour',state.colour);set('direction',state.dir);
   set('section',state.focus?state.focus.label:'');set('threadPick','');
   const cb=document.getElementById('cbsafe');if(cb)cb.checked=state.cbsafe;
+  scaleDial();
   const mn=document.getElementById('minlinks');if(mn)mn.value=state.min;
   document.querySelectorAll('.views button').forEach(b=>{
     const on=b.dataset.view===state.view;b.setAttribute('aria-pressed',on?'true':'false')});
