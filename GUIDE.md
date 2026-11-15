@@ -79,6 +79,27 @@ the links of the middling one, so a straight scale would leave half the Bible
 looking blank. Read the colour as more and less; the number itself is always in
 the panel.
 
+All four drawings use the same scale, climbing in one direction from pale green
+through teal to deep blue, so "more" looks like more whether you read it on a
+screen, in grey on a printer, or with any kind of colour blindness. On the three
+link diagrams it colours distance: a short link is pale, a link across the canon
+is dark. Half of all cross-references join chapters less than a tenth of the
+canon apart, so the short end is stretched to make it visible — the ends mean
+what the key says, and the middle is opened out.
+
+The arc and the circle fade their links according to how many are being drawn.
+Showing the whole canon means a hundred and ninety thousand chapter pairs on one
+picture, and at a fixed strength they pile into a solid shape with nothing
+readable inside it.
+
+A link can carry a whole question: "#view=canon&query=rare" opens the canon strip
+on rare vocabulary, "#view=canon&query=reach&verse=Isa.53.5" opens it on the
+reach of Isaiah 53:5, and "#view=matrix" opens the matrix. Whatever is held
+travels between the four drawings — the circle and the matrix hold a chapter and
+the strip holds a verse, so a chapter arrives at its first verse and a verse
+leaves as its chapter — and a book focused in the other views is ringed on the
+strip.
+
 "Order" lays the books out either as they are bound or in the order their events are
 usually dated — Job beside Genesis, the prophets among the kings, Paul's letters by
 when they are thought to have been written. Whole books move, never split. The dates

@@ -895,21 +895,7 @@ function clipMax(val){
   seen.sort((a,b)=>a-b);
   return Math.max(1,seen[Math.min(seen.length-1,Math.floor(seen.length*0.97))]);
 }
-function heatColour(t){
-  t=Math.max(0,Math.min(1,t));
-  const dark=isDark();
-  if(state.cbsafe){
-    const stops=dark?[[32,38,40],[14,70,110],[0,114,178],[86,180,233],[240,228,66]]
-                    :[[233,236,232],[146,197,222],[33,113,181],[8,48,107],[214,153,0]];
-    const u=t*(stops.length-1),i=Math.min(stops.length-2,Math.floor(u)),f=u-i;
-    const a=stops[i],b=stops[i+1];
-    return 'rgb('+a.map((v,k)=>Math.round(v+(b[k]-v)*f)).join(',')+')';
-  }
-  const h=150-105*t;                       // green through olive to gold
-  const sat=18+48*t;
-  const lig=dark?(16+54*t):(90-62*t);      // one direction only, so greyscale still reads
-  return 'hsl('+Math.round(h)+','+Math.round(sat)+'%,'+Math.round(lig)+'%)';
-}
+const heatColour=t=>rampColour(t,false);
 const STRIP_WARM=()=>state.cbsafe?[213,94,0]:[176,106,31];
 const STRIP_COOL=()=>state.cbsafe?[0,114,178]:[47,111,143];
 function stripScalar(){
@@ -1034,15 +1020,49 @@ const CB={Matt:'#0072b2',Mark:'#d55e00',Luke:'#009e73',John:'#cc79a7'};
 const isDark=()=>document.documentElement.dataset.theme==='dark'||(matchMedia('(prefers-color-scheme: dark)').matches&&document.documentElement.dataset.theme!=='light');
 
 function gospelColour(ci){const code=BOOKS[bookOfChapter[ci]].code;return state.cbsafe?(CB[code]||'#888'):(css(GOSPEL[code]||'--muted')||'#888')}
-function distanceColour(d){
-  if(state.cbsafe){
-    const stops=[[11,26,60],[33,86,140],[42,150,146],[132,194,108],[250,228,110]];
-    const t=Math.min(.999,Math.max(0,d))*(stops.length-1),i=Math.floor(t),f=t-i;
-    const a=stops[i],b=stops[Math.min(stops.length-1,i+1)];
-    return 'rgb('+a.map((v,k)=>Math.round(v+(b[k]-v)*f)).join(',')+')';
-  }
-  return 'hsl('+Math.round(272-272*Math.min(1,d))+',72%,52%)';
+// One scale for all four drawings.
+//
+// The arc, the circle and the matrix used to run a 272-degree sweep of hue at a fixed
+// lightness - purple, blue, green, orange, red - for a quantity that is purely more or
+// less. Hue has no order: nobody can say whether green is above or below orange without
+// looking it up, the whole thing collapses to one grey in print, and a red-green
+// reader loses both ends at once. The colour-blind ramp sitting behind the toggle was
+// the better drawing of the two, which is the wrong way round.
+//
+// So there is now a single ramp, ordered by lightness, used by every view. Cells on
+// the canon strip run from the paper colour up, because nothing there should look like
+// something. Links never reach the paper, because a line the colour of the background
+// is a line nobody can see; they run from a mid tone to a dark one instead. Both ends
+// stay distinguishable in grey, and the colour-blind ramp is the same shape rather
+// than a different picture.
+function rampColour(t,links){
+  t=Math.max(0,Math.min(1,t));
+  const dark=isDark();
+  // A ramp that climbs in one direction - pale green, teal, blue, navy - so it still
+  // reads as more and less printed in grey or seen by a colour-blind reader. The hue
+  // travels far enough to tell a short link from a middling one, which a single hue
+  // could not do with a quarter of a million lines lying on top of each other.
+  const LIGHT=[[236,243,214],[199,233,180],[127,205,187],[65,182,196],
+               [29,145,192],[34,94,168],[37,52,148],[8,29,88]];
+  const DARK=[[30,35,32],[22,62,86],[26,99,140],[32,140,160],
+              [86,180,170],[150,206,140],[214,226,120],[246,240,170]];
+  const stops=dark?DARK:LIGHT;
+  // A link is never drawn in the paper colour, because a line the colour of the
+  // background is a line nobody can see. Cells may be: on the canon strip nothing
+  // should look like something.
+  const lo=links?(dark?2:1.6):0;
+  const u=lo+t*(stops.length-1-lo);
+  const k=Math.min(stops.length-2,Math.floor(u)),f=u-k;
+  const a=stops[k],b=stops[k+1];
+  return 'rgb('+a.map((v,n)=>Math.round(v+(b[n]-v)*f)).join(',')+')';
 }
+// Half of all cross-references join chapters less than a tenth of the canon apart, so
+// a straight scale leaves half the picture in the bottom tenth of the ramp and the
+// whole drawing comes out one colour. The distance is raised to a power before it is
+// coloured, which opens out the short end where the links actually are. The ends still
+// mean what the key says they mean - near and far - only the middle is stretched.
+const DIST_GAMMA=0.45;
+const distanceColour=d=>rampColour(Math.pow(Math.max(0,Math.min(1,d)),DIST_GAMMA),true);
 function testamentColour(ci){return bookOfChapter[ci]>=NT?(state.cbsafe?'#0072b2':css('--luke')):(state.cbsafe?'#e69f00':css('--gold'))}
 function linkColour(l){
   if(state.colour==='gospel')return gospelColour(l[0]);
@@ -1153,7 +1173,9 @@ function layout(){
     const want=Math.max(200,Math.min(1600,bookY[BOOKS.length]+padB));
     if(Math.abs(want-H)>6){H=Math.round(want);canvas.style.height=H+'px';canvas.height=Math.round(H*dpr)}
   }else{
-    const padL=74,padT=16,padB=36,padR=16;
+    // Deeper margins than the other views need: sixty-six names down the side and
+    // sixty-six more, turned on their side, along the foot.
+    const padL=96,padT=16,padB=92,padR=14;
     geom.matrix={padL,padT,padB,padR,cw:(W-padL-padR)/sources.length,ch:(H-padT-padB)/N};
   }
 }
@@ -1235,6 +1257,22 @@ function drawStripFrame(c){
     c.strokeStyle=colour;c.lineWidth=w;
     c.strokeRect(x-1.5,y-1.5,g.cell+3,g.cell+3);
   };
+  // The book or section focused in the other three views, ringed here so the place you
+  // were working does not disappear when the drawing changes.
+  if(state.focus){
+    const a=CHAPTER_START[state.focus.from];
+    const b=Math.min(VCOUNT-1,CHAPTER_START[state.focus.to]+(CHAPTER_START[state.focus.to+1]!==undefined?
+      (CHAPTER_START[state.focus.to+1]-CHAPTER_START[state.focus.to]-1):0));
+    c.strokeStyle=css('--gold');c.globalAlpha=.8;c.lineWidth=1;
+    let run=null;
+    const flush=()=>{if(run)c.strokeRect(run[0]-1,run[1]-1,run[2]-run[0]+g.cell+2,g.cell+2);run=null};
+    for(let v=a;v<=b;v++){
+      const [x,y]=geom.cellAt(v);
+      if(run&&Math.abs(run[1]-y)<0.5&&x-run[2]<=g.pitch+0.5){run[2]=x;continue}
+      flush();run=[x,y,x];
+    }
+    flush();c.globalAlpha=1;
+  }
   if((state.query==='reach'||state.query==='similar')&&state.qVerse!==null&&state.qVerse!==undefined)mark(state.qVerse,css('--ink'),1.6);
   if(state.lockedVerse!==null&&state.lockedVerse!==undefined)mark(state.lockedVerse,css('--gold'),1.6);
   if(state.hoverVerse!==null&&state.hoverVerse!==undefined)mark(state.hoverVerse,css('--accent'),1.2);
@@ -1335,6 +1373,18 @@ function bookMag(bi){
   const h=hoverBook(); if(h<0)return 1;
   const d=Math.abs(bi-h);
   return d===0?2.05:d===1?0.66:d===2?0.76:d===3?0.88:1;
+}
+// Laying out labels along a line so that none sits on top of another: push each off the
+// one before it, then push the run back off the far end so nothing is lost over the
+// edge. Order is never changed - a label that has to move stays between its neighbours
+// and is drawn with a hairline back to where it belongs.
+function spreadLabels(want,gap,lo,hi){
+  const at=want.slice();
+  let prev=-1e9;
+  for(let i=0;i<at.length;i++){at[i]=Math.max(at[i],prev+gap);prev=at[i]}
+  let next=hi;
+  for(let i=at.length-1;i>=0;i--){at[i]=Math.max(lo,Math.min(at[i],next));next=at[i]-gap}
+  return at;
 }
 let labelHits=[];          // where each book's name was drawn this frame, for pointing at
 function drawFrame(c){
@@ -1523,27 +1573,65 @@ function drawFrame(c){
     }
   }else{
     const m=geom.matrix;
+    const gw=sources.length*m.cw,gh=N*m.ch;
     c.strokeStyle=line;c.globalAlpha=.9;c.lineWidth=1;
-    c.strokeRect(m.padL-.5,m.padT-.5,sources.length*m.cw+1,N*m.ch+1);
-    c.globalAlpha=1;c.fillStyle=faint;c.textAlign='right';
-    ['Gen','Ps','Isa','Matt','Rev'].forEach(code=>{
-      const b=BOOKS.find(x=>x.code===code);if(!b)return;
-      const y=m.padT+b.first*m.ch;
-      c.fillText(shortName(b.name),m.padL-7,y+4);
-      c.globalAlpha=.35;c.fillRect(m.padL,y,sources.length*m.cw,.6);c.globalAlpha=1;
+    c.strokeRect(m.padL-.5,m.padT-.5,gw+1,gh+1);
+    c.globalAlpha=1;
+    const hb=hoverBook();
+    // Both axes carry every book. Five of sixty-six used to be named, which is enough
+    // to see that a block of links is there and not enough to say what it is; the point
+    // of a matrix is naming the row and the column a cluster sits in.
+    // Down the side: where a book is too short to carry its own name the name is moved
+    // just far enough to be read, with a hairline back to its first chapter.
+    c.font='8px '+css('--sans');c.textBaseline='middle';
+    const rowsY=BOOKS.map(b=>m.padT+b.first*m.ch);
+    const placed=spreadLabels(rowsY,9,m.padT+4,m.padT+gh-2);
+    BOOKS.forEach((b,bi)=>{
+      const y=rowsY[bi],at=placed[bi],lit=bi===hb;
+      c.fillStyle=lit?css('--accent'):(bi>=NT?ink:faint);
+      c.globalAlpha=lit?1:(hb>=0?.55:.9);
+      c.textAlign='right';
+      c.font=(lit?'700 9px ':'8px ')+css('--sans');
+      c.fillText(shortName(b.name).slice(0,13),m.padL-8,at);
+      if(Math.abs(at-y)>1.5){
+        c.strokeStyle=line;c.globalAlpha=.65;c.lineWidth=.7;
+        c.beginPath();c.moveTo(m.padL-7,at);c.lineTo(m.padL-2,y);c.stroke();
+      }
+      c.globalAlpha=lit?.5:.22;c.fillStyle=lit?css('--accent'):line;
+      c.fillRect(m.padL,y,gw,lit?1:.6);
+      c.globalAlpha=1;
     });
-    c.textAlign='center';
-    const marks=COMPLETE?['Gen','Ps','Isa','Matt','Rev']:['Matt','Mark','Luke','John'];
-    marks.forEach(code=>{
-      const b=BOOKS.find(x=>x.code===code);if(!b)return;
-      const s=b.first,e=b.first+b.chapters-1;
-      const inRange=sources.filter(v=>v>=s&&v<=e);
-      if(!inRange.length)return;
-      const x1=m.padL+sourceSlot.get(inRange[0])*m.cw,x2=m.padL+(sourceSlot.get(inRange[inRange.length-1])+1)*m.cw;
-      c.fillStyle=GOSPEL[code]&&!COMPLETE?(state.cbsafe?CB[code]:css(GOSPEL[code])):faint;
-      c.fillRect(x1,m.padT+N*m.ch+5,Math.max(2,x2-x1-1.5),2.5);
-      c.fillStyle=faint;c.fillText(shortName(b.name),(x1+x2)/2,m.padT+N*m.ch+20);
+    // Along the foot: the same, rotated, and only for the books that have a column at
+    // all - a book nothing points out of has no place on this axis.
+    c.font='8px '+css('--sans');
+    const cols=[];
+    BOOKS.forEach((b,bi)=>{
+      const s0=b.first,e0=b.first+b.chapters-1;
+      let lo=null,hi=null;
+      for(const v of sources)if(v>=s0&&v<=e0){if(lo===null)lo=v;hi=v}
+      if(lo===null)return;
+      const x1=m.padL+sourceSlot.get(lo)*m.cw,x2=m.padL+(sourceSlot.get(hi)+1)*m.cw;
+      cols.push({b,bi,x1,x2,mid:(x1+x2)/2});
     });
+    const foot=m.padT+gh;
+    const placedX=spreadLabels(cols.map(o=>o.mid),9,m.padL+4,m.padL+gw-2);
+    cols.forEach((o,i)=>{
+      const at=placedX[i],lit=o.bi===hb;
+      c.globalAlpha=lit?.6:.3;c.fillStyle=lit?css('--accent'):line;
+      c.fillRect(o.x1,foot+4,Math.max(2,o.x2-o.x1-1.5),lit?2.5:1.6);
+      if(Math.abs(at-o.mid)>1.5){
+        c.strokeStyle=line;c.globalAlpha=.6;c.lineWidth=.7;
+        c.beginPath();c.moveTo(o.mid,foot+7);c.lineTo(at,foot+12);c.stroke();
+      }
+      c.globalAlpha=lit?1:(hb>=0?.55:.9);
+      c.save();c.translate(at,foot+15);c.rotate(-Math.PI/2);
+      c.textAlign='right';c.textBaseline='middle';
+      c.fillStyle=lit?css('--accent'):(o.bi>=NT?ink:faint);
+      c.font=(lit?'700 9px ':'8px ')+css('--sans');
+      c.fillText(shortName(o.b.name).slice(0,13),0,0);
+      c.restore();c.globalAlpha=1;
+    });
+    c.textBaseline='middle';
   }
   if(state.chain)drawChain(c);
   if(state.focus){
@@ -1705,10 +1793,19 @@ function renderBase(){
   const dark=isDark();
   const threading=!!threadPairs;
   const dimmed=threading||!!state.chain;
-  const alpha=state.view==='matrix'?(dark?.72:.6):(dark?.26:.2);
+  // How see-through a link is has to depend on how many are being drawn. At one fixed
+  // value the whole canon - a hundred and ninety thousand chapter pairs - piles into a
+  // solid dome on the arc and nothing inside it can be read, while the same value on a
+  // single focused book is so faint it disappears. So the ink is spread: the alpha
+  // falls with the square root of the number of links, which keeps roughly the same
+  // total ink on the paper whether the view holds eight thousand links or two hundred
+  // thousand.
   const dim=dimmed?(state.view==='matrix'?.22:.16):1;
   c.lineCap='round';c.lineWidth=state.view==='circle'?.7:.6;
   const list=[];for(const l of LINKS)if(visible(l))list.push(l);
+  const spread=Math.max(.16,Math.min(1,Math.sqrt(9000/Math.max(1,list.length))));
+  const alpha=state.view==='matrix'?(dark?.72:.6)
+    :Math.max(.035,(dark?.26:.2)*spread);
   if(threading)list.sort((a,b)=>(onThread(a)?1:0)-(onThread(b)?1:0));   // thread last, so it lies on top
   const CHUNK=state.view==='matrix'?80000:7000;
   let i=0;progress=list.length?0:1;
@@ -2575,11 +2672,37 @@ document.getElementById('wOpen').addEventListener('click',()=>{
 // Opened from another page with a verse in hand: "#verse=Deut.28.48" brings that chapter
 // up on the drawing. The Atlas sends Old Testament verses here, since it is a map of the
 // Gospels and has nowhere of its own to open one.
+// A link can also name the drawing and the question: "#view=strip&query=rare", or
+// "#view=strip&query=reach&verse=Isa.53.5". A note or a bookmark could already restore
+// a state; now an email or another page of the suite can too.
 {
-  const m=/[#&]verse=([1-3]?[A-Za-z]+)\.(\d+)\.(\d+)/.exec(location.hash||'');
+  const hash=location.hash||'';
+  const want=/[#&]view=(arc|circle|matrix|strip|canon)/.exec(hash);
+  const q=/[#&]query=(gravity|reach|grain|testament|bookreach|lemma|rare|similar|orphans)/.exec(hash);
+  const w=/[#&]book=([1-3]?[A-Za-z]+)/.exec(hash);
+  if(want){
+    state.view=want[1]==='canon'?'strip':want[1];
+    document.querySelectorAll('.views button').forEach(x=>
+      x.setAttribute('aria-pressed',String(x.dataset.view===state.view)));
+  }
+  if(q&&state.view==='strip')state.query=q[1];
+  if(w&&state.view==='strip'&&state.query==='bookreach'){
+    const bi=BOOKS.findIndex(b=>b.code===w[1]);if(bi>=0)state.qBook=bi;
+  }
+  const m=/[#&]verse=([1-3]?[A-Za-z]+)\.(\d+)\.(\d+)/.exec(hash);
   const book=m&&BOOKS.find(b=>b.code===m[1]);
   if(book&&+m[2]>=1&&+m[2]<=book.chapters){
-    state.focus=null;chip();renderBase();select(book.first+(+m[2]-1));caption();
+    const chapter=book.first+(+m[2]-1);
+    state.focus=null;chip();
+    if(state.view==='strip'){
+      const v=Math.min(VCOUNT-1,CHAPTER_START[chapter]+Math.max(0,+m[3]-1));
+      state.lockedVerse=v;state.locked=chapter;
+      if(state.query==='reach'||state.query==='similar')state.qVerse=v;
+      dials();renderBase();caption();describe();
+    }else{renderBase();select(chapter);caption()}
+    setTimeout(()=>document.getElementById('plot').scrollIntoView({block:'center'}),80);
+  }else if(want){
+    dials();render();describe();
     setTimeout(()=>document.getElementById('plot').scrollIntoView({block:'center'}),80);
   }
 }
@@ -2762,7 +2885,23 @@ function dials(){
   const q=document.getElementById('query');if(q)q.value=state.query;
   qSubject();
 }
+// Four drawings of one thing, so what is held in one is held in the next. The circle
+// and the matrix hold a chapter and the strip holds a verse, so a chapter arrives at
+// its first verse and a verse leaves as its chapter. The focused book travels too: the
+// strip has no focus dial, since it counts every link there is, but it draws the ring
+// round the book so you can still see where you were.
+function carryHold(to){
+  if(to==='strip'){
+    if(state.locked!=null&&(state.lockedVerse==null||CHAPTER_OF_VERSE[state.lockedVerse]!==state.locked))
+      state.lockedVerse=CHAPTER_START[state.locked];
+    if((state.query==='reach'||state.query==='similar')&&state.qVerse==null&&state.lockedVerse!=null)
+      state.qVerse=state.lockedVerse;
+  }else if(state.lockedVerse!=null){
+    state.locked=CHAPTER_OF_VERSE[state.lockedVerse];
+  }
+}
 document.querySelectorAll('.views button').forEach(b=>b.addEventListener('click',()=>{
+  carryHold(b.dataset.view);
   state.view=b.dataset.view;
   document.querySelectorAll('.views button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
   dials();render();describe();
