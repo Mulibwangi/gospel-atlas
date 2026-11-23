@@ -272,8 +272,9 @@ together with the full ASV text, so every link can be read rather than only
 counted. One link is left out: it starts at 3 John 1:15, a verse the ASV does
 not have. The
 wash is built progressively, so the page is usable in under a second and fills
-in as it draws. The minimum-links slider starts at 2, because two thirds of all
-chapter pairs rest on a single verse link; drop it to 1 for everything.
+in as it draws. The "Hide faint links" slider, under **Adjust**, starts at 2,
+because two thirds of all chapter pairs rest on a single verse link; drop it to 1
+for everything.
 
 Ask it a question and it answers from the data. Select Acts 27, Paul's
 shipwreck, and among its links sit **Jonah 1** and **Psalm 107** — the storm at

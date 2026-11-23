@@ -83,8 +83,17 @@ no subject, so there is never a combination that draws nothing. "Show me one"
 picks a question and a subject at random — a way of finding what you would not
 have thought to ask for; the drawing chooses where to look and the text beside
 it says what is there. "Full screen" gives the grid the whole window, and Escape
-brings it back. The chapter-level dials — minimum links, focus, thread, order —
-are hidden while Canon is up, because this view counts every link there is.
+brings it back. The chapter-level dials — Hide faint links, Narrow to, Trace a
+chain, Arrange by — are hidden while Canon is up, because this view counts every
+link there is.
+
+Those dials, and the rest of them, live behind **Adjust**, at the end of the row
+of controls. What stays out in front is what chooses the picture rather than
+adjusts it: the four views, the search, the colour scheme, and on Canon the
+question and the Show filter. Nothing has been removed — the drawer opens on one
+click and stays open once opened, and the page remembers that you opened it. The
+line under each drawing ends with one suggestion of what to do next from exactly
+where you are; it is never a popup and never has to be dismissed.
 
 The two vocabulary questions count Hebrew and Greek separately, because a word's
 frequency in one is no guide to the other, and they leave out the prefixes and
@@ -205,8 +214,8 @@ unit shows the first verse containing your words.
 not. It reports the chosen index's assignments: a unit absent from one Gospel
 may still share details with something that Gospel records elsewhere.
 
-"Thread", in the Cross-Reference Lab, traces a theme through the links. The
-menu holds two kinds.
+"Trace a chain", in the Cross-Reference Lab — under Adjust — follows a theme
+through the links. The menu holds two kinds.
 
 Words in the text at both ends: choose one, or type words of your own, and
 every link whose Scripture at both ends carries one of those words is drawn in

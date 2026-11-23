@@ -42,9 +42,15 @@ h1 em{color:var(--gold);font-style:italic}
 .counts div{display:flex;flex-direction:column;gap:4px}
 .counts strong{font-family:var(--serif);font-weight:400;font-size:24px;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
 .counts span{font-size:8px;letter-spacing:1.1px;color:var(--faint)}
-.bar{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-top:18px;padding:12px 14px;background:var(--panel);border:1px solid var(--line);border-radius:9px}
+/* Closed, the bar is not a panel: no fill, no border, just the things that choose the
+   picture, sitting on the paper. Opened, it becomes a drawer you can see the edges of.
+   The drawing below is then the only filled slab on the page, which is the point. */
+.bar{display:flex;flex-wrap:wrap;gap:13px;align-items:center;margin-top:18px;padding:10px 2px;
+  background:none;border:1px solid transparent;border-radius:9px}
+.bar:not(.shut){padding:12px 14px;background:var(--panel);border-color:var(--line)}
 .views{display:flex;gap:4px}
-.views button{font-size:13px;padding:9px 16px;border:0;border-radius:5px;background:none;color:var(--muted);cursor:pointer}
+.views button{font-size:13px;padding:9px 16px;border:0;border-radius:5px;background:none;color:var(--faint);cursor:pointer}
+.views button:hover{color:var(--ink)}
 .views button[aria-pressed=true]{background:var(--accent);color:var(--paper);font-weight:600}
 /* Where to start: four questions, each of which sets the page up to answer itself. */
 .openers{margin:0 0 20px}
@@ -59,7 +65,12 @@ h1 em{color:var(--gold);font-style:italic}
 .openers-grid button span{font-size:11.5px;line-height:1.6;color:var(--muted)}
 .openers-grid button em{font-style:italic}
 @media(max-width:1100px){.openers-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:620px){.openers-grid{grid-template-columns:1fr;gap:8px}.openers-grid button{padding:13px 14px}}
+@media(max-width:620px){
+  .openers-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .openers-grid button{padding:12px 13px}
+  .openers-grid button span{display:none}
+  .openers-grid button strong{font-size:12.5px}
+}
 /* Full screen for the canon strip: the grid is 31,102 cells, and on a laptop the panel
    beside it costs a third of the width. This is a class rather than the Fullscreen API
    so it behaves the same in a file:// window, where that API is often refused. */
@@ -80,7 +91,7 @@ body.full .head,body.full .notebook,body.full .words,body.full .passages{display
 .results button:last-child{border-bottom:0}
 .results button:hover,.results button:focus-visible{background:var(--panel)}
 .results .n{margin-left:auto;font-size:10px;color:var(--faint);font-variant-numeric:tabular-nums}
-.opt{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted)}
+.opt{display:flex;align-items:center;gap:8px;font-size:10.5px;color:var(--faint)}
 .opt select{color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:4px;padding:7px 9px;font-size:11px}
 .opt input[type=range]{width:88px;accent-color:var(--gold)}
 .thread-words input{background:var(--field);border:1px solid var(--line);border-radius:4px;padding:7px 9px;color:var(--ink);font-size:11px;width:270px;max-width:46vw}
@@ -91,7 +102,7 @@ body.full .head,body.full .notebook,body.full .words,body.full .passages{display
 .opt input[type=checkbox]{accent-color:var(--accent);width:14px;height:14px}
 .chip{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:var(--paper);border-radius:20px;padding:5px 7px 5px 13px;font-size:11px}
 .chip button{background:none;border:0;color:inherit;cursor:pointer;font-size:15px;line-height:1;padding:0 4px;opacity:.8}
-.spacer{margin-left:auto}
+.spacer{flex-basis:100%;height:0;margin:0}
 .pill{display:inline-block;min-width:17px;padding:0 5px;border-radius:9px;background:var(--ink);color:var(--paper);
   font-size:11px;font-weight:700;text-align:center;margin-left:4px}
 .keepbar{display:flex;gap:6px;margin:-4px 0 12px;flex-wrap:wrap}
@@ -126,6 +137,11 @@ body.full .head,body.full .notebook,body.full .words,body.full .passages{display
 canvas{display:block;width:100%;touch-action:pan-y}
 canvas:focus-visible{outline:2px solid var(--gold);outline-offset:-3px}
 .caption{margin:0;padding:7px 14px 10px;font-size:10px;line-height:1.5;color:var(--faint);pointer-events:none}
+/* What you could do from here, on the end of the line that says what you are looking at.
+   A tip that has to be dismissed is read once and then is in the way; this is never in the
+   way, because it is never in front of anything, and it is never stale, because it is
+   rewritten every time the picture is. */
+.caption .next{display:block;margin-top:3px;color:var(--muted)}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:17px 18px;min-width:0}
 .panel h2{font-family:var(--serif);font-weight:400;font-size:21px;margin:4px 0 2px;letter-spacing:-.4px}
 .panel .sub{font-size:11px;color:var(--muted);margin:0 0 14px}
@@ -221,9 +237,6 @@ footer p{margin:0 0 7px}
      The dials now fold away behind one button, shut to begin with. What stays is what
      chooses the picture - the three views and the search - and the chip that says a focus
      is in force, since a filter nobody can see is worse than no filter. */
-  .bar .dials-toggle{display:inline-block}
-  .bar.shut .opt{display:none}
-  .bar.shut #optQuery,.bar.shut #optSubject,.bar.shut #optScale{display:flex}
   .bar #optQuery{flex:1 1 100%}
   .bar .spacer{display:none}
   header{gap:10px;padding-bottom:12px}
@@ -231,7 +244,22 @@ footer p{margin:0 0 7px}
   .counts strong{font-size:17px}
   .counts span{font-size:8px}
 }
-.dials-toggle{display:none}
+/* The dials fold at every width, not only on a phone.
+   Sixteen controls stood in one row before anyone had touched anything - Arc, Circle,
+   Matrix, Canon, search, Arrange by, Colour links by, Colour scheme, Trace a chain,
+   Show direction, Colour-blind safe, Hide faint links, Narrow to, Word search, Notebook,
+   Clear - for a page whose first action is to look. None of them was in the way of the
+   drawing; all of them were presented as equals to it.
+   What stays out is what chooses the picture rather than adjusts it: the four views, the
+   search, the colour scheme, and on the canon strip the question and its filter. The
+   rest is one click away and stays open once opened. Nothing is taken away; it simply
+   stops talking first. */
+.bar.shut .opt{display:none}
+.bar.shut #optQuery,.bar.shut #optSubject,.bar.shut #optHeld,.bar.shut #optScale{display:flex}
+.dials-toggle{display:inline-block;text-decoration:none;padding:6px 14px;
+  border:1px solid var(--line);border-radius:14px;background:var(--field);color:var(--muted)}
+.dials-toggle:hover{color:var(--ink);border-color:var(--faint)}
+.dials-toggle[aria-expanded=true]{background:var(--accent);border-color:var(--accent);color:var(--paper)}
 select,input[type=search]{max-inline-size:100%}
 canvas{max-width:100%}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -659,26 +687,26 @@ root.innerHTML=`
       <input id="q" type="search" autocomplete="off" placeholder="Search — Isaiah 53, Ps 22, the Prophets, Paul" aria-label="Search for a book or chapter">
       <div id="results" hidden></div>
     </div>
-    <div class="opt" id="optOrder">Order
+    <div class="opt" id="optOrder">Arrange by
       <select id="order" aria-label="The order the books are laid out in">
         <option value="canonical">Canonical</option>
         <option value="chronological">Chronological</option>
       </select>
     </div>
-    <div class="opt" id="optColour">Colour
+    <div class="opt" id="optColour">Colour links by
       <select id="colour" aria-label="Colour mode">
         <option value="distance">By distance</option>
         <option value="testament">By target testament</option>
         ${COMPLETE?'':'<option value="gospel">By Gospel</option>'}
       </select>
     </div>
-    <div class="opt" id="optScale">Colours
+    <div class="opt" id="optScale">Colour scheme
       <select id="scale" aria-label="Which colour scale the drawings use">
         <option value="ramp">Ordered</option>
         <option value="rainbow">Rainbow</option>
       </select>
     </div>
-    <div class="opt" id="optThread">Thread
+    <div class="opt" id="optThread">Trace a chain
       <select id="threadPick" aria-label="Trace a thread through the links">
         <option value="">None</option>
       </select>
@@ -689,13 +717,13 @@ root.innerHTML=`
     </div>
     <div class="opt" id="optFlow"><label><input type="checkbox" id="flow" checked> Show direction</label></div>
     <div class="opt"><label><input type="checkbox" id="cbsafe"> Colour-blind safe</label></div>
-    <div class="opt" id="optMin">Minimum links <input type="range" id="minlinks" min="1" max="12" value="${COMPLETE?2:1}" aria-label="Minimum verse links per chapter pair"><strong id="minlabel" style="font-variant-numeric:tabular-nums;color:var(--ink)">${COMPLETE?2:1}</strong></div>
-    <div class="opt" id="optSection">Focus
+    <div class="opt" id="optMin">Hide faint links <input type="range" id="minlinks" min="1" max="12" value="${COMPLETE?2:1}" aria-label="Minimum verse links per chapter pair"><strong id="minlabel" style="font-variant-numeric:tabular-nums;color:var(--ink)">${COMPLETE?2:1}</strong></div>
+    <div class="opt" id="optSection">Narrow to
       <select id="section" aria-label="Focus on a section of the Bible">
         <option value="">Whole Bible</option>
       </select>
     </div>
-    <div class="opt" id="optQuery" hidden>Query
+    <div class="opt" id="optQuery" hidden>Question
       <select id="query" aria-label="What to colour every verse by">
         <option value="gravity">Gravity &mdash; links per verse</option>
         <option value="reach">Reach &mdash; hops from one verse</option>
@@ -726,10 +754,10 @@ root.innerHTML=`
         <option value="out">Links out of it</option>
       </select>
     </div>
+    <button class="ghost dials-toggle" id="dialsToggle" aria-expanded="false" aria-controls="root">Adjust</button>
     <div class="spacer"></div>
     <button class="ghost" id="qSpin" hidden title="Pick a query and a subject at random, from the combinations that mean something">Show me one</button>
     <button class="ghost" id="fullOpen" hidden aria-pressed="false">Full screen</button>
-    <button class="ghost dials-toggle" id="dialsToggle" aria-expanded="false" aria-controls="root">Settings</button>
     <button class="ghost" id="wOpen" aria-expanded="false">Word search</button>
     <button class="ghost" id="nbOpen" aria-expanded="false">Notebook <span class="pill" id="nbCount">0</span></button>
     <button class="ghost" id="clear">Clear</button>
@@ -737,7 +765,7 @@ root.innerHTML=`
   <div class="stage">
     <div class="plot">
       <canvas id="plot" tabindex="0" role="img" aria-label="Cross-reference diagram. Arrow keys step through chapters; the list beside it gives the same links as text."></canvas>
-      <p class="caption" id="caption"></p>
+      <p class="caption" id="caption"><span id="capBody"></span><span class="next" id="capNext"></span></p>
     </div>
     <aside class="panel">
       <div class="keepbar">
@@ -822,7 +850,7 @@ const state={view:'circle',colour:'distance',cbsafe:false,palette:'ramp',held:'a
 // ---- the canon strip ----------------------------------------------------
 // One cell per verse, all 31,102 of them, in reading order. Every query below is the
 // same thing - a number for each verse - so they all share one grid, one colour ramp
-// and one hit test. The chapter-level dials (minimum links, focus, thread, direction)
+// and one hit test. The chapter-level dials (hide faint links, narrow to, trace a chain, direction)
 // are hidden while this view is up, because they do not apply to it: the strip counts
 // every link there is. A dial that does nothing is worse than no dial.
 const VCOUNT=TEXT.length;
@@ -2018,7 +2046,8 @@ function paint(){
   ctx.restore();
 }
 function caption(){
-  document.getElementById('caption').textContent={
+  document.getElementById('capNext').textContent=nextStep();
+  document.getElementById('capBody').textContent={
     arc:'Chapters left to right, Genesis 1 to Revelation 22. Bar length is the number of verses; arc height is the distance a link travels.',
     circle:state.focus
       ?'The dial is '+state.focus.label+': one full turn, its chapters numbered. Every chord runs from a chapter out to where it points, and the rim now profiles how much lands in each chapter.'
@@ -2028,16 +2057,42 @@ function caption(){
   }[state.view];
   if(state.view==='strip')return;
   if(state.order==='chronological')
-    document.getElementById('caption').textContent+=
+    document.getElementById('capBody').textContent+=
       ' The books are laid out in the order the events are usually dated rather than the order they are bound in'
       +' \u2014 Job beside Genesis, the prophets among the kings, Paul\u2019s letters by when they are thought'
       +' to have been written. Whole books are moved, never split, and the dates behind such an order are'
       +' widely contested; a second published plan puts Joel four centuries from where this one does.'
       +' Nothing in the data changes, only where each chapter is drawn.';
 }
+// One line, keyed to where you actually are: the move that is available now rather than a
+// tour of everything. Guidance only - what the controls do, never what the text means.
+function nextStep(){
+  const shut=document.querySelector('.bar').classList.contains('shut'),
+        noVerse=state.qVerse===null||state.qVerse===undefined;
+  if(state.view==='strip'){
+    if((state.query==='reach'||state.query==='similar')&&noVerse)
+      return 'Next: click any cell. Anywhere will do \u2014 the whole canon recolours from where you click.';
+    if(state.query==='lemma'&&!state.qKey)
+      return 'Next: type into the box above \u2014 an English word, a transliteration, or a Strong number.';
+    if(state.query==='bookreach'&&(state.qBook===null||state.qBook===undefined))
+      return 'Next: choose a book above.';
+    if(state.held==='all')
+      return 'Next: try Show, which keeps only the verses many books point at \u2014 or only the ones nothing points at.';
+    return 'Next: hover a cell to read the verse, or change the Question to ask something else of the same grid.';
+  }
+  if(state.view==='circle')
+    return state.focus
+      ? 'Next: click the rim to follow one chapter'+(shut?', or open Adjust to colour the chords by how far they travel rather than how many there are.':'.')
+      : 'Next: search for a book above, or click a chord, to put that book on the dial.';
+  if(state.view==='arc')
+    return 'Next: click an arc to read both ends'+(shut?', or open Adjust to arrange the books by date rather than by binding.':', or choose Canon for one cell per verse rather than per chapter.');
+  if(state.view==='matrix')
+    return 'Next: hover a dot to name the chapter pair it stands for, or click it to list the links.';
+  return '';
+}
 function stripCaption(){
   const base='One cell per verse, all '+fmt(VCOUNT)+' of them, each book starting at the left edge. '
-    +'Every link in the data is counted here \u2014 the minimum-links dial and the focus do not apply. ';
+    +'Every link in the data is counted here \u2014 Hide faint links and Narrow to do not apply. ';
   if(state.query==='similar')return base+((state.qVerse===null||state.qVerse===undefined)
     ?'Click any verse to colour the canon by how much of its vocabulary each other verse shares.'
     :'How much of the vocabulary of '+verseLabel(state.qVerse)+' each verse shares, by Strong number rather than by English. A word counts for what it is worth: one standing in a handful of verses counts heavily, one standing in hundreds barely at all, and words standing in more than '+COMMON+' verses are not followed at all. What is measured is the share of each verse\u2019s own vocabulary held in common, so a long verse is not favoured over a short one. This is shared wording, not shared meaning, and it is not a cross-reference: nobody judged these to belong together.');
@@ -2785,15 +2840,23 @@ function wRender(){
   note.textContent=(real.length>60?'Showing the first 60 of '+fmt(real.length)+' words. ':'')
     +WORDS.attribution+'. Click a word to see every verse it stands in; click a verse to bring that chapter up on the diagram.';
 }
-// The dials fold away on a phone. Shut to begin with there, and never on a wider screen,
-// where the button is not shown and the class has no effect.
+// Shut to begin with, at every width, and remembered after that: somebody who has opened
+// the dials once has said what they want, and being folded up again on every visit would
+// be the page overruling them.
 {
   const bar=document.querySelector('.bar'),tog=document.getElementById('dialsToggle');
-  if(matchMedia('(max-width:560px)').matches)bar.classList.add('shut');
-  tog.addEventListener('click',()=>{
-    const open=!bar.classList.toggle('shut');
+  let want=null;
+  try{want=localStorage.getItem('xref-dials')}catch(e){}
+  const set=open=>{
+    bar.classList.toggle('shut',!open);
     tog.setAttribute('aria-expanded',String(open));
-    tog.textContent=open?'Hide settings':'Settings';
+    tog.textContent=open?'Done':'Adjust';
+  };
+  set(want==='open');
+  tog.addEventListener('click',()=>{
+    const open=bar.classList.contains('shut');
+    set(open);
+    try{localStorage.setItem('xref-dials',open?'open':'shut')}catch(e){}
   });
 }
 document.getElementById('w-q').addEventListener('input',wRender);
