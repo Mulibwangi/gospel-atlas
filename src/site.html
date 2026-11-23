@@ -76,6 +76,14 @@ h2{font-family:var(--serif);font-weight:400;font-size:clamp(24px,3.6vw,33px);let
 h3{font-size:18px;font-weight:650;letter-spacing:-.3px;margin:0 0 6px}
 
 /* The three tools */
+.doors{padding-bottom:16px}
+.door-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}
+.door-grid a{display:flex;flex-direction:column;gap:7px;text-decoration:none;color:inherit;
+ background:#fdfdf9;border:1px solid var(--line);border-radius:9px;padding:18px 19px;
+ transition:border-color .12s,box-shadow .12s,transform .12s}
+.door-grid a:hover{border-color:var(--gold);box-shadow:0 5px 14px #29382f12;transform:translateY(-1px);text-decoration:none}
+.door-grid strong{font-size:14px;font-weight:650;letter-spacing:-.2px;line-height:1.35;color:#2c4034}
+.door-grid span{font-size:12px;line-height:1.6;color:var(--muted)}
 .tools{display:grid;grid-template-columns:repeat(3,1fr);gap:26px}
 .tool{background:#fdfdf9;border:1px solid var(--line);border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
 .tool img{border-bottom:1px solid var(--line);aspect-ratio:760/485;object-fit:cover;object-position:top left;width:100%;height:auto;background:#eceade}
@@ -109,6 +117,8 @@ footer p{margin:0 0 6px}
   .hero .wrap{grid-template-columns:1fr;gap:30px}
   .hero figure{max-width:440px;margin:4px auto 0}
   .tools,.what{grid-template-columns:1fr}
+  .door-grid{grid-template-columns:1fr;gap:9px}
+  .door-grid a{padding:15px 16px}
   .credits dl{grid-template-columns:1fr;gap:4px 0}
   .credits dd{margin-bottom:14px}
   a.open{flex:1;justify-content:center}
@@ -173,7 +183,41 @@ footer p{margin:0 0 6px}
   </div>
 </div>
 
-<section>
+<section class="doors">
+  <div class="wrap">
+    <h2>Start with a question</h2>
+    <p class="sub">Each one opens the right tool with the right thing already on screen.
+    Nothing to set up, nothing to install.</p>
+    <div class="door-grid">
+      <a href="gospel-atlas.html">
+        <strong>Read one story in all four Gospels</strong>
+        <span>The feeding of the five thousand is the only miracle every Gospel records.</span>
+      </a>
+      <a href="gospel-atlas.html">
+        <strong>See what only one Gospel tells</strong>
+        <span>Eighty-five per cent of John is told by John alone. Mark: three per cent.</span>
+      </a>
+      <a href="cross-references.html#view=canon&amp;query=gravity">
+        <strong>See the whole Bible at once</strong>
+        <span>All 31,102 verses, one cell each, lit by how much of Scripture points at them.</span>
+      </a>
+      <a href="cross-references.html#view=canon&amp;query=testament">
+        <strong>Find where the New Testament reads the Old</strong>
+        <span>129,033 cross-references cross between the Testaments &mdash; a fifth of them all.</span>
+      </a>
+      <a href="cross-references.html#view=canon&amp;query=lemma">
+        <strong>Look up a Greek or Hebrew word</strong>
+        <span>Every verse a word stands in, across both Testaments, by Strong number.</span>
+      </a>
+      <a href="typology.html">
+        <strong>See where Scripture says one passage answers another</strong>
+        <span>Only where a verse states it &mdash; and the readings tradition adds, marked as readings.</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section style="border-top:1px solid var(--line)">
   <div class="wrap">
     <h2>The three tools</h2>
     <p class="sub">Each one is a single HTML file. Open it from this page, or download all
@@ -276,6 +320,10 @@ footer p{margin:0 0 6px}
         <li>Open the unzipped folder and double-click
         <strong>1 START HERE &ndash; Open Gospel Atlas.html</strong>.</li>
       </ol>
+      <p class="inzip"><strong>On an iPhone or iPad, use this website rather than the
+      download.</strong> iOS will not run a web page held as a file on the device, so the
+      apps open blank from the Files app; opened here they work normally. Android,
+      Windows, Mac and Linux all run the downloaded files.</p>
       <p class="inzip">Inside: <code>Gospel_Atlas_David_Lee.html</code>,
       <code>Cross_Reference_Lab.html</code>, <code>Shadow_and_Substance.html</code>, the
       start page, plain-text opening instructions and the reader's guide. Needs a current

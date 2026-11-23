@@ -199,3 +199,36 @@
 }
 .ws-count a,.ws-refs a{font-size:10.5px;color:#5a7050;text-decoration:underline;text-underline-offset:2px}
 .ws-count a:hover,.ws-refs a:hover{color:var(--ink)}
+
+/* Where to start. Four questions instead of a control panel: the first thing on the
+   page is now something you might want to know, not something you have to decide. */
+.openers{margin:0 0 26px}
+.openers-lead{margin:0 0 14px;font-size:12.5px;color:#7b8376}
+.openers-lead strong{color:#3b5140;font-weight:650}
+.openers-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.openers-grid button{display:flex;flex-direction:column;gap:7px;text-align:left;padding:17px 18px;
+ background:#fffef9;border:1px solid #dedfd5;border-radius:8px;cursor:pointer;
+ box-shadow:0 2px 4px #29382f06;transition:border-color .12s,box-shadow .12s,transform .12s}
+.openers-grid button:hover{border-color:#b9c6ac;box-shadow:0 4px 12px #29382f12;transform:translateY(-1px)}
+.openers-grid button strong{font-size:13.5px;font-weight:650;letter-spacing:-.2px;color:#2c4034;line-height:1.3}
+.openers-grid button span{font-size:11.5px;line-height:1.6;color:#7f877a}
+.openers-grid button em{font-style:italic;color:#6b7a62}
+
+/* The reading settings, folded. The summary says what they are set to, so the fold does
+   not hide the answer to the question people open it with. */
+.settings-fold{margin:0 0 30px;border:1px solid #e0e2d7;border-radius:8px;background:#f2f1ea}
+.settings-fold>summary{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;
+ padding:13px 17px;cursor:pointer;list-style:none;font-size:12px;color:#7b8376}
+.settings-fold>summary::-webkit-details-marker{display:none}
+.settings-fold>summary::before{content:"\203A";font-size:15px;color:#9aa391;transition:transform .15s;display:inline-block}
+.settings-fold[open]>summary::before{transform:rotate(90deg)}
+.settings-fold .sf-label{font-weight:650;color:#4a5c48;letter-spacing:.01em}
+.settings-fold .sf-now{color:#5f6b5c}
+.settings-fold .sf-more{margin-left:auto;color:#949c8e;font-size:11px}
+.settings-fold>summary:hover .sf-more{color:#6b7566;text-decoration:underline}
+.settings-fold .edition-panel{margin:0;border:0;border-top:1px solid #e0e2d7;border-radius:0 0 8px 8px;background:transparent}
+@media(max-width:1100px){.openers-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.openers-grid{grid-template-columns:1fr;gap:9px}
+ .openers-grid button{padding:14px 15px}
+ .settings-fold>summary{font-size:11.5px;gap:8px}
+ .settings-fold .sf-more{margin-left:0;width:100%}}

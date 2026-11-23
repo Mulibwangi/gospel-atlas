@@ -587,6 +587,12 @@ function App({data}){
 
   function select(id,vid){if(!stories[id])return;setSelected(id);setSelectedVerse(vid||null);setHover(null)}
   function jump(id){setFilter('all');setQuery('');setCompare({a:'',b:''});select(id)}
+  // The opener promises a story all four tell, so it is looked up rather than hard-coded
+  // to an index number that a later edit of the data could quietly make wrong.
+  const ALL_FOUR_STORY=useMemo(()=>{
+    const feeding=data.stories.find(s=>s.count===4&&/five thousand/i.test(s.title));
+    return (feeding||data.stories.find(s=>s.count===4)||data.stories[0]).id;
+  },[data.stories]);
   function expandRef(ref){
     setExpanded(expanded===ref?null:ref);
     if(!bible)setBible(window.BASELINE);
@@ -779,7 +785,45 @@ function App({data}){
     <header className="site-header"><a className="brand" href="#top" aria-label="Gospel Atlas home"><span className="brand-mark">{BOOKS.map(b=><i key={b} style={{background:COLORS[b]}}/>)}</span>Gospel Atlas</a><nav><a href="#atlas">Explore</a><a href={SUITE.lab} title="Every cross-reference in the Bible, drawn three ways, with whole-Bible word search">Cross-Reference Lab</a><a href={SUITE.types} title="Where Scripture says one passage answers another">Shadow and Substance</a><button onClick={openNotebook} aria-expanded={nbOpen}>Notebook <span className="nb-pill">{kept.length}</span></button><button onClick={()=>dialog.current.showModal()}>How to read & sources</button></nav><span className="edition">STANDALONE EDITION · DAVID LEE</span></header>
     <main id="top">
       <section className="hero"><div><div className="eyebrow">MATTHEW · MARK · LUKE · JOHN</div><h1>Four Gospels, <em>in pixels.</em></h1><p>Read the accounts side by side.<br className="mobile-break"/> Follow their shared and distinctive passages.</p></div><div className="hero-stats"><div><strong>{fmt(meta.verseCount)}</strong><span>VERSE PIXELS</span></div><div><strong>{meta.storyCount}</strong><span>STORY UNITS</span></div><div><strong>{fmt(meta.crossReferenceCount)}</strong><span>SOURCE CROSS-REFERENCES</span></div></div></section>
-      <EditionBar state={editionState}/><section className="atlas-section" id="atlas" aria-label="Gospel pixel maps">
+      {/* Somebody opening this for the first time met eleven rows of settings before a
+          single verse: which language, which translation, what size, what to print, what
+          to import, what to search, what to filter, how big the squares should be. All of
+          them are things you adjust once you know what you are looking at, and none of
+          them is a reason to be here.
+          So the page opens with four questions it can answer. Each one carries the fact
+          that makes it worth asking, and each one does the work rather than explaining
+          it: the dials move, the page scrolls, and you arrive at the answer. That is the
+          whole of the instruction manual. */}
+      <section className="openers" aria-label="Where to start">
+        <p className="openers-lead"><strong>Four things this answers.</strong> Pick one and it will take you there.</p>
+        <div className="openers-grid">
+          <button onClick={()=>{jump(ALL_FOUR_STORY);setFilter('four');setTimeout(()=>reader.current?.scrollIntoView({behavior:'smooth',block:'start'}),60)}}>
+            <strong>Read one story in all four</strong>
+            <span>The feeding of the five thousand is the only miracle every Gospel records. Here it is in four columns.</span>
+          </button>
+          <button onClick={()=>{setFilter('unique');setQuery('');setCompare({a:'',b:''});setTimeout(()=>document.getElementById('atlas')?.scrollIntoView({behavior:'smooth',block:'start'}),60)}}>
+            <strong>See what only one Gospel tells</strong>
+            <span>Eighty-five per cent of John is told by John alone. Mark: three per cent. The maps show where.</span>
+          </button>
+          <button onClick={()=>{jump(ALL_FOUR_STORY);setTimeout(()=>connectionSection.current?.scrollIntoView({behavior:'smooth',block:'start'}),60)}}>
+            <strong>Follow where a verse points</strong>
+            <span>Every verse carries the passages Scripture ties it to &mdash; 344,799 of them across the whole Bible.</span>
+          </button>
+          <button onClick={()=>{setGreek(true);setWordQuery('yoke');setWord(null);setTimeout(()=>connectionSection.current?.scrollIntoView({behavior:'smooth',block:'start'}),60)}}>
+            <strong>Find a word in Greek or Hebrew</strong>
+            <span>Search <em>yoke</em> and read it where it stands, word by word, in both Testaments.</span>
+          </button>
+        </div>
+      </section>
+      {/* The settings are still one click away, and the click now says what they are set
+          to, so nobody has to open it to find out. */}
+      <details className="settings-fold">
+        <summary><span className="sf-label">Reading settings</span>
+          <span className="sf-now">{editionState.ed.language||'English'} &middot; {editionState.ed.name} &middot; {editionState.scale}px</span>
+          <span className="sf-more">Change language, translation or text size</span>
+        </summary>
+        <EditionBar state={editionState}/>
+      </details><section className="atlas-section" id="atlas" aria-label="Gospel pixel maps">
         <div className="section-heading"><div><span className="section-number">01</span><h2>The four accounts</h2></div><p>One square = one verse · Chapters read top to bottom</p></div>
         <div className="controls"><label className="search-label">{icon('search')}<input type="search" aria-label="Find a story, a reference or words in the text" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Find a story, a reference, or words…"/>{query&&<button className="clear-search" aria-label="Clear search" onClick={()=>setQuery('')}>×</button>}</label><div className="filter-tabs" aria-label="Filter stories">{[['all','All material'],['shared','Shared'],['unique','Distinctive'],['four','In all four']].map(([value,label])=><button key={value} className={filter===value?'active':''} aria-pressed={filter===value} onClick={()=>setFilter(value)}>{label}</button>)}</div><label className="density">Pixels <select value={columns} onChange={e=>setColumns(Number(e.target.value))} aria-label="Pixel density"><option value={52}>Small</option><option value={40}>Medium</option><option value={28}>Large</option></select></label></div>
         <div className="compare-row"><span className="compare-label">COMPARE</span><label>Told in <select value={compare.a} aria-label="Gospel that records the story" onChange={e=>setCompare({a:e.target.value,b:compare.b===e.target.value?'':compare.b})}><option value="">—</option>{BOOKS.map(b=><option key={b} value={b}>{NAMES[b]}</option>)}</select></label><label>but not in <select value={compare.b} aria-label="Gospel that does not record the story" onChange={e=>setCompare({a:compare.a===e.target.value?'':compare.a,b:e.target.value})}><option value="">—</option>{BOOKS.map(b=><option key={b} value={b}>{NAMES[b]}</option>)}</select></label>{comparing?<><strong>{visibleStories.length} {visibleStories.length===1?'unit':'units'}</strong><button className="compare-clear" onClick={()=>setCompare({a:'',b:''})}>Clear</button></>:<span className="compare-hint">Choose both to see what one Gospel records and another does not.</span>}</div>
