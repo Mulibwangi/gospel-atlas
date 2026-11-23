@@ -44,6 +44,10 @@ from "Query":
   Where a book points  pick a book and see what it reaches, or what reaches it.
   A word             type a word, a transliteration or a Strong number and every
                      verse holding it lights up.
+  How many books     not how many links a verse has but how many different books
+   point at it       they come from. Psalm 119 is pointed at hundreds of times,
+                     mostly from nearby; II Peter 2:3 is pointed at by 47 separate
+                     books. The second is what being widely held looks like.
   Rare vocabulary    how uncommon a verse's own words are — the information each
                      tagged word carries, averaged over the verse. The darkest
                      places are the Aramaic chapters of Daniel and Ezra, the
@@ -58,6 +62,21 @@ from "Query":
                      judged these verses to belong together.
   No link            the 54 verses nothing points at, and the barely-touched
                      ones beside them.
+
+"Show" is the whole-Bible answer to the Atlas's shared, distinctive and
+told-in-all-four. Those come from an index of which Gospels tell which story;
+no such index exists for the rest of Scripture, and for most of it there is no
+parallel material to index. What the links can answer instead is how many books
+point at a verse:
+
+  Distinctive        one book or none — 1,625 verses, 5.2% of the Bible
+  Shared             two books or more — 29,477 verses, 94.8%
+  Widely held        fifteen books or more — 5,336 verses, 17.2%
+
+It is a filter, not a colour, so it composes with whatever question is asked:
+rare vocabulary among the widely held verses is a question neither could answer
+alone. Verses the filter excludes are drawn in grey rather than removed, because
+a gap where a verse should be reads as missing data.
 
 The subject box changes with the question and disappears when a question takes
 no subject, so there is never a combination that draws nothing. "Show me one"
