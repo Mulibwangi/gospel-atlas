@@ -223,7 +223,7 @@ footer p{margin:0 0 7px}
      is in force, since a filter nobody can see is worse than no filter. */
   .bar .dials-toggle{display:inline-block}
   .bar.shut .opt{display:none}
-  .bar.shut #optQuery,.bar.shut #optSubject{display:flex}
+  .bar.shut #optQuery,.bar.shut #optSubject,.bar.shut #optScale{display:flex}
   .bar #optQuery{flex:1 1 100%}
   .bar .spacer{display:none}
   header{gap:10px;padding-bottom:12px}
@@ -672,9 +672,9 @@ root.innerHTML=`
         ${COMPLETE?'':'<option value="gospel">By Gospel</option>'}
       </select>
     </div>
-    <div class="opt" id="optScale">Scale
+    <div class="opt" id="optScale">Colours
       <select id="scale" aria-label="Which colour scale the drawings use">
-        <option value="ramp">Ramp</option>
+        <option value="ramp">Ordered</option>
         <option value="rainbow">Rainbow</option>
       </select>
     </div>
@@ -3110,7 +3110,7 @@ function scaleDial(){
   const sel=document.getElementById('scale');if(!sel)return;
   const rb=sel.querySelector('option[value=rainbow]');
   rb.disabled=state.cbsafe;
-  rb.textContent=state.cbsafe?'Rainbow (not colour-blind safe)':'Rainbow';
+  rb.textContent=state.cbsafe?'Rainbow \u2014 not colour-blind safe':'Rainbow';
   sel.value=state.cbsafe?'ramp':state.palette;
   sel.title=state.cbsafe?'The rainbow cannot be made colour-blind safe, so it is off while that is on.':'';
 }
