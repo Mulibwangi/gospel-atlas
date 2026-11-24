@@ -255,7 +255,8 @@ footer p{margin:0 0 7px}
    rest is one click away and stays open once opened. Nothing is taken away; it simply
    stops talking first. */
 .bar.shut .opt{display:none}
-.bar.shut #optQuery,.bar.shut #optSubject,.bar.shut #optHeld,.bar.shut #optScale{display:flex}
+.bar.shut #optQuery,.bar.shut #optSubject,.bar.shut #optHeld,.bar.shut #optScale,
+.bar.shut #optPixels{display:flex}
 .dials-toggle{display:inline-block;text-decoration:none;padding:6px 14px;
   border:1px solid var(--line);border-radius:14px;background:var(--field);color:var(--muted)}
 .dials-toggle:hover{color:var(--ink);border-color:var(--faint)}
@@ -700,6 +701,14 @@ root.innerHTML=`
         ${COMPLETE?'':'<option value="gospel">By Gospel</option>'}
       </select>
     </div>
+    <div class="opt" id="optPixels" hidden>Pixels
+      <select id="pixels" aria-label="How big each verse is drawn">
+        <option value="fit">Fit the window</option>
+        <option value="3">Small</option>
+        <option value="5">Medium</option>
+        <option value="8">Large</option>
+      </select>
+    </div>
     <div class="opt" id="optScale">Colour scheme
       <select id="scale" aria-label="Which colour scale the drawings use">
         <option value="ramp">Ordered</option>
@@ -845,7 +854,7 @@ const SECTIONS=[
   return a&&z?{name,from:a.first,to:z.first+z.chapters-1,alias}:null;
 }).filter(Boolean);
 const state={view:'circle',colour:'distance',cbsafe:false,palette:'ramp',held:'all',flow:true,thread:null,chain:null,min:COMPLETE?2:1,hover:null,locked:null,focus:null,dir:'both',order:'canonical',
-  query:'gravity',qVerse:null,qBook:null,qDir:'out',qLemma:'',qKey:null,hoverVerse:null,lockedVerse:null};
+  query:'gravity',qVerse:null,qBook:null,qDir:'out',qLemma:'',qKey:null,hoverVerse:null,lockedVerse:null,px:'fit'};
 
 // ---- the canon strip ----------------------------------------------------
 // One cell per verse, all 31,102 of them, in reading order. Every query below is the
@@ -1211,6 +1220,8 @@ const canvas=document.getElementById('plot'),ctx=canvas.getContext('2d');
 let W=0,H=0,dpr=1,base=null;
 const geom={};
 let STRIP_WIDE=null;     // which gutter the canon strip last settled on
+let STRIP_CAPPED=0;      // a pixel size the screen could not draw, if the last layout met one
+let STRIP_MAXPITCH=11;   // the largest cell the last layout found this screen can carry
 
 function sizes(){
   const rect=canvas.parentElement.getBoundingClientRect();
@@ -1274,12 +1285,35 @@ function layout(){
     const wide=STRIP_WIDE===null?W>=1100:(STRIP_WIDE?W>=1040:W>=1160);
     STRIP_WIDE=wide;
     const narrow=W<560;
-    const padL=narrow?62:wide?148:96,padT=12,padR=narrow?4:10,padB=18;
-    const nameMax=narrow?0:wide?13:7;   // 0 means the book's short code
-    const single=wide;
+    // One straight column of names is the readable gutter, and the only thing that ever
+    // forced two was height: a one-row book cannot carry a name, so room has to be made
+    // after it, and on a grid fitted to the window that room is what there is least of.
+    // A size chosen by hand has already accepted a taller grid, so the straight column
+    // comes back as soon as there is width for a short name - the gutter is the reason
+    // for the threshold, not the drawing.
+    const asked=state.px==='fit'?0:+state.px;
+    const single=wide||(asked>0&&W>=760);
+    // A straight column of truncated names is worse than no column at all, so where
+    // there is a straight column there is room for the whole name: the gutter costs
+    // fifty pixels of grid width, which at these sizes is a twentieth of it.
+    const room=wide||(single&&W>=980);
+    const padL=narrow?62:room?148:96,padT=12,padR=narrow?4:10,padB=18;
+    const nameMax=narrow?0:room?13:7;   // 0 means the book's short code
     const fs=narrow?9:10, GAP=fs+1;
     const availW=Math.max(60,W-padL-padR);
-    const capH=single?920:Math.max(60,H-padT-padB);
+    // The height the window would give it, worked out from the width rather than read
+    // off the canvas: the canvas carries whatever the last size chosen made it, so
+    // measuring that and fitting to it would feed the answer back into the question.
+    const natural=document.body.classList.contains('full')
+      ? Math.max(320,Math.round((window.innerHeight||700)-108))
+      : Math.round(Math.min(900,Math.max(380,W*0.68)));
+    const capH=single?920:Math.max(60,natural-padT-padB);
+    // What this screen can actually draw. A canvas has a largest side and a largest
+    // area, both counted in device pixels, and asking for more than either gives a
+    // blank rather than a picture - on an iPhone soonest of all. So a size asked for
+    // is a ceiling, not a promise: the largest that fits is drawn and the caption says
+    // when that is less than was asked.
+    const maxH=Math.max(capH,Math.min(8192/dpr,12e6/Math.max(1,W*dpr*dpr)));
     const plan=p=>{
       const cols=Math.max(1,Math.floor(availW/p));
       const y=new Float64Array(BOOKS.length+1);
@@ -1292,11 +1326,17 @@ function layout(){
       y[BOOKS.length]=at;
       return {cols,bookY:y,height:at-padT};
     };
-    let pitch=2,laid=plan(2);
-    for(let p=11;p>=2;p--){
+    let pitch=2,laid=plan(2),capped=0;
+    for(let p=asked||11;p>=2;p--){
       const t=plan(p);
-      if(t.height<=capH||p===2){pitch=p;laid=t;break}
+      if(t.height<=(asked?maxH-padT-padB:capH)||p===2){pitch=p;laid=t;break}
     }
+    if(asked&&pitch<asked)capped=asked;
+    STRIP_CAPPED=capped;
+    // The largest cell this screen could carry, so the dial can say which sizes are
+    // open to it rather than offering one and quietly drawing another.
+    STRIP_MAXPITCH=2;
+    for(let p=11;p>=2;p--)if(plan(p).height<=maxH-padT-padB){STRIP_MAXPITCH=p;break}
     const {cols,bookY}=laid;
     geom.strip={padL,padT,padR,padB,pitch,cols,bookY,nameMax,narrow,single,fs,GAP,
       cell:Math.max(1,pitch-1),bottom:bookY[BOOKS.length]};
@@ -1307,7 +1347,7 @@ function layout(){
     // The grid decides its own height. Left-over canvas would sit under it as blank and
     // a saved image would carry the blank with it; too little and the grid would run
     // out under the caption.
-    const want=Math.max(200,Math.min(1600,bookY[BOOKS.length]+padB));
+    const want=Math.max(200,Math.min(asked?maxH:1600,bookY[BOOKS.length]+padB));
     if(Math.abs(want-H)>6){H=Math.round(want);canvas.style.height=H+'px';canvas.height=Math.round(H*dpr)}
   }else{
     // Deeper margins than the other views need: sixty-six names down the side and
@@ -1935,6 +1975,9 @@ function renderBase(){
     linkLayer=document.createElement('canvas');
     linkLayer.width=Math.max(1,W);linkLayer.height=Math.max(1,H);
     drawStrip(linkLayer.getContext('2d'));
+    // The layout has just worked out how big a cell this screen can carry, so the dial
+    // is brought up to date here rather than before, when the answer was last screen's.
+    pixelsDial();
     progress=1;paint();legend();return;
   }
   buildIndex();
@@ -2112,13 +2155,18 @@ function stripCaption(){
     rare:'The highest scores are lists of names, which are rare words by definition, and the Aramaic chapters of Daniel and Ezra, whose every word is uncommon in a Hebrew corpus. Both are what the measure says rather than faults in it. How uncommon a verse\u2019s own words are: the information each tagged word carries, averaged over the verse and counted within its own language, since Hebrew and Greek are different corpora. Prefixes and suffixes are left out. A short verse is not promoted for holding one odd word.',
     orphans:'The verses no cross-reference touches at all, and the barely-touched ones beside them. Most are speech formulae and genealogy.'
   }[state.query]||'';
+  let out=base+q;
   if(state.held!=='all'){
     const bd=breadth(),t=HELD[state.held];
     let n=0;for(let v=0;v<VCOUNT;v++)if(t.test(bd[v]))n++;
-    return base+q+' Showing only the verses '+t.label+' \u2014 '+fmt(n)+' of them, '
+    out+=' Showing only the verses '+t.label+' \u2014 '+fmt(n)+' of them, '
       +(100*n/VCOUNT).toFixed(1)+'% of the Bible. The rest are still drawn, in grey.';
   }
-  return base+q;
+  // Said plainly rather than left to be noticed: the cells are not the size that was
+  // asked for, and the reason is this screen rather than the choice.
+  if(STRIP_CAPPED)out+=' Drawn a size smaller than asked: this screen cannot carry a '
+    +'grid that tall in one piece.';
+  return out;
 }
 // The panel beside the strip answers for one verse: what it says, what the query makes
 // of it, and what it points at. A cell is one verse, so the panel is too.
@@ -3072,6 +3120,7 @@ function dials(){
   const show=(id,on)=>{const e=document.getElementById(id);if(e)e.hidden=!on};
   ['optOrder','optColour','optThread','optFlow','optMin','optSection'].forEach(id=>show(id,!strip));
   show('optQuery',strip);show('optHeld',strip);show('qSpin',strip);show('fullOpen',strip);
+  show('optPixels',strip);pixelsDial();
   const hv=document.getElementById('held');if(hv)hv.value=state.held;
   scaleDial();        // the scale belongs to every view, so it is never taken away
   const chips=document.getElementById('chipslot');       // the focus chip, which the strip ignores
@@ -3107,6 +3156,11 @@ document.querySelectorAll('.views button').forEach(b=>b.addEventListener('click'
   document.querySelectorAll('.views button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
   dials();render();describe();
 }));
+document.getElementById('pixels').addEventListener('change',e=>{
+  state.px=e.target.value;renderBase();pixelsDial();caption();describe();
+  // A bigger cell makes a taller picture, and the top of it is where the reading starts.
+  document.querySelector('.stage').scrollIntoView({block:'start',behavior:'smooth'});
+});
 document.getElementById('held').addEventListener('change',e=>{
   state.held=e.target.value;renderBase();caption();describe();
 });
@@ -3249,6 +3303,19 @@ document.getElementById('scale').addEventListener('change',e=>{
 // Colour-blind safe and the rainbow are a contradiction, so the one rules the other out
 // rather than quietly winning: the option is greyed while the safe scale is on, and it
 // says why.
+// A size the screen cannot draw is shown as unavailable rather than offered and then
+// silently reduced, which is how the rainbow behaves while colour-blind safe is on.
+function pixelsDial(){
+  const sel=document.getElementById('pixels');if(!sel)return;
+  for(const o of sel.options){
+    const p=+o.value;
+    if(!p)continue;
+    const ok=p<=STRIP_MAXPITCH;
+    o.disabled=!ok;
+    o.textContent=({3:'Small',5:'Medium',8:'Large'}[p]||o.value)+(ok?'':' \u2014 too tall for this screen');
+  }
+  sel.value=state.px;
+}
 function scaleDial(){
   const sel=document.getElementById('scale');if(!sel)return;
   const rb=sel.querySelector('option[value=rainbow]');

@@ -87,6 +87,16 @@ brings it back. The chapter-level dials — Hide faint links, Narrow to, Trace a
 chain, Arrange by — are hidden while Canon is up, because this view counts every
 link there is.
 
+**Pixels** sets how big a verse is drawn, as it does in the Atlas. "Fit the
+window" is the default and keeps the whole canon on one screen; Small, Medium
+and Large make the cell bigger and the picture taller, and you scroll. Nothing
+about the data changes — a verse is one cell at every size, so Obadiah stays 21
+cells and Psalms stays 2,461. At the larger sizes the book names straighten into
+one column and are written out in full, because there is then room for them. A
+size a screen cannot draw in one piece is shown as unavailable rather than
+offered and quietly reduced: a canvas has a largest side and a largest area, and
+a phone meets both sooner than a laptop.
+
 Those dials, and the rest of them, live behind **Adjust**, at the end of the row
 of controls. What stays out in front is what chooses the picture rather than
 adjusts it: the four views, the search, the colour scheme, and on Canon the
